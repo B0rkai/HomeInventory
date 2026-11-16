@@ -83,9 +83,10 @@ development and the live app apart:
   `tailscale serve` HTTPS port, so the dev build opens on a phone with real
   Tailscale identity, push and camera. Its `server.allowedHosts` must
   include the `*.ts.net` name.
-- **Ports**: pick them after checking `tailscale serve status` (the torrent
-  box already runs here) and record them here: dev API, dev Vite, dev
-  HTTPS, live app, live HTTPS.
+- **Ports** (checked against the torrent box's ports and `tailscale serve
+  status`): dev API `127.0.0.1:8000`, dev Vite `127.0.0.1:5173`, dev HTTPS
+  `:8443`, live app `127.0.0.1:8100`, live HTTPS `:443`. The tailnet name
+  is `borkai-server.tail61796b.ts.net`.
 - Git pushes go out as the **B0rkai-Claude** GitHub account.
 
 ## Repository layout *(planned)*
@@ -122,10 +123,9 @@ npm run generate-api    # regenerate the client from the server's OpenAPI schema
 - *(planned)* Docker Compose from `deploy/`: one container; the API serves
   the built web client as static files. The SQLite file lives in a
   bind-mounted data directory on the host, never inside the image.
-- Before configuring `tailscale serve`, check `tailscale serve status`: the
-  torrent box may already use HTTPS port 443, in which case HomeInventory
-  gets another HTTPS port or path. MagicDNS and HTTPS certificates must be
-  enabled in the tailnet admin console.
+- `tailscale serve` publishes the live app on HTTPS 443 and the dev Vite
+  server on 8443 (ports above). MagicDNS and HTTPS certificates are enabled
+  in the tailnet admin console.
 - Backups: copy the database with SQLite's online backup (`sqlite3 db
   ".backup ..."` or the Python `backup()` API), never a plain file copy of a
   live database.
