@@ -199,46 +199,51 @@ function RequestRow({
     <li>
       <div className="request-head">
         {title}
-        {who && <span className={`claim ${mine.length ? 'mine' : ''}`}>{who}</span>}
+        <span className="request-who">
+          {who && <span className={`claim ${mine.length ? 'mine' : ''}`}>{who}</span>}
+          <button
+            type="button"
+            className="icon"
+            aria-label={t.todo.cancel(name)}
+            onClick={() => {
+              if (window.confirm(t.todo.confirmCancel(name)))
+                void actions.act('cancel', ids(requests))
+            }}
+          >
+            ×
+          </button>
+        </span>
       </div>
-      {children}
-      <div className="request-actions">
-        {open.length > 0 && (
+      {/* Where and who, with the buttons beside it when it's short enough. */}
+      <div className="request-body">
+        <div className="request-info">{children}</div>
+        <div className="request-actions">
+          {open.length > 0 && (
+            <button
+              type="button"
+              className="secondary small-button"
+              onClick={() => actions.act('claim', ids(open))}
+            >
+              {t.todo.claim}
+            </button>
+          )}
+          {open.length === 0 && mine.length > 0 && (
+            <button
+              type="button"
+              className="secondary small-button"
+              onClick={() => actions.act('unclaim', ids(mine))}
+            >
+              {t.todo.unclaim}
+            </button>
+          )}
           <button
             type="button"
-            className="secondary small-button"
-            onClick={() => actions.act('claim', ids(open))}
+            className="small-button"
+            onClick={() => actions.act('done', ids(requests))}
           >
-            {t.todo.claim}
+            ✓ {doneLabel}
           </button>
-        )}
-        {open.length === 0 && mine.length > 0 && (
-          <button
-            type="button"
-            className="secondary small-button"
-            onClick={() => actions.act('unclaim', ids(mine))}
-          >
-            {t.todo.unclaim}
-          </button>
-        )}
-        <button
-          type="button"
-          className="small-button"
-          onClick={() => actions.act('done', ids(requests))}
-        >
-          ✓ {doneLabel}
-        </button>
-        <button
-          type="button"
-          className="icon"
-          aria-label={t.todo.cancel(name)}
-          onClick={() => {
-            if (window.confirm(t.todo.confirmCancel(name)))
-              void actions.act('cancel', ids(requests))
-          }}
-        >
-          ×
-        </button>
+        </div>
       </div>
     </li>
   )
