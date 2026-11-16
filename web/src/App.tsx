@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getCurrentUser, type UserOut } from './api'
+import { NicknameForm } from './NicknameForm'
 import { t } from './strings'
 
 type State =
@@ -17,6 +18,7 @@ function errorMessage(status: number | undefined): string {
 
 export default function App() {
   const [state, setState] = useState<State>({ kind: 'loading' })
+  const [editingNickname, setEditingNickname] = useState(false)
 
   useEffect(() => {
     getCurrentUser().then(
@@ -30,11 +32,27 @@ export default function App() {
     )
   }, [])
 
+  function saved(user: UserOut) {
+    setState({ kind: 'ready', user })
+    setEditingNickname(false)
+  }
+
+  const user = state.kind === 'ready' ? state.user : undefined
+
   return (
     <div className="app">
       <header className="app-header">
         <h1>{t.appName}</h1>
-        {state.kind === 'ready' && <span className="user">{state.user.name}</span>}
+        {user?.nickname && (
+          <button
+            type="button"
+            className="user"
+            aria-label={t.nickname.editHint}
+            onClick={() => setEditingNickname(true)}
+          >
+            {user.display_name}
+          </button>
+        )}
       </header>
       <main>
         {state.kind === 'loading' && <p className="muted">{t.loading}</p>}
@@ -43,9 +61,13 @@ export default function App() {
             <p>{state.message}</p>
           </div>
         )}
-        {state.kind === 'ready' && (
+        {user && !user.nickname && <NicknameForm user={user} onSaved={saved} />}
+        {user?.nickname && editingNickname && (
+          <NicknameForm user={user} onSaved={saved} onCancel={() => setEditingNickname(false)} />
+        )}
+        {user?.nickname && !editingNickname && (
           <div className="card">
-            <p>{t.greeting(state.user.name)}</p>
+            <p>{t.greeting(user.display_name)}</p>
             <p className="muted">{t.comingSoon}</p>
           </div>
         )}

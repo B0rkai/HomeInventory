@@ -5,6 +5,16 @@ export type ClientOptions = {
 };
 
 /**
+ * HTTPValidationError
+ */
+export type HttpValidationError = {
+    /**
+     * Detail
+     */
+    detail?: Array<ValidationError>;
+};
+
+/**
  * Health
  */
 export type Health = {
@@ -30,6 +40,52 @@ export type UserOut = {
      * Name
      */
     name: string;
+    /**
+     * Nickname
+     */
+    nickname: string | null;
+    /**
+     * Display Name
+     */
+    display_name: string;
+};
+
+/**
+ * UserUpdate
+ */
+export type UserUpdate = {
+    /**
+     * Nickname
+     */
+    nickname: string | null;
+};
+
+/**
+ * ValidationError
+ */
+export type ValidationError = {
+    /**
+     * Location
+     */
+    loc: Array<string | number>;
+    /**
+     * Message
+     */
+    msg: string;
+    /**
+     * Error Type
+     */
+    type: string;
+    /**
+     * Input
+     */
+    input?: unknown;
+    /**
+     * Context
+     */
+    ctx?: {
+        [key: string]: unknown;
+    };
 };
 
 export type GetHealthData = {
@@ -63,3 +119,28 @@ export type GetCurrentUserResponses = {
 };
 
 export type GetCurrentUserResponse = GetCurrentUserResponses[keyof GetCurrentUserResponses];
+
+export type UpdateCurrentUserData = {
+    body: UserUpdate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/users/me';
+};
+
+export type UpdateCurrentUserErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateCurrentUserError = UpdateCurrentUserErrors[keyof UpdateCurrentUserErrors];
+
+export type UpdateCurrentUserResponses = {
+    /**
+     * Successful Response
+     */
+    200: UserOut;
+};
+
+export type UpdateCurrentUserResponse = UpdateCurrentUserResponses[keyof UpdateCurrentUserResponses];

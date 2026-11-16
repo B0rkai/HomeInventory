@@ -3,6 +3,8 @@ from datetime import UTC, datetime
 from sqlalchemy import DateTime, MetaData, String, TypeDecorator
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+NICKNAME_MAX_LENGTH = 40
+
 
 def utcnow() -> datetime:
     return datetime.now(UTC)
@@ -44,5 +46,12 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     # Tailscale login, e.g. someone@gmail.com.
     login: Mapped[str] = mapped_column(String(255), unique=True)
+    # Full name from Tailscale, kept in sync on every request.
     name: Mapped[str] = mapped_column(String(255))
+    # What the app calls them ("Ákos"); chosen by the user, unset until then.
+    nickname: Mapped[str | None] = mapped_column(String(NICKNAME_MAX_LENGTH))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+    @property
+    def display_name(self) -> str:
+        return self.nickname or self.name

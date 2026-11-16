@@ -5,6 +5,16 @@ export const t = {
   loading: 'Betöltés…',
   greeting: (name: string) => `Szia, ${name}!`,
   comingSoon: 'Hamarosan: helyek és készletszintek.',
+  nickname: {
+    prompt: 'Hogy szólítsunk?',
+    hint: 'Ezt a nevet látja a másik is, például az értesítésekben.',
+    label: 'Becenév',
+    save: 'Mentés',
+    saving: 'Mentés…',
+    cancel: 'Mégse',
+    editHint: 'Becenév módosítása',
+    saveFailed: 'Nem sikerült menteni. Próbáld újra.',
+  },
   errors: {
     unreachable: 'Nem érem el a szervert.',
     noIdentity: 'Az alkalmazást a Tailscale-címén nyisd meg.',

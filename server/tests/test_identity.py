@@ -15,7 +15,13 @@ def test_no_identity_is_401(client: TestClient) -> None:
 def test_first_request_creates_user(client: TestClient) -> None:
     response = client.get("/api/v1/users/me", headers=tailscale("anna@example.com", "Anna"))
     assert response.status_code == 200
-    assert response.json() == {"id": 1, "login": "anna@example.com", "name": "Anna"}
+    assert response.json() == {
+        "id": 1,
+        "login": "anna@example.com",
+        "name": "Anna",
+        "nickname": None,
+        "display_name": "Anna",
+    }
 
 
 def test_same_login_is_same_user(client: TestClient) -> None:

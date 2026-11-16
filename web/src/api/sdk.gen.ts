@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses } from './types.gen';
+import type { GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -29,3 +29,15 @@ export const getHealth = <ThrowOnError extends boolean = false>(options?: Option
  * Get Current User
  */
 export const getCurrentUser = <ThrowOnError extends boolean = false>(options?: Options<GetCurrentUserData, ThrowOnError>): RequestResult<GetCurrentUserResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetCurrentUserResponses, unknown, ThrowOnError>({ url: '/api/v1/users/me', ...options });
+
+/**
+ * Update Current User
+ */
+export const updateCurrentUser = <ThrowOnError extends boolean = false>(options: Options<UpdateCurrentUserData, ThrowOnError>): RequestResult<UpdateCurrentUserResponses, UpdateCurrentUserErrors, ThrowOnError> => (options.client ?? client).patch<UpdateCurrentUserResponses, UpdateCurrentUserErrors, ThrowOnError>({
+    url: '/api/v1/users/me',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
