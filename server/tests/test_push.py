@@ -256,3 +256,14 @@ def test_live_updates_reach_listeners_from_other_threads() -> None:
         return received
 
     assert asyncio.run(scenario()) == ["retry: 3000\n\n", 'data: {"by": 7}\n\n']
+
+
+def test_done_with_lots_elsewhere_is_fetched(api, house, phones, pushes) -> None:
+    basement = api("POST", "/locations", {"name": "Pince"}).json()["id"]
+    api("PUT", f"/locations/{basement}/stock/{house['beans']}", {"level": "lots"})
+    set_level(api, house, "out")
+    api("POST", f"/requests/{active(api)[0]['id']}/done", headers=BELA)
+    assert [(to, m["event"]) for to, m in pushes[1:]] == [(ANNAS_PHONE, "fetched")]
+    # The basement keeps its lots; the pantry is filled.
+    levels = {r["location_id"]: r["level"] for r in api("GET", "/stock").json()}
+    assert levels == {basement: "lots", house["pantry"]: "plenty"}

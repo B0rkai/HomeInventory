@@ -11,8 +11,9 @@ import { PushSettings } from './PushSettings'
 import { byItem, fullName } from './variants'
 
 /**
- * What needs doing: the shopping list (items running low, one row per item however many
- * places want it, grouped by category for the shop) and the reported chores.
+ * What needs doing: the reported chores, the refills (items running low where another
+ * place has lots: fetch, don't buy) and the shopping list (the rest, grouped by category
+ * for the shop). An item is one row however many places want it.
  */
 export function TodoPage() {
   const { house } = useHouse()
@@ -26,18 +27,34 @@ export function TodoPage() {
   const byPlace = (a: { location_id: number | null }, b: { location_id: number | null }) =>
     rank(a.location_id) - rank(b.location_id)
 
-  // Buy requests by item, and items by category ("Egyéb" last).
+  // Buy requests by item.
   const buying = new Map<number, RequestOut[]>()
   for (const request of requests) {
     if (request.item_id === null || !itemsById.has(request.item_id)) continue
     buying.set(request.item_id, [...(buying.get(request.item_id) ?? []), request])
   }
+  // Where another place has lots of it: fetch from there instead of buying.
+  const lotsFor = (itemId: number) => {
+    const wantedAt = new Set(buying.get(itemId)!.map((request) => request.location_id))
+    return stock
+      .filter(
+        (row) => row.item_id === itemId && row.level === 'lots' && !wantedAt.has(row.location_id),
+      )
+      .sort(byPlace)
+  }
+  const refills: ItemOut[] = []
+  // The rest is the shopping list, by category ("Egyéb" last).
   const categories = new Map<string, ItemOut[]>()
   for (const id of buying.keys()) {
     const item = itemsById.get(id)!
+    if (lotsFor(id).length) {
+      refills.push(item)
+      continue
+    }
     const category = item.category ?? ''
     categories.set(category, [...(categories.get(category) ?? []), item])
   }
+  refills.sort(byItem)
   const shopping = [...categories]
     .sort(([a], [b]) => (!a ? 1 : !b ? -1 : a.localeCompare(b, 'hu')))
     .map(([category, list]) => [category, list.sort(byItem)] as const)
@@ -52,6 +69,54 @@ export function TodoPage() {
     ) : (
       <a href={href.place(id)}>{placePath(locations, id)}</a>
     )
+
+  /** An item wanted in one or more places, and (for a refill) where to bring it from. */
+  const itemRow = (item: ItemOut) => {
+    const wanted = buying.get(item.id)!.sort(byPlace)
+    const lots = lotsFor(item.id)
+    const levels = new Map(
+      stock.filter((row) => row.item_id === item.id).map((row) => [row.location_id, row.level]),
+    )
+    return (
+      <RequestRow
+        key={item.id}
+        title={<Named thing={item} kind="item" />}
+        name={fullName(item)}
+        requests={wanted}
+        doneLabel={lots.length ? t.todo.refilled : t.todo.bought}
+      >
+        <p className="small">
+          {wanted.map((request, index) => {
+            // A buy request always has a place.
+            const level = levels.get(request.location_id!)
+            return (
+              <span key={request.id}>
+                {index > 0 && ', '}
+                {placeLink(request.location_id)}
+                {level && (
+                  <>
+                    {' '}
+                    <LevelName level={level} />
+                  </>
+                )}
+              </span>
+            )
+          })}
+        </p>
+        {lots.length > 0 && (
+          <p className="small lots-note">
+            {t.todo.fetchFrom}{' '}
+            {lots.map((row, index) => (
+              <span key={row.location_id}>
+                {index > 0 && ', '}
+                {placeLink(row.location_id)}
+              </span>
+            ))}
+          </p>
+        )}
+      </RequestRow>
+    )
+  }
 
   return (
     <>
@@ -91,6 +156,13 @@ export function TodoPage() {
         </section>
       )}
 
+      {refills.length > 0 && (
+        <section className="card">
+          <h3>{t.todo.refill}</h3>
+          <ul className="requests">{refills.map(itemRow)}</ul>
+        </section>
+      )}
+
       {shopping.length > 0 && (
         <section className="card">
           <h3>{t.todo.shopping}</h3>
@@ -100,65 +172,7 @@ export function TodoPage() {
               {(category || shopping.length > 1) && (
                 <h4 className="category-head">{category || t.items.noCategory}</h4>
               )}
-              <ul className="requests">
-                {list.map((item) => {
-                  const wanted = buying.get(item.id)!.sort(byPlace)
-                  const wantedAt = new Set(wanted.map((request) => request.location_id))
-                  const levels = new Map(
-                    stock
-                      .filter((row) => row.item_id === item.id)
-                      .map((row) => [row.location_id, row.level]),
-                  )
-                  // Places that have lots of it, to fetch from instead.
-                  const lots = stock
-                    .filter(
-                      (row) =>
-                        row.item_id === item.id &&
-                        row.level === 'lots' &&
-                        !wantedAt.has(row.location_id),
-                    )
-                    .sort(byPlace)
-                  return (
-                    <RequestRow
-                      key={item.id}
-                      title={<Named thing={item} kind="item" />}
-                      name={fullName(item)}
-                      requests={wanted}
-                      doneLabel={t.todo.bought}
-                    >
-                      <p className="small">
-                        {wanted.map((request, index) => {
-                          // A buy request always has a place.
-                          const level = levels.get(request.location_id!)
-                          return (
-                            <span key={request.id}>
-                              {index > 0 && ', '}
-                              {placeLink(request.location_id)}
-                              {level && (
-                                <>
-                                  {' '}
-                                  <LevelName level={level} />
-                                </>
-                              )}
-                            </span>
-                          )
-                        })}
-                      </p>
-                      {lots.length > 0 && (
-                        <p className="small lots-note">
-                          {t.missing.lotsAt}{' '}
-                          {lots.map((row, index) => (
-                            <span key={row.location_id}>
-                              {index > 0 && ', '}
-                              {placeLink(row.location_id)}
-                            </span>
-                          ))}
-                        </p>
-                      )}
-                    </RequestRow>
-                  )
-                })}
-              </ul>
+              <ul className="requests">{list.map(itemRow)}</ul>
             </div>
           ))}
         </section>

@@ -26,7 +26,9 @@ log = logging.getLogger(__name__)
 # How long a push service keeps a message for a phone that's offline.
 TTL_SECONDS = 24 * 60 * 60
 
-Event = Literal["reported", "claimed", "done", "refilled", "due"]
+# "fetched": a buy request done while another place had lots of it, so it was brought
+# from there rather than bought.
+Event = Literal["reported", "claimed", "done", "fetched", "refilled", "due"]
 
 
 @dataclass(frozen=True)

@@ -52,9 +52,12 @@ check stock remotely, and avoid duplicating the job.
    listed, and every minute, so the push goes out on time.
 5. **Shopping list.** The *Teendők* (to-do) tab: reported chores, then the
    open and claimed *buy* requests, one row per item however many places
-   want it (its buttons act on all of them), grouped by category, with the
-   places that have *lots* of it. Marking one bought sets its level back to
-   *plenty* in each place. The tab counts the requests nobody has claimed.
+   want it (its buttons act on all of them). An item another place has
+   *lots* of goes under *Utántöltés* (refill: "Hozd innen: Pince", done as
+   "Feltöltöttem"); the rest is the shopping list, grouped by category.
+   Either way, done sets the level back to *plenty* in the places that
+   wanted it and leaves the source's *lots* alone: carrying rolls upstairs
+   isn't booked. A refill tells the other "feltöltötte", not "megvette". The tab counts the requests nobody has claimed.
 6. **Notifications.** Web push to the other user's devices when something
    is reported (a level set to *low*/*out*, a chore reported), claimed,
    done, or refilled (a level set back to *plenty*/*lots*), and to everyone
@@ -132,9 +135,6 @@ change is a single conditional update (see `CLAUDE.md`); losing a race is
 ## Later ideas (not scheduled)
 
 - Reminders for repeating chores beyond the push when they fall due (e.g. the evening before).
-- "Fetch, don't buy": when the guest WC is low but the basement has lots,
-  suggest bringing some up instead of adding it to the shopping list (the
-  shortages view already shows where there's lots).
 - QR stickers (or NFC tags) on bins, toilets and shelves that open that
   place's report page. Scanning isn't faster than two taps on a small tree,
   so only worth it if the tree grows past one screen.

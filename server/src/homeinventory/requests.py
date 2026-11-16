@@ -444,14 +444,25 @@ def complete_request(
         closed_by_id=user.id,
         closed_at=utcnow(),
     )
+    event = "done"
     if request.kind == RequestKind.BUY:
+        # Another place stocked up on it: it was fetched from there, not bought. That
+        # place's level stays; nobody books every roll carried upstairs.
+        if session.scalar(
+            select(Stock.id).where(
+                Stock.item_id == request.item_id,
+                Stock.location_id != request.location_id,
+                Stock.level == Level.LOTS,
+            )
+        ):
+            event = "fetched"
         session.execute(
             update(Stock)
             .where(Stock.item_id == request.item_id, Stock.location_id == request.location_id)
             .values(level=Level.PLENTY, updated_by_id=user.id, updated_at=utcnow())
         )
         session.commit()
-    notifier.send(session, user.id, message_for(session, request, "done", user.display_name))
+    notifier.send(session, user.id, message_for(session, request, event, user.display_name))
     return RequestOut.model_validate(request)
 
 
