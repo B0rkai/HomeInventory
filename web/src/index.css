@@ -282,14 +282,22 @@ input:focus {
   font-weight: 700;
 }
 
-.badge.low {
+.badge[data-level='low'] {
   background: var(--low-bg);
   color: var(--low);
 }
 
-.badge.out {
+.badge[data-level='out'] {
   background: var(--out-bg);
   color: var(--out);
+}
+.badge.one {
+  padding: 0;
+  width: 1.4rem;
+}
+.badge.one .icon-art {
+  width: 0.95rem;
+  height: 0.95rem;
 }
 
 /* Place page */

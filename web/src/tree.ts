@@ -41,15 +41,25 @@ function subtreeIds(locations: LocationOut[], id: number): Set<number> {
   return ids
 }
 
-export type Shortage = { low: number; out: number }
+/** What runs low or out in a location: the stock rows, by level. */
+export type Shortage = { low: StockOut[]; out: StockOut[] }
 
-/** How many items run low or out in a location, including the places inside it. */
-export function shortageIn(locations: LocationOut[], stock: StockOut[], id: number): Shortage {
-  const ids = subtreeIds(locations, id)
-  const shortage = { low: 0, out: 0 }
+/**
+ * What runs low or out in a location: with `deep`, including the places inside it (for a
+ * chip that stands for them all); without, only what's kept there itself (for a floor
+ * whose rooms show their own).
+ */
+export function shortageIn(
+  locations: LocationOut[],
+  stock: StockOut[],
+  id: number,
+  { deep = true } = {},
+): Shortage {
+  const ids = deep ? subtreeIds(locations, id) : new Set([id])
+  const shortage: Shortage = { low: [], out: [] }
   for (const row of stock) {
     if (ids.has(row.location_id) && (row.level === 'low' || row.level === 'out')) {
-      shortage[row.level]++
+      shortage[row.level].push(row)
     }
   }
   return shortage

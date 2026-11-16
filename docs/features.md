@@ -16,7 +16,11 @@ check stock remotely, and avoid duplicating the job.
 1. **Report on the spot.** "Out of sugar", "low on toilet paper in the guest
    WC", "bin on floor 2 is full". The home screen shows the places as a tree
    that fits on one phone screen without scrolling (floor → room), so
-   reaching a place is a tap or two, and reporting one more.
+   reaching a place is a tap or two, and reporting one more. Badges in the
+   shortage colours count what's out and low: a floor only what's kept on
+   it directly (its rooms show their own), a room (or a place's child) what's
+   in it and the places inside; a single item shows as its icon instead of
+   a "1".
 2. **Stock levels per place.** Each supply has a level, **lots / plenty /
    low / out**, per place it is kept (pantry, basement, each bathroom). No
    exact counts. *Lots* means stocked up for weeks (20+ rolls of toilet

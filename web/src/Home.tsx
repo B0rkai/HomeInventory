@@ -34,7 +34,8 @@ export function Home() {
         <section key={floor.id} className="card floor">
           <a className="floor-name" href={href.place(floor.id)}>
             <Named thing={floor} kind="place" />
-            <ShortageBadge shortage={shortageIn(locations, stock, floor.id)} />
+            {/* Only what's kept on the floor itself: its rooms show their own. */}
+            <ShortageBadge shortage={shortageIn(locations, stock, floor.id, { deep: false })} />
           </a>
           <div className="chips">
             {childrenOf(locations, floor.id).map((room) => (
