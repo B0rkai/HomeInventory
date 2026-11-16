@@ -10,6 +10,8 @@ from homeinventory.models import (
     NICKNAME_MAX_LENGTH,
     VARIANT_MAX_LENGTH,
     Level,
+    RequestKind,
+    RequestStatus,
 )
 
 
@@ -123,3 +125,43 @@ class StockOut(BaseModel):
 
 class StockSet(BaseModel):
     level: Level
+
+
+class ChoreOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    location_id: int
+    name: str
+    icon: str | None
+
+
+class ChoreCreate(BaseModel):
+    location_id: int
+    name: Name
+    icon: Icon = None
+
+
+class ChoreUpdate(BaseModel):
+    # Only the fields sent change.
+    name: Name | None = None
+    icon: Icon = None
+
+
+class RequestOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    kind: RequestKind
+    # Set for a buy request.
+    item_id: int | None
+    # Set for a chore request.
+    chore_id: int | None
+    location_id: int
+    status: RequestStatus
+    created_by_id: int
+    created_by_name: str
+    created_at: datetime
+    claimed_by_id: int | None
+    claimed_by_name: str | None
+    claimed_at: datetime | None

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import type { ItemOut, StockOut } from './api'
+import type { ChoreOut, ItemOut, RequestOut, StockOut } from './api'
 import { useHouse } from './house'
 import { IconPicker } from './IconPicker'
 import { COMMON_ITEMS } from './icons'
@@ -15,12 +15,12 @@ import { byItem, findItem, fullName, groupByName, hasVariants, parseFullName } f
 
 /** One place: the places inside it, and the level of everything kept here. */
 export function PlacePage({ id }: { id: number }) {
-  const { house, actions } = useHouse()
+  const { me, house, actions } = useHouse()
   const [editing, setEditing] = useState(false)
   // The item name whose "new variant" field is open.
   const [addingVariantTo, setAddingVariantTo] = useState<string>()
   if (!house) return null
-  const { locations, items, stock } = house
+  const { locations, items, stock, chores, requests } = house
 
   const path = pathTo(locations, id)
   const place = path.at(-1)
@@ -46,6 +46,14 @@ export function PlacePage({ id }: { id: number }) {
     .map((row) => ({ ...row, item: itemsById.get(row.item_id)! }))
     .sort((a, b) => byItem(a.item, b.item))
   const groups = groupByName(rows, (row) => row.item)
+  const choresHere = chores.filter((chore) => chore.location_id === id)
+  // Who's on it, for an item claimed for this place.
+  const claimText = (request: RequestOut | undefined) =>
+    request?.claimed_by_id == null
+      ? undefined
+      : request.claimed_by_id === me.id
+        ? t.todo.mine
+        : t.todo.theirs(request.claimed_by_name ?? '')
   const keptHere = new Set(rows.map((row) => row.item_id))
   // Items not kept here yet, then common supplies not in the catalogue yet.
   const known = new Set(items.map((item) => item.name.toLocaleLowerCase('hu')))
@@ -79,6 +87,9 @@ export function PlacePage({ id }: { id: number }) {
       row={r}
       item={r.item}
       title={title}
+      claim={claimText(
+        requests.find((request) => request.item_id === r.item_id && request.location_id === id),
+      )}
       editing={editing}
       onLevel={(level) => actions.setLevel(id, r.item_id, level)}
       onRemove={() => actions.removeStock(id, r.item_id)}
@@ -251,7 +262,87 @@ export function PlacePage({ id }: { id: number }) {
           }}
         />
       </section>
+
+      <section className="card">
+        <h3>{t.place.choresTitle}</h3>
+        {choresHere.length === 0 && !editing && <p className="muted">{t.place.noChores}</p>}
+        <ul className="missing-rows">
+          {choresHere.map((chore) => (
+            <ChoreRow
+              key={chore.id}
+              chore={chore}
+              request={requests.find((request) => request.chore_id === chore.id)}
+              claim={claimText}
+              editing={editing}
+            />
+          ))}
+        </ul>
+        {editing && (
+          <AddForm
+            label={t.place.addChore}
+            placeholder={t.place.addChorePlaceholder}
+            onSubmit={async (name) => Boolean(await actions.addChore(id, name))}
+          />
+        )}
+      </section>
     </>
+  )
+}
+
+/** A chore here: report it with one tap, see who's on it, or mark it done. */
+function ChoreRow({
+  chore,
+  request,
+  claim,
+  editing,
+}: {
+  chore: ChoreOut
+  request: RequestOut | undefined
+  claim: (request: RequestOut | undefined) => string | undefined
+  editing: boolean
+}) {
+  const { actions } = useHouse()
+  let action: ReactNode
+  if (editing) {
+    action = (
+      <button
+        type="button"
+        className="icon"
+        aria-label={t.place.removeChore(chore.name)}
+        onClick={() => {
+          if (window.confirm(t.place.confirmRemoveChore(chore.name))) {
+            void actions.deleteChore(chore.id)
+          }
+        }}
+      >
+        ×
+      </button>
+    )
+  } else if (request) {
+    action = (
+      <span className="chore-state">
+        <span className="small muted">{claim(request) ?? t.place.reported}</span>
+        <button
+          type="button"
+          className="secondary small-button"
+          onClick={() => actions.act('done', [request.id])}
+        >
+          ✓ {t.todo.done}
+        </button>
+      </span>
+    )
+  } else {
+    action = (
+      <button type="button" className="small-button" onClick={() => actions.reportChore(chore.id)}>
+        {t.place.report}
+      </button>
+    )
+  }
+  return (
+    <li>
+      <Named thing={chore} kind="chore" />
+      {action}
+    </li>
   )
 }
 
@@ -260,6 +351,7 @@ function StockRow({
   row,
   item,
   title,
+  claim,
   editing,
   onLevel,
   onRemove,
@@ -267,6 +359,8 @@ function StockRow({
   row: StockOut
   item: ItemOut
   title: ReactNode
+  // Who's buying it, if someone said so.
+  claim: string | undefined
   editing: boolean
   onLevel: (level: StockOut['level']) => void
   onRemove: () => void
@@ -290,6 +384,7 @@ function StockRow({
             <span className="muted">
               {t.place.updated(row.updated_by_name, ago(row.updated_at))}
             </span>
+            {claim && <span className="claim"> · {claim}</span>}
           </span>
         )}
       </div>

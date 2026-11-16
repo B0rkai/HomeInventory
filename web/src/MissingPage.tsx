@@ -4,7 +4,7 @@ import { LevelName } from './LevelPicker'
 import { Named } from './Named'
 import { href, type MissingView } from './route'
 import { t } from './strings'
-import { isShort, pathTo, treeOrder } from './tree'
+import { isShort, placePath, treeOrder } from './tree'
 import { byItem, groupByName, hasVariants } from './variants'
 
 const key = (row: StockOut) => `${row.location_id}-${row.item_id}`
@@ -57,12 +57,6 @@ type Props = {
   items: ItemOut[]
   locations: LocationOut[]
   listed: StockOut[]
-}
-
-function placePath(locations: LocationOut[], id: number): string {
-  return pathTo(locations, id)
-    .map((location) => location.name)
-    .join(' › ')
 }
 
 // Out before low.

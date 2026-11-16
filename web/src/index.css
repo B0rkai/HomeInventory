@@ -703,7 +703,8 @@ h2 .tile .icon-art {
   right: 0;
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   padding-bottom: env(safe-area-inset-bottom);
   background: var(--surface);
   border-top: 1px solid var(--border);
@@ -828,4 +829,58 @@ h2 .tile .icon-art {
 
 .missing-rows li:has(.named) {
   align-items: center;
+}
+
+/* To-dos: the shopping list and reported chores */
+.requests li {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.requests li:last-child {
+  border-bottom: 0;
+}
+.requests p {
+  margin: 0.25rem 0 0;
+}
+.request-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+.request-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+.claim {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--lots);
+}
+.claim.mine {
+  color: var(--accent);
+}
+.category-head {
+  margin: 0.75rem 0 0;
+  font-size: 0.95rem;
+}
+.category-head:first-child {
+  margin-top: 0;
+}
+.lots-note {
+  color: var(--lots);
+}
+.lots-note a {
+  color: inherit;
+}
+.chore-state {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: none;
 }

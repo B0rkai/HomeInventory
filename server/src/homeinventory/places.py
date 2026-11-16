@@ -1,13 +1,24 @@
 """Locations, the item catalogue and stock levels."""
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
+from homeinventory.common import NO_CONTENT, conflict, get_or_404
 from homeinventory.db import get_session
 from homeinventory.identity import current_user
-from homeinventory.models import LOCATION_MAX_DEPTH, Item, Location, Stock, User, utcnow
+from homeinventory.models import (
+    LOCATION_MAX_DEPTH,
+    Item,
+    Level,
+    Location,
+    RequestStatus,
+    Stock,
+    User,
+    utcnow,
+)
+from homeinventory.requests import close_buy_requests, open_buy_request
 from homeinventory.schemas import (
     ItemCreate,
     ItemOut,
@@ -21,20 +32,6 @@ from homeinventory.schemas import (
 
 # Every route needs an identity, even the read-only ones: the app is for its users only.
 router = APIRouter(dependencies=[Depends(current_user)])
-
-NO_CONTENT = {"status_code": status.HTTP_204_NO_CONTENT, "response_class": Response}
-
-
-def _get(session: Session, model, id: int):
-    row = session.get(model, id)
-    if row is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, f"{model.__name__} not found")
-    return row
-
-
-def _conflict(detail: str) -> HTTPException:
-    return HTTPException(status.HTTP_409_CONFLICT, detail)
-
 
 # Locations
 
@@ -52,7 +49,7 @@ def _siblings(session: Session, parent_id: int | None) -> list[Location]:
 def _check_location_name(siblings: list[Location], name: str, own_id: int | None = None) -> None:
     folded = name.casefold()
     if any(s.name.casefold() == folded and s.id != own_id for s in siblings):
-        raise _conflict("A location with this name already exists here")
+        raise conflict("A location with this name already exists here")
 
 
 def _depth(session: Session, location: Location) -> int:
@@ -76,7 +73,7 @@ def list_locations(session: Session = Depends(get_session)) -> list[LocationOut]
 def create_location(new: LocationCreate, session: Session = Depends(get_session)) -> LocationOut:
     """Adds a location as the last of its siblings."""
     if new.parent_id is not None:
-        parent = _get(session, Location, new.parent_id)
+        parent = get_or_404(session, Location, new.parent_id)
         if _depth(session, parent) >= LOCATION_MAX_DEPTH:
             raise HTTPException(
                 status.HTTP_422_UNPROCESSABLE_CONTENT, "Locations nest at most three deep"
@@ -99,7 +96,7 @@ def update_location(
     location_id: int, update: LocationUpdate, session: Session = Depends(get_session)
 ) -> LocationOut:
     """Renames a location, changes its icon or moves it among its siblings."""
-    location = _get(session, Location, location_id)
+    location = get_or_404(session, Location, location_id)
     siblings = _siblings(session, location.parent_id)
     if update.name is not None:
         _check_location_name(siblings, update.name, own_id=location.id)
@@ -118,9 +115,9 @@ def update_location(
 @router.delete("/locations/{location_id}", **NO_CONTENT)
 def delete_location(location_id: int, session: Session = Depends(get_session)) -> None:
     """Deletes a location and its stock rows; refuses while it has child locations."""
-    location = _get(session, Location, location_id)
+    location = get_or_404(session, Location, location_id)
     if session.scalar(select(Location.id).where(Location.parent_id == location.id).limit(1)):
-        raise _conflict("Delete the locations inside this one first")
+        raise conflict("Delete the locations inside this one first")
     session.delete(location)
     session.commit()
 
@@ -139,7 +136,7 @@ def _check_item_name(
         key(item.name, item.variant) == wanted and item.id != own_id
         for item in session.scalars(select(Item))
     ):
-        raise _conflict("An item with this name and variant already exists")
+        raise conflict("An item with this name and variant already exists")
 
 
 @router.get("/items")
@@ -160,7 +157,7 @@ def create_item(new: ItemCreate, session: Session = Depends(get_session)) -> Ite
 def update_item(
     item_id: int, update: ItemUpdate, session: Session = Depends(get_session)
 ) -> ItemOut:
-    item = _get(session, Item, item_id)
+    item = get_or_404(session, Item, item_id)
     name = item.name if update.name is None else update.name
     variant = update.variant if "variant" in update.model_fields_set else item.variant
     _check_item_name(session, name, variant, own_id=item.id)
@@ -176,7 +173,7 @@ def update_item(
 @router.delete("/items/{item_id}", **NO_CONTENT)
 def delete_item(item_id: int, session: Session = Depends(get_session)) -> None:
     """Deletes an item and its stock rows in every location."""
-    session.delete(_get(session, Item, item_id))
+    session.delete(get_or_404(session, Item, item_id))
     session.commit()
 
 
@@ -198,8 +195,8 @@ def set_stock(
     session: Session = Depends(get_session),
 ) -> StockOut:
     """Sets an item's level in a location, adding the item there if it isn't kept there yet."""
-    _get(session, Location, location_id)
-    _get(session, Item, item_id)
+    get_or_404(session, Location, location_id)
+    get_or_404(session, Item, item_id)
     values = {"level": new.level, "updated_by_id": user.id, "updated_at": utcnow()}
     # One statement, so two people setting the same level at once can't collide.
     session.execute(
@@ -207,6 +204,12 @@ def set_stock(
         .values(item_id=item_id, location_id=location_id, **values)
         .on_conflict_do_update(index_elements=[Stock.item_id, Stock.location_id], set_=values)
     )
+    # Running low is a report: it puts the item on the shopping list. Filling it up again
+    # takes it off, whoever did it.
+    if new.level in (Level.LOW, Level.OUT):
+        open_buy_request(session, item_id, location_id, user)
+    else:
+        close_buy_requests(session, item_id, location_id, user, RequestStatus.DONE)
     session.commit()
     stock = session.scalars(
         select(Stock)
@@ -217,12 +220,18 @@ def set_stock(
 
 
 @router.delete("/locations/{location_id}/stock/{item_id}", **NO_CONTENT)
-def remove_stock(location_id: int, item_id: int, session: Session = Depends(get_session)) -> None:
-    """Stops keeping an item in a location."""
+def remove_stock(
+    location_id: int,
+    item_id: int,
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+) -> None:
+    """Stops keeping an item in a location, cancelling its request to buy it there."""
     stock = session.scalar(
         select(Stock).where(Stock.item_id == item_id, Stock.location_id == location_id)
     )
     if stock is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Stock not found")
+    close_buy_requests(session, item_id, location_id, user, RequestStatus.CANCELLED)
     session.delete(stock)
     session.commit()

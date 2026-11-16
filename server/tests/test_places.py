@@ -1,21 +1,10 @@
 import pytest
-from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from homeinventory.models import Stock
 
 ANNA = {"Tailscale-User-Login": "anna@example.com", "Tailscale-User-Name": "Anna Kovacs"}
 BELA = {"Tailscale-User-Login": "bela@example.com", "Tailscale-User-Name": "Bela Kovacs"}
-
-
-@pytest.fixture
-def api(client: TestClient):
-    """Calls /api/v1 as Anna unless told otherwise."""
-
-    def call(method: str, path: str, json=None, headers=ANNA):
-        return client.request(method, f"/api/v1{path}", json=json, headers=headers)
-
-    return call
 
 
 def add_location(api, name: str, parent_id: int | None = None) -> int:

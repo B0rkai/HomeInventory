@@ -1,4 +1,4 @@
-// Icons for items and places, by name: Tabler icons (tablerIcons.gen.ts) and our own
+// Icons for items, places and chores, by name: Tabler icons (tablerIcons.gen.ts) and our own
 // (drawnIcons.ts). An icon stored on the server wins; null means "guess from the name"
 // with the tables below, and an empty string means no icon.
 
@@ -92,12 +92,30 @@ const PLACES: Entry[] = [
   ['badge-wc', 'place', []],
 ]
 
+const CHORES: Entry[] = [
+  ['recycle', 'clean', ['szelektiv', 'muanyag', 'papirgyujto', 'uveg']],
+  ['trash', 'clean', ['kuka', 'szemet', 'szemetes']],
+  ['bucket', 'clean', ['felmosas']],
+  ['vacuum-cleaner', 'clean', ['porszivo', 'porszivozas', 'takaritas', 'portorles']],
+  ['window', 'clean', ['ablak']],
+  ['tools-kitchen-2', 'clean', ['mosogatas', 'mosogatogep', 'edeny']],
+  ['wash-machine', 'clean', ['mosas', 'mosogep']],
+  ['hanger', 'clean', ['teregetes', 'ruha']],
+  ['ironing', 'clean', ['vasalas']],
+  ['bed', 'home', ['agynemu', 'agyhuzat', 'agyazas']],
+  ['plant-2', 'home', ['locsolas', 'virag', 'kert', 'funyiras']],
+  ['paw', 'home', ['alom', 'etetes', 'kutya', 'macska']],
+  ['mailbox', 'home', ['posta', 'levelek']],
+  ['bulb', 'home', ['izzo', 'lampa']],
+  ['tool', 'home', ['javitas', 'szereles']],
+]
+
 /** Icons the app uses outside these tables: the tab bar. */
-export const UI_ICONS = ['home', 'shopping-cart', 'clipboard-list']
+export const UI_ICONS = ['home', 'list-check', 'shopping-cart', 'clipboard-list']
 
-export type IconKind = 'item' | 'place'
+export type IconKind = 'item' | 'place' | 'chore'
 
-export const ICON_TABLES: Record<IconKind, Entry[]> = { item: ITEMS, place: PLACES }
+export const ICON_TABLES: Record<IconKind, Entry[]> = { item: ITEMS, place: PLACES, chore: CHORES }
 
 function normalize(text: string): string {
   return text

@@ -10,7 +10,7 @@ import { NicknameForm } from './NicknameForm'
 import { PlacePage } from './PlacePage'
 import { href, useRoute, type Route } from './route'
 import { t } from './strings'
-import { isShort } from './tree'
+import { TodoPage } from './TodoPage'
 
 type State =
   { kind: 'loading' } | { kind: 'ready'; user: UserOut } | { kind: 'error'; message: string }
@@ -83,7 +83,7 @@ export default function App() {
           <NicknameForm user={user} onSaved={saved} onCancel={() => setEditingNickname(false)} />
         )}
         {user?.nickname && !editingNickname && (
-          <HouseProvider onError={showError}>
+          <HouseProvider me={user} onError={showError}>
             <Pages />
             <NavBar />
           </HouseProvider>
@@ -119,11 +119,13 @@ function Pages() {
   if (route.page === 'place') return <PlacePage key={route.id} id={route.id} />
   if (route.page === 'items') return <ItemsPage />
   if (route.page === 'missing') return <MissingPage view={route.view} />
+  if (route.page === 'todo') return <TodoPage />
   return <Home />
 }
 
 const TABS: { page: Route['page']; href: string; icon: string; label: string }[] = [
   { page: 'home', href: href.home, icon: 'home', label: t.nav.places },
+  { page: 'todo', href: href.todo, icon: 'list-check', label: t.nav.todo },
   { page: 'missing', href: href.missing(), icon: 'shopping-cart', label: t.nav.missing },
   { page: 'items', href: href.items, icon: 'clipboard-list', label: t.nav.items },
 ]
@@ -131,7 +133,8 @@ const TABS: { page: Route['page']; href: string; icon: string; label: string }[]
 function NavBar() {
   const route = useRoute()
   const { house } = useHouse()
-  const missing = house?.stock.filter(isShort).length ?? 0
+  // Nobody's on these yet.
+  const open = house?.requests.filter((r) => r.status === 'open').length ?? 0
   // A place page belongs to the Places tab.
   const current = route.page === 'place' ? 'home' : route.page
 
@@ -141,7 +144,7 @@ function NavBar() {
         <a key={tab.page} href={tab.href} aria-current={tab.page === current ? 'page' : undefined}>
           <span className="tab-icon" aria-hidden="true">
             <IconArt name={tab.icon} />
-            {tab.page === 'missing' && missing > 0 && <span className="tab-count">{missing}</span>}
+            {tab.page === 'todo' && open > 0 && <span className="tab-count">{open}</span>}
           </span>
           {tab.label}
         </a>

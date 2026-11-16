@@ -9,6 +9,8 @@ from homeinventory.config import Settings
 from homeinventory.main import create_app
 from homeinventory.models import Base
 
+ANNA = {"Tailscale-User-Login": "anna@example.com", "Tailscale-User-Name": "Anna Kovacs"}
+
 
 @pytest.fixture
 def settings(tmp_path: Path) -> Settings:
@@ -27,3 +29,13 @@ def app(settings: Settings) -> FastAPI:
 def client(app: FastAPI) -> Iterator[TestClient]:
     with TestClient(app) as client:
         yield client
+
+
+@pytest.fixture
+def api(client: TestClient):
+    """Calls /api/v1 as Anna unless told otherwise."""
+
+    def call(method: str, path: str, json=None, headers=ANNA):
+        return client.request(method, f"/api/v1{path}", json=json, headers=headers)
+
+    return call

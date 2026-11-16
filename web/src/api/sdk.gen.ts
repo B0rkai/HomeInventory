@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListStockData, ListStockResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, SetStockData, SetStockErrors, SetStockResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses } from './types.gen';
+import type { CancelRequestData, CancelRequestErrors, CancelRequestResponses, ClaimRequestData, ClaimRequestErrors, ClaimRequestResponses, CompleteRequestData, CompleteRequestErrors, CompleteRequestResponses, CreateChoreData, CreateChoreErrors, CreateChoreResponses, CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, DeleteChoreData, DeleteChoreErrors, DeleteChoreResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, ListChoresData, ListChoresResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListRequestsData, ListRequestsResponses, ListStockData, ListStockResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, ReportChoreData, ReportChoreErrors, ReportChoreResponses, SetStockData, SetStockErrors, SetStockResponses, UnclaimRequestData, UnclaimRequestErrors, UnclaimRequestResponses, UpdateChoreData, UpdateChoreErrors, UpdateChoreResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -130,7 +130,7 @@ export const listStock = <ThrowOnError extends boolean = false>(options?: Option
 /**
  * Remove Stock
  *
- * Stops keeping an item in a location.
+ * Stops keeping an item in a location, cancelling its request to buy it there.
  */
 export const removeStock = <ThrowOnError extends boolean = false>(options: Options<RemoveStockData, ThrowOnError>): RequestResult<RemoveStockResponses, RemoveStockErrors, ThrowOnError> => (options.client ?? client).delete<RemoveStockResponses, RemoveStockErrors, ThrowOnError>({ url: '/api/v1/locations/{location_id}/stock/{item_id}', ...options });
 
@@ -147,3 +147,81 @@ export const setStock = <ThrowOnError extends boolean = false>(options: Options<
         ...options.headers
     }
 });
+
+/**
+ * List Chores
+ */
+export const listChores = <ThrowOnError extends boolean = false>(options?: Options<ListChoresData, ThrowOnError>): RequestResult<ListChoresResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListChoresResponses, unknown, ThrowOnError>({ url: '/api/v1/chores', ...options });
+
+/**
+ * Create Chore
+ */
+export const createChore = <ThrowOnError extends boolean = false>(options: Options<CreateChoreData, ThrowOnError>): RequestResult<CreateChoreResponses, CreateChoreErrors, ThrowOnError> => (options.client ?? client).post<CreateChoreResponses, CreateChoreErrors, ThrowOnError>({
+    url: '/api/v1/chores',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete Chore
+ *
+ * Deletes a chore and its requests.
+ */
+export const deleteChore = <ThrowOnError extends boolean = false>(options: Options<DeleteChoreData, ThrowOnError>): RequestResult<DeleteChoreResponses, DeleteChoreErrors, ThrowOnError> => (options.client ?? client).delete<DeleteChoreResponses, DeleteChoreErrors, ThrowOnError>({ url: '/api/v1/chores/{chore_id}', ...options });
+
+/**
+ * Update Chore
+ */
+export const updateChore = <ThrowOnError extends boolean = false>(options: Options<UpdateChoreData, ThrowOnError>): RequestResult<UpdateChoreResponses, UpdateChoreErrors, ThrowOnError> => (options.client ?? client).patch<UpdateChoreResponses, UpdateChoreErrors, ThrowOnError>({
+    url: '/api/v1/chores/{chore_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Report Chore
+ *
+ * Reports that a chore needs doing; if it's already reported, returns that request (200).
+ */
+export const reportChore = <ThrowOnError extends boolean = false>(options: Options<ReportChoreData, ThrowOnError>): RequestResult<ReportChoreResponses, ReportChoreErrors, ThrowOnError> => (options.client ?? client).post<ReportChoreResponses, ReportChoreErrors, ThrowOnError>({ url: '/api/v1/chores/{chore_id}/requests', ...options });
+
+/**
+ * List Requests
+ *
+ * The open and claimed requests, oldest first.
+ */
+export const listRequests = <ThrowOnError extends boolean = false>(options?: Options<ListRequestsData, ThrowOnError>): RequestResult<ListRequestsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListRequestsResponses, unknown, ThrowOnError>({ url: '/api/v1/requests', ...options });
+
+/**
+ * Claim Request
+ *
+ * Says "I'm on it". Only an open request can be claimed.
+ */
+export const claimRequest = <ThrowOnError extends boolean = false>(options: Options<ClaimRequestData, ThrowOnError>): RequestResult<ClaimRequestResponses, ClaimRequestErrors, ThrowOnError> => (options.client ?? client).post<ClaimRequestResponses, ClaimRequestErrors, ThrowOnError>({ url: '/api/v1/requests/{request_id}/claim', ...options });
+
+/**
+ * Unclaim Request
+ *
+ * Takes back one's own claim, opening the request again.
+ */
+export const unclaimRequest = <ThrowOnError extends boolean = false>(options: Options<UnclaimRequestData, ThrowOnError>): RequestResult<UnclaimRequestResponses, UnclaimRequestErrors, ThrowOnError> => (options.client ?? client).post<UnclaimRequestResponses, UnclaimRequestErrors, ThrowOnError>({ url: '/api/v1/requests/{request_id}/unclaim', ...options });
+
+/**
+ * Complete Request
+ *
+ * Marks a request done, whoever claimed it; a bought item's level goes back to plenty.
+ */
+export const completeRequest = <ThrowOnError extends boolean = false>(options: Options<CompleteRequestData, ThrowOnError>): RequestResult<CompleteRequestResponses, CompleteRequestErrors, ThrowOnError> => (options.client ?? client).post<CompleteRequestResponses, CompleteRequestErrors, ThrowOnError>({ url: '/api/v1/requests/{request_id}/done', ...options });
+
+/**
+ * Cancel Request
+ *
+ * Drops a request that's no longer needed; a buy request leaves the level as it is.
+ */
+export const cancelRequest = <ThrowOnError extends boolean = false>(options: Options<CancelRequestData, ThrowOnError>): RequestResult<CancelRequestResponses, CancelRequestErrors, ThrowOnError> => (options.client ?? client).post<CancelRequestResponses, CancelRequestErrors, ThrowOnError>({ url: '/api/v1/requests/{request_id}/cancel', ...options });

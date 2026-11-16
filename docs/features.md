@@ -31,17 +31,26 @@ check stock remotely, and avoid duplicating the job.
    supplies; only the ones picked become items.
 4. **Requests with claiming.** Every report becomes a request: **open →
    claimed → done** (or cancelled). Claiming shows who is on it, so two
-   people don't buy the same milk.
-5. **Shopping list.** The open and claimed *buy* requests, grouped for the
-   shop. Marking one done sets the supply's level back to *plenty*.
+   people don't buy the same milk. Setting a level to *low* or *out* is the
+   report for a supply; a chore is reported with one tap on its place's
+   page ("Szólok"). Anyone can mark a request done, claimed or not; only
+   the claimer can give a claim back.
+5. **Shopping list.** The *Teendők* (to-do) tab: reported chores, then the
+   open and claimed *buy* requests, one row per item however many places
+   want it (its buttons act on all of them), grouped by category, with the
+   places that have *lots* of it. Marking one bought sets its level back to
+   *plenty* in each place. The tab counts the requests nobody has claimed.
+   Until live updates (milestone 4) the app refetches when it comes back
+   on screen and when the tab opens.
 6. **Notifications.** Push to the other user when a request is created,
    claimed or done. Nobody is notified about their own actions.
 7. **Live updates.** An open list updates itself without a refresh.
 
 ## Data model
 
-Built so far: User, Location, Item, Stock (tables `users`, `locations`,
-`items`, `stock`). The rest is a draft until its milestone.
+Built so far: User, Location, Item, Stock, Chore, Request (tables `users`,
+`locations`, `items`, `stock`, `chores`, `requests`). PushSubscription is a
+draft until its milestone.
 
 - **User**: Tailscale login (unique), display name. Created on first request
   from a new login.
@@ -63,18 +72,25 @@ Built so far: User, Location, Item, Stock (tables `users`, `locations`,
 - **Stock**: one row per (item, location), unique on that pair: level
   (`lots` | `plenty` | `low` | `out`), updated by, updated at. A row means the item
   is kept there.
-- **Chore**: a reportable job tied to a location: "Empty bin" on "Floor 2
-  bathroom bin". Not stock, but reported and claimed the same way.
-- **Request**: kind (`buy` | `chore`), item or chore, location, optional
-  note, status (`open` | `claimed` | `done` | `cancelled`), created by,
-  claimed by, timestamps. At most one open/claimed request per (item,
-  location) or chore, so reporting twice doesn't create duplicates.
+- **Chore**: a reportable job tied to a location: "Kuka ürítése" in
+  "Emelet › Fürdő". Not stock, but reported and claimed the same way. Names
+  are unique per location ignoring case; icons work as for items. Added and
+  deleted in a place's edit mode; deleting one deletes its requests.
+- **Request**: kind (`buy` | `chore`), item (buy) or chore (chore),
+  location, status (`open` | `claimed` | `done` | `cancelled`), created by,
+  claimed by, closed by, timestamps. At most one open/claimed request per
+  (item, location) or chore (partial unique indexes), so reporting twice
+  finds the first one. Closed requests stay in the table (history, later).
+  No note yet: nothing has needed typing.
 - **PushSubscription**: user, endpoint, keys. A user can have several
   devices.
 
-Setting stock to *low* or *out* opens a *buy* request; completing it sets the
-stock back to *plenty*. Claiming is a single conditional update (see
-`CLAUDE.md`).
+Setting stock to *low* or *out* opens a *buy* request (or keeps the active
+one, claim included); setting it to *plenty* or *lots* marks it done, and
+taking the item off the place cancels it. Completing a buy request sets the
+stock back to *plenty*; cancelling it leaves the level alone. Every state
+change is a single conditional update (see `CLAUDE.md`); losing a race is
+`409`.
 
 ## Milestones
 

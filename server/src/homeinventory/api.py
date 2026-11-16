@@ -6,6 +6,7 @@ from homeinventory.db import get_session
 from homeinventory.identity import current_user
 from homeinventory.models import User
 from homeinventory.places import router as places_router
+from homeinventory.requests import router as requests_router
 from homeinventory.schemas import Health, UserOut, UserUpdate
 
 router = APIRouter(prefix="/api/v1")
@@ -35,3 +36,4 @@ def update_current_user(
 
 
 router.include_router(places_router)
+router.include_router(requests_router)

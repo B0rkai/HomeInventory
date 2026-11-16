@@ -2,13 +2,16 @@ from datetime import UTC, datetime
 from enum import StrEnum
 
 from sqlalchemy import (
+    CheckConstraint,
     DateTime,
     Enum,
     ForeignKey,
+    Index,
     MetaData,
     String,
     TypeDecorator,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -108,6 +111,17 @@ class Item(Base):
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
 
+def str_enum(enum: type[StrEnum], name: str) -> Enum:
+    """Stores an enum's values as text, with a CHECK constraint (named ck_<table>_<name>)."""
+    return Enum(
+        enum,
+        name=name,
+        native_enum=False,
+        create_constraint=True,
+        values_callable=lambda members: [member.value for member in members],
+    )
+
+
 class Level(StrEnum):
     # Stocked up for weeks, e.g. a 20-pack of toilet paper in the basement.
     LOTS = "lots"
@@ -127,15 +141,7 @@ class Stock(Base):
     location_id: Mapped[int] = mapped_column(
         ForeignKey("locations.id", ondelete="CASCADE"), index=True
     )
-    level: Mapped[Level] = mapped_column(
-        Enum(
-            Level,
-            name="level",
-            native_enum=False,
-            create_constraint=True,
-            values_callable=lambda levels: [level.value for level in levels],
-        )
-    )
+    level: Mapped[Level] = mapped_column(str_enum(Level, "level"))
     updated_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
@@ -144,3 +150,89 @@ class Stock(Base):
     @property
     def updated_by_name(self) -> str:
         return self.updated_by.display_name
+
+
+class Chore(Base):
+    """A job that comes up at a place and is reported when it does: "Kuka ürítése"."""
+
+    __tablename__ = "chores"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    location_id: Mapped[int] = mapped_column(
+        ForeignKey("locations.id", ondelete="CASCADE"), index=True
+    )
+    # Unique within its location, ignoring case (checked by the API).
+    name: Mapped[str] = mapped_column(String(NAME_MAX_LENGTH))
+    # Unset: the client guesses one from the name. Empty: no icon.
+    icon: Mapped[str | None] = mapped_column(String(ICON_MAX_LENGTH))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
+class RequestKind(StrEnum):
+    BUY = "buy"
+    CHORE = "chore"
+
+
+class RequestStatus(StrEnum):
+    OPEN = "open"
+    # Someone said they're on it.
+    CLAIMED = "claimed"
+    DONE = "done"
+    CANCELLED = "cancelled"
+
+
+ACTIVE = (RequestStatus.OPEN, RequestStatus.CLAIMED)
+# The partial unique indexes' condition. ON CONFLICT must repeat it word for word, so
+# it's text rather than a bound expression.
+ACTIVE_WHERE = text("status IN ('open', 'claimed')")
+
+
+class Request(Base):
+    """Something to buy (an item running low somewhere) or a chore to do, until it's done."""
+
+    __tablename__ = "requests"
+    __table_args__ = (
+        CheckConstraint(
+            "(kind = 'buy' AND item_id IS NOT NULL AND chore_id IS NULL)"
+            " OR (kind = 'chore' AND chore_id IS NOT NULL AND item_id IS NULL)",
+            name="target",
+        ),
+        # At most one active request per item and place, or per chore: reporting twice
+        # finds the first one.
+        Index(
+            "uq_requests_active_buy",
+            "item_id",
+            "location_id",
+            unique=True,
+            sqlite_where=ACTIVE_WHERE,
+        ),
+        Index("uq_requests_active_chore", "chore_id", unique=True, sqlite_where=ACTIVE_WHERE),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    kind: Mapped[RequestKind] = mapped_column(str_enum(RequestKind, "kind"))
+    item_id: Mapped[int | None] = mapped_column(ForeignKey("items.id", ondelete="CASCADE"))
+    chore_id: Mapped[int | None] = mapped_column(ForeignKey("chores.id", ondelete="CASCADE"))
+    # Where it's needed; a chore's own location.
+    location_id: Mapped[int] = mapped_column(
+        ForeignKey("locations.id", ondelete="CASCADE"), index=True
+    )
+    status: Mapped[RequestStatus] = mapped_column(str_enum(RequestStatus, "status"))
+    created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    claimed_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    claimed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    # Who marked it done or cancelled it, and when.
+    closed_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    closed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+
+    created_by: Mapped[User] = relationship(foreign_keys=[created_by_id], lazy="joined")
+    claimed_by: Mapped[User | None] = relationship(foreign_keys=[claimed_by_id], lazy="joined")
+
+    @property
+    def created_by_name(self) -> str:
+        return self.created_by.display_name
+
+    @property
+    def claimed_by_name(self) -> str | None:
+        return self.claimed_by and self.claimed_by.display_name

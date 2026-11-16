@@ -23,12 +23,13 @@ records are out of scope.
 
 ## Status
 
-Milestones 1 (skeleton, live deployment) and 2 (places and stock) done:
-locations, items and stock levels with their API (`places.py`) and the web
-pages for them (home tree, place page, shortages view, item catalogue, a
-bottom tab bar; hash routes in `web/src/route.ts`, shared data in
-`web/src/house.ts`). Next: milestone 3
-(requests and the shopping list, `docs/features.md`). Anything marked *(planned)* describes intended
+Milestones 1 (skeleton, live deployment), 2 (places and stock) and 3
+(requests) done: locations, items and stock levels (`places.py`), chores and
+requests with claiming (`requests.py`), and the web pages for them (home
+tree, place page, to-do list with the shopping list, shortages view, item
+catalogue, a bottom tab bar; hash routes in `web/src/route.ts`, shared data
+in `web/src/house.ts`). Next: milestone 4 (push notifications and live
+updates, `docs/features.md`). Anything marked *(planned)* describes intended
 setup, not code that exists yet.
 
 ## Tech stack

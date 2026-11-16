@@ -19,6 +19,13 @@ export function pathTo(locations: LocationOut[], id: number): LocationOut[] {
   return path
 }
 
+/** "Földszint › Konyha › Spájz". */
+export function placePath(locations: LocationOut[], id: number): string {
+  return pathTo(locations, id)
+    .map((location) => location.name)
+    .join(' › ')
+}
+
 function subtreeIds(locations: LocationOut[], id: number): Set<number> {
   const ids = new Set([id])
   // Parents come before children only by accident, so repeat until nothing is added.

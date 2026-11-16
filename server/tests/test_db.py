@@ -94,3 +94,32 @@ def test_migrations_keep_data_across_table_rebuilds(settings: Settings) -> None:
         assert connection.execute(text("SELECT count(*) FROM locations")).scalar() == 1
         assert connection.execute(text("SELECT count(*) FROM stock")).scalar() == 1
     engine.dispose()
+
+
+def test_stock_already_short_gets_buy_requests(settings: Settings) -> None:
+    config = alembic_config(settings)
+    command.upgrade(config, "fe065aff6d6a")
+    engine = create_db_engine(settings.db_path)
+    created = "'2026-01-01'"
+    with engine.begin() as connection:
+        for statement in [
+            f"INSERT INTO users (id, login, name, created_at) VALUES (1, 'a', 'A', {created})",
+            f"INSERT INTO locations (id, name, position, created_at) VALUES (1, 'P', 0, {created})",
+            *(
+                f"INSERT INTO items (id, name, created_at) VALUES ({id}, 'I{id}', {created})"
+                for id in (1, 2, 3)
+            ),
+            "INSERT INTO stock (item_id, location_id, level, updated_by_id, updated_at) VALUES"
+            f" (1, 1, 'out', 1, {created}), (2, 1, 'low', 1, {created}),"
+            f" (3, 1, 'plenty', 1, {created})",
+        ]:
+            connection.execute(text(statement))
+
+    # Adds chores and requests.
+    command.upgrade(config, "819b2a994284")
+    with engine.connect() as connection:
+        rows = connection.execute(
+            text("SELECT item_id, kind, status, created_by_id FROM requests ORDER BY item_id")
+        ).all()
+    engine.dispose()
+    assert rows == [(1, "buy", "open", 1), (2, "buy", "open", 1)]

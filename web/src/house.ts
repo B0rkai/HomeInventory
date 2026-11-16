@@ -1,55 +1,109 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import {
+  cancelRequest,
+  claimRequest,
+  completeRequest,
+  createChore,
   createItem,
   createLocation,
+  deleteChore,
   deleteItem,
   deleteLocation,
+  listChores,
   listItems,
   listLocations,
+  listRequests,
   listStock,
   removeStock,
+  reportChore,
   setStock,
+  unclaimRequest,
+  updateChore,
   updateItem,
   updateLocation,
+  type ChoreOut,
+  type ChoreUpdate,
   type ItemCreate,
   type ItemOut,
   type ItemUpdate,
   type Level,
   type LocationOut,
   type LocationUpdate,
+  type RequestOut,
   type StockOut,
+  type UserOut,
 } from './api'
 import { t } from './strings'
 
-export type House = { locations: LocationOut[]; items: ItemOut[]; stock: StockOut[] }
+export type House = {
+  locations: LocationOut[]
+  items: ItemOut[]
+  stock: StockOut[]
+  chores: ChoreOut[]
+  // The open and claimed ones.
+  requests: RequestOut[]
+}
+
+export type RequestAction = 'claim' | 'unclaim' | 'done' | 'cancel'
+
+const REQUEST_ACTIONS = {
+  claim: claimRequest,
+  unclaim: unclaimRequest,
+  done: completeRequest,
+  cancel: cancelRequest,
+}
 
 type Result<T> = Promise<{ data?: T; response?: Response }>
 
 /** What a failed change means to the user, by status; the rest get a generic message. */
 type Messages = Partial<Record<number, string>>
 
-export function useHouseState(onError: (message: string) => void) {
+export function useHouseState(me: UserOut, onError: (message: string) => void) {
   const [house, setHouse] = useState<House>()
   const [loadError, setLoadError] = useState<string>()
 
   const reload = useCallback(async () => {
-    const [locations, items, stock] = await Promise.all([
+    const [locations, items, stock, chores, requests] = await Promise.all([
       listLocations(),
       listItems(),
       listStock(),
+      listChores(),
+      listRequests(),
     ]).catch(() => [])
-    if (locations?.data && items?.data && stock?.data) {
-      setHouse({ locations: locations.data, items: items.data, stock: stock.data })
+    if (locations?.data && items?.data && stock?.data && chores?.data && requests?.data) {
+      setHouse({
+        locations: locations.data,
+        items: items.data,
+        stock: stock.data,
+        chores: chores.data,
+        requests: requests.data,
+      })
       setLoadError(undefined)
     } else {
       setLoadError(t.errors.unreachable)
     }
   }, [])
 
+  // A stock level opens or closes buy requests on the server; fetch them again after one.
+  const reloadRequests = useCallback(async () => {
+    const { data } = await listRequests().catch(() => ({ data: undefined }))
+    if (data) setHouse((h) => h && { ...h, requests: data })
+  }, [])
+
   useEffect(() => {
     // The state is set once the fetch answers, not synchronously.
     // oxlint-disable-next-line react/set-state-in-effect
     void reload()
+  }, [reload])
+
+  // Until live updates arrive (milestone 4), catch up on the other's changes whenever the
+  // app comes back to the screen, e.g. when the phone is unlocked.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void reload()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
   }, [reload])
 
   /** Runs a change; on failure tells the user and reloads, since our copy may be stale. */
@@ -104,6 +158,8 @@ export function useHouseState(onError: (message: string) => void) {
                 ...h,
                 locations: h.locations.filter((l) => l.id !== id),
                 stock: h.stock.filter((s) => s.location_id !== id),
+                chores: h.chores.filter((c) => c.location_id !== id),
+                requests: h.requests.filter((r) => r.location_id !== id),
               },
           )
         }
@@ -138,6 +194,7 @@ export function useHouseState(onError: (message: string) => void) {
                 ...h,
                 items: h.items.filter((i) => i.id !== id),
                 stock: h.stock.filter((s) => s.item_id !== id),
+                requests: h.requests.filter((r) => r.item_id !== id),
               },
           )
         }
@@ -159,6 +216,7 @@ export function useHouseState(onError: (message: string) => void) {
                 ],
               },
           )
+          void reloadRequests()
         }
         return row
       },
@@ -174,13 +232,81 @@ export function useHouseState(onError: (message: string) => void) {
                 ),
               },
           )
+          void reloadRequests()
         }
       },
+      async addChore(locationId: number, name: string) {
+        const chore = (
+          await change(createChore({ body: { location_id: locationId, name } }), {
+            409: t.errors.duplicateChore,
+          })
+        )?.data
+        if (chore) setHouse((h) => h && { ...h, chores: [...h.chores, chore] })
+        return chore
+      },
+      async updateChore(id: number, body: ChoreUpdate) {
+        const chore = (
+          await change(updateChore({ path: { chore_id: id }, body }), {
+            409: t.errors.duplicateChore,
+          })
+        )?.data
+        if (chore) {
+          setHouse((h) => h && { ...h, chores: h.chores.map((c) => (c.id === id ? chore : c)) })
+        }
+        return chore
+      },
+      async deleteChore(id: number) {
+        const ok = await change(deleteChore({ path: { chore_id: id } }))
+        if (ok) {
+          setHouse(
+            (h) =>
+              h && {
+                ...h,
+                chores: h.chores.filter((c) => c.id !== id),
+                requests: h.requests.filter((r) => r.chore_id !== id),
+              },
+          )
+        }
+      },
+      async reportChore(id: number) {
+        const request = (await change(reportChore({ path: { chore_id: id } })))?.data
+        if (request) {
+          setHouse(
+            (h) =>
+              h && { ...h, requests: [...h.requests.filter((r) => r.id !== request.id), request] },
+          )
+        }
+      },
+      /** Claims, unclaims, completes or cancels requests (an item's, in every place). */
+      async act(action: RequestAction, ids: number[]) {
+        const results = await Promise.all(
+          ids.map((id) =>
+            change(REQUEST_ACTIONS[action]({ path: { request_id: id } }), {
+              409: t.errors.requestChanged,
+            }),
+          ),
+        )
+        if (action === 'done') {
+          // Done refills the stock too.
+          await reload()
+          return
+        }
+        const changed = new Map(results.flatMap((r) => (r ? [[r.data.id, r.data]] : [])))
+        setHouse(
+          (h) =>
+            h && {
+              ...h,
+              requests: h.requests
+                .map((r) => changed.get(r.id) ?? r)
+                .filter((r) => r.status === 'open' || r.status === 'claimed'),
+            },
+        )
+      },
     }),
-    [change, reload],
+    [change, reload, reloadRequests],
   )
 
-  return { house, loadError, reload, actions }
+  return { me, house, loadError, reload, actions }
 }
 
 type HouseContext = ReturnType<typeof useHouseState>

@@ -5,6 +5,60 @@ export type ClientOptions = {
 };
 
 /**
+ * ChoreCreate
+ */
+export type ChoreCreate = {
+    /**
+     * Location Id
+     */
+    location_id: number;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Icon
+     */
+    icon?: string | null;
+};
+
+/**
+ * ChoreOut
+ */
+export type ChoreOut = {
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Location Id
+     */
+    location_id: number;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Icon
+     */
+    icon: string | null;
+};
+
+/**
+ * ChoreUpdate
+ */
+export type ChoreUpdate = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Icon
+     */
+    icon?: string | null;
+};
+
+/**
  * HTTPValidationError
  */
 export type HttpValidationError = {
@@ -160,6 +214,64 @@ export type LocationUpdate = {
      */
     position?: number | null;
 };
+
+/**
+ * RequestKind
+ */
+export type RequestKind = 'buy' | 'chore';
+
+/**
+ * RequestOut
+ */
+export type RequestOut = {
+    /**
+     * Id
+     */
+    id: number;
+    kind: RequestKind;
+    /**
+     * Item Id
+     */
+    item_id: number | null;
+    /**
+     * Chore Id
+     */
+    chore_id: number | null;
+    /**
+     * Location Id
+     */
+    location_id: number;
+    status: RequestStatus;
+    /**
+     * Created By Id
+     */
+    created_by_id: number;
+    /**
+     * Created By Name
+     */
+    created_by_name: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Claimed By Id
+     */
+    claimed_by_id: number | null;
+    /**
+     * Claimed By Name
+     */
+    claimed_by_name: string | null;
+    /**
+     * Claimed At
+     */
+    claimed_at: string | null;
+};
+
+/**
+ * RequestStatus
+ */
+export type RequestStatus = 'open' | 'claimed' | 'done' | 'cancelled';
 
 /**
  * StockOut
@@ -603,3 +715,274 @@ export type SetStockResponses = {
 };
 
 export type SetStockResponse = SetStockResponses[keyof SetStockResponses];
+
+export type ListChoresData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/chores';
+};
+
+export type ListChoresResponses = {
+    /**
+     * Response List Chores
+     *
+     * Successful Response
+     */
+    200: Array<ChoreOut>;
+};
+
+export type ListChoresResponse = ListChoresResponses[keyof ListChoresResponses];
+
+export type CreateChoreData = {
+    body: ChoreCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/chores';
+};
+
+export type CreateChoreErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateChoreError = CreateChoreErrors[keyof CreateChoreErrors];
+
+export type CreateChoreResponses = {
+    /**
+     * Successful Response
+     */
+    201: ChoreOut;
+};
+
+export type CreateChoreResponse = CreateChoreResponses[keyof CreateChoreResponses];
+
+export type DeleteChoreData = {
+    body?: never;
+    path: {
+        /**
+         * Chore Id
+         */
+        chore_id: number;
+    };
+    query?: never;
+    url: '/api/v1/chores/{chore_id}';
+};
+
+export type DeleteChoreErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteChoreError = DeleteChoreErrors[keyof DeleteChoreErrors];
+
+export type DeleteChoreResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteChoreResponse = DeleteChoreResponses[keyof DeleteChoreResponses];
+
+export type UpdateChoreData = {
+    body: ChoreUpdate;
+    path: {
+        /**
+         * Chore Id
+         */
+        chore_id: number;
+    };
+    query?: never;
+    url: '/api/v1/chores/{chore_id}';
+};
+
+export type UpdateChoreErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateChoreError = UpdateChoreErrors[keyof UpdateChoreErrors];
+
+export type UpdateChoreResponses = {
+    /**
+     * Successful Response
+     */
+    200: ChoreOut;
+};
+
+export type UpdateChoreResponse = UpdateChoreResponses[keyof UpdateChoreResponses];
+
+export type ReportChoreData = {
+    body?: never;
+    path: {
+        /**
+         * Chore Id
+         */
+        chore_id: number;
+    };
+    query?: never;
+    url: '/api/v1/chores/{chore_id}/requests';
+};
+
+export type ReportChoreErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ReportChoreError = ReportChoreErrors[keyof ReportChoreErrors];
+
+export type ReportChoreResponses = {
+    /**
+     * Successful Response
+     */
+    201: RequestOut;
+};
+
+export type ReportChoreResponse = ReportChoreResponses[keyof ReportChoreResponses];
+
+export type ListRequestsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/requests';
+};
+
+export type ListRequestsResponses = {
+    /**
+     * Response List Requests
+     *
+     * Successful Response
+     */
+    200: Array<RequestOut>;
+};
+
+export type ListRequestsResponse = ListRequestsResponses[keyof ListRequestsResponses];
+
+export type ClaimRequestData = {
+    body?: never;
+    path: {
+        /**
+         * Request Id
+         */
+        request_id: number;
+    };
+    query?: never;
+    url: '/api/v1/requests/{request_id}/claim';
+};
+
+export type ClaimRequestErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ClaimRequestError = ClaimRequestErrors[keyof ClaimRequestErrors];
+
+export type ClaimRequestResponses = {
+    /**
+     * Successful Response
+     */
+    200: RequestOut;
+};
+
+export type ClaimRequestResponse = ClaimRequestResponses[keyof ClaimRequestResponses];
+
+export type UnclaimRequestData = {
+    body?: never;
+    path: {
+        /**
+         * Request Id
+         */
+        request_id: number;
+    };
+    query?: never;
+    url: '/api/v1/requests/{request_id}/unclaim';
+};
+
+export type UnclaimRequestErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UnclaimRequestError = UnclaimRequestErrors[keyof UnclaimRequestErrors];
+
+export type UnclaimRequestResponses = {
+    /**
+     * Successful Response
+     */
+    200: RequestOut;
+};
+
+export type UnclaimRequestResponse = UnclaimRequestResponses[keyof UnclaimRequestResponses];
+
+export type CompleteRequestData = {
+    body?: never;
+    path: {
+        /**
+         * Request Id
+         */
+        request_id: number;
+    };
+    query?: never;
+    url: '/api/v1/requests/{request_id}/done';
+};
+
+export type CompleteRequestErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CompleteRequestError = CompleteRequestErrors[keyof CompleteRequestErrors];
+
+export type CompleteRequestResponses = {
+    /**
+     * Successful Response
+     */
+    200: RequestOut;
+};
+
+export type CompleteRequestResponse = CompleteRequestResponses[keyof CompleteRequestResponses];
+
+export type CancelRequestData = {
+    body?: never;
+    path: {
+        /**
+         * Request Id
+         */
+        request_id: number;
+    };
+    query?: never;
+    url: '/api/v1/requests/{request_id}/cancel';
+};
+
+export type CancelRequestErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CancelRequestError = CancelRequestErrors[keyof CancelRequestErrors];
+
+export type CancelRequestResponses = {
+    /**
+     * Successful Response
+     */
+    200: RequestOut;
+};
+
+export type CancelRequestResponse = CancelRequestResponses[keyof CancelRequestResponses];
