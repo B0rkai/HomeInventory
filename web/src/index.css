@@ -350,9 +350,24 @@ input:focus {
   gap: 0.4rem;
 }
 
+/* A fixed slot, so names line up whether or not they have an icon. */
 .icon-glyph {
-  font-size: 1.15em;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 1.5em;
+  height: 1.5em;
+  font-size: 1.1em;
   line-height: 1;
+}
+
+.icon-glyph.monogram {
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--muted);
+  font-weight: 700;
+  /* Visually smaller than an emoji; the slot keeps its width, so names stay in line. */
+  transform: scale(0.8);
 }
 
 .item-title {

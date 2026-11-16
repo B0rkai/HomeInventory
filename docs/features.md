@@ -25,7 +25,9 @@ check stock remotely, and avoid duplicating the job.
    tailnet (e.g. at the shop). The *shortages* view lists everything low or
    out, by item (with the places that have *lots* of it, to fetch from) or
    by place.
-   Items and places show an emoji icon, guessed from the name or chosen.
+   Items and places show an emoji icon, guessed from the name or chosen;
+   without one, the first letter stands in. Adding an item suggests common
+   supplies; only the ones picked become items.
 4. **Requests with claiming.** Every report becomes a request: **open →
    claimed → done** (or cancelled). Claiming shows who is on it, so two
    people don't buy the same milk.

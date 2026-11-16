@@ -1,6 +1,9 @@
 import { iconOf, type IconKind } from './icons'
 
-/** An item's or place's icon (if any) and name. */
+/**
+ * An item's or place's icon and name. Without an icon the first letter stands in, so
+ * names in a list always start in line.
+ */
 export function Named({
   thing,
   kind,
@@ -11,9 +14,13 @@ export function Named({
   const icon = iconOf(thing, kind)
   return (
     <span className="named">
-      {icon && (
+      {icon ? (
         <span className="icon-glyph" aria-hidden="true">
           {icon}
+        </span>
+      ) : (
+        <span className="icon-glyph monogram" aria-hidden="true">
+          {thing.name.charAt(0).toLocaleUpperCase('hu')}
         </span>
       )}
       <span>{thing.name}</span>

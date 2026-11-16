@@ -6,8 +6,8 @@ const MAX_LENGTH = 60 // the server's limit for names
 type Props = {
   label: string
   placeholder?: string
-  // Suggestions offered while typing (e.g. items not kept here yet).
-  suggestions?: string[]
+  // Offered while typing (e.g. items not kept here yet); the label shows beside the value.
+  suggestions?: { value: string; label?: string }[]
   initial?: string
   // Defaults to Save when editing a name, Add otherwise.
   submitLabel?: string
@@ -59,8 +59,8 @@ export function AddForm({
       </div>
       {suggestions && (
         <datalist id={`${id}-list`}>
-          {suggestions.map((suggestion) => (
-            <option key={suggestion} value={suggestion} />
+          {suggestions.map(({ value, label }) => (
+            <option key={value} value={value} label={label} />
           ))}
         </datalist>
       )}
