@@ -23,11 +23,11 @@ records are out of scope.
 
 ## Status
 
-Milestone 1 (skeleton) in progress: the server skeleton (settings, SQLite,
-Alembic, identity, `/api/v1/health`, `/api/v1/users/me`) and the web client
-skeleton (PWA shell, generated API client) exist; deployment doesn't yet. Sections marked *(planned)* describe the
-intended setup, not code that exists yet. Turn them into real instructions as
-the code lands.
+Milestone 1 (skeleton) done: server (settings, SQLite, Alembic, identity,
+nicknames), web client (Hungarian PWA shell, generated API client), dev
+servers as services, and the live deployment. Next: milestone 2 (places and
+stock, `docs/features.md`). Anything marked *(planned)* describes intended
+setup, not code that exists yet.
 
 ## Tech stack
 
@@ -82,15 +82,15 @@ development and the live app apart:
 - **Dev checkout**: `~/HomeInventory`, with its own data directory
   (gitignored, inside the checkout) and its own SQLite file. Never point it
   at the live data directory.
-- **Live app**: runs from Docker Compose in a separate directory with its
-  own data directory, built from a pushed commit, never served from the dev
-  checkout.
+- **Live app**: Docker Compose from its own checkout (`~/homeinventory-live`)
+  with its own data directory (`~/.local/share/homeinventory`), built from a
+  pushed commit by `deploy/deploy.sh`, never served from the dev checkout.
+  Deploy only when the user asks: it is what both of them use day to day.
 - **Dev servers** bind to `127.0.0.1`: Uvicorn for the API, Vite for the
-  web client (proxying `/api` to Uvicorn). Vite is exposed through the
-  Tailscale Service `svc:spajz` (`https://spajz.tail61796b.ts.net`) and on
-  its own HTTPS port of the server's name, so the dev build opens on a phone
-  with real Tailscale identity, push and camera. Its `server.allowedHosts`
-  must include both `*.ts.net` names. Both run as systemd user services
+  web client (proxying `/api` to Uvicorn). Vite is exposed on `:8443` of the
+  server's name, so the dev build opens on a phone with real Tailscale
+  identity, push and camera. Its `server.allowedHosts` must include the
+  `*.ts.net` names. Both run as systemd user services
   (`homeinventory-dev-api`, `homeinventory-dev-web`, see
   `deploy/dev/README.md`) and reload on code changes: check or restart them,
   don't start a second copy.
@@ -98,10 +98,9 @@ development and the live app apart:
   status`): dev API `127.0.0.1:8000`, dev Vite `127.0.0.1:5173`, dev HTTPS
   `:8443`, live app `127.0.0.1:8100`. The server's tailnet name is
   `borkai-server.tail61796b.ts.net`; its `:443` is the torrent box's start
-  page. The app's own name is the Tailscale Service `svc:spajz`
+  page. The live app's own name is the Tailscale Service `svc:spajz`
   (`spajz.tail61796b.ts.net`; borkai-server is tagged `tag:server`, which
-  the tailnet policy auto-approves to host it): the dev build until the live
-  app exists, then the live app.
+  the tailnet policy auto-approves to host it).
 - Because borkai-server is a tagged device, requests made **from the server
   itself** through either name carry no user identity and get `401`. Test
   identity with real headers against `127.0.0.1` (e.g. a headless browser
@@ -113,8 +112,8 @@ development and the live app apart:
 ```
 server/      FastAPI app (src/homeinventory/...), alembic/, tests/
 web/         Vite + React + TS PWA
-deploy/      dev/: systemd user units for the dev servers; (planned) docker-compose.yml,
-             tailscale serve notes, backup script
+deploy/      Dockerfile, docker-compose.yml, deploy.sh, backup.sh + timer (README.md);
+             dev/: systemd user units for the dev servers
 docs/        features.md and other design notes
 ```
 
@@ -142,24 +141,26 @@ npm run build && npm run lint
 npm run generate-api    # after any API change: re-exports openapi.json, regenerates src/api
 
 # phone access to the dev build (once; persists across reboots)
-tailscale serve --service=svc:spajz --https=443 http://127.0.0.1:5173
 tailscale serve --bg --https=8443 http://127.0.0.1:5173
+
+# live (only when asked): deploys origin/main, see deploy/README.md
+deploy/deploy.sh
 ```
 
 ## Deployment
 
 - Target: **`borkai-server`**, Ubuntu Server (latest release), already on
   the tailnet (it also runs the torrent box and the dev environment above).
-- *(planned)* Docker Compose from `deploy/`: one container; the API serves
-  the built web client as static files. The SQLite file lives in a
-  bind-mounted data directory on the host, never inside the image.
+- Docker Compose from `deploy/` (details in `deploy/README.md`): one
+  container running as the server's user; the API serves the built web
+  client (`WEB_DIR`) and migrates the database on start. The SQLite file
+  lives in a bind-mounted data directory on the host, never inside the image.
 - `tailscale serve` publishes the live app as the Tailscale Service
-  `svc:spajz` (moved over from the dev build) and the dev Vite server on
-  8443 (ports above). MagicDNS and HTTPS certificates are enabled
-  in the tailnet admin console.
-- Backups: copy the database with SQLite's online backup (`sqlite3 db
-  ".backup ..."` or the Python `backup()` API), never a plain file copy of a
-  live database.
+  `svc:spajz` and the dev Vite server on 8443 (ports above). MagicDNS and
+  HTTPS certificates are enabled in the tailnet admin console.
+- Backups: `deploy/backup.sh` (daily user timer, and before every deploy)
+  takes SQLite's online backup to `/mnt/storage/backups/homeinventory`
+  (another disk), never a plain file copy of a live database.
 
 ## Conventions
 

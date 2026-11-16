@@ -1,0 +1,17 @@
+# Daily online backup of the live database to the storage disk. User unit, started by
+# homeinventory-backup.timer; install with deploy/README.md.
+[Unit]
+Description=HomeInventory live database backup
+
+[Service]
+Type=oneshot
+ExecStart=%h/homeinventory-live/deploy/backup.sh
+
+# Sandboxing: read-only system and home, except the database (SQLite needs to write its
+# -shm file even to read) and the backup directory.
+PrivateUsers=yes
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.local/share/homeinventory /mnt/storage/backups/homeinventory

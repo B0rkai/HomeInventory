@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     # Stands in for the Tailscale identity headers when they are missing (tests, or
     # running without `tailscale serve` in front). Never set in the live deployment.
     dev_user: str | None = None
+    # The built web client (web/dist) to serve next to the API, as in the live image.
+    # Unset in development, where Vite serves it.
+    web_dir: Path | None = None
 
     @property
     def db_path(self) -> Path:

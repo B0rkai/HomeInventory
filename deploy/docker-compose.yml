@@ -1,0 +1,14 @@
+# The live app. Started by deploy.sh, which builds the image and sets the variables below.
+name: homeinventory
+
+services:
+  app:
+    image: homeinventory:live
+    # Runs as the server's user, so the data and backups stay owned by them.
+    user: "${HOMEINVENTORY_UID:?}:${HOMEINVENTORY_GID:?}"
+    # Only `tailscale serve` (svc:spajz) may reach it: its identity headers are trusted.
+    ports:
+      - "127.0.0.1:8100:8100"
+    volumes:
+      - "${HOMEINVENTORY_DATA:?}:/data"
+    restart: unless-stopped

@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from homeinventory.api import router
 from homeinventory.config import Settings
 from homeinventory.db import create_db_engine
+from homeinventory.web import add_web_client
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -30,6 +31,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.engine = engine
     app.state.sessionmaker = sessionmaker(engine, expire_on_commit=False)
     app.include_router(router)
+    if settings.web_dir:
+        add_web_client(app, settings.web_dir)  # after the API, so its routes win
     return app
 
 

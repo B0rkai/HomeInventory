@@ -1,0 +1,11 @@
+# Only sources go into the image build; never local data, envs or build output.
+.git
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/data
+**/.env
+web/dist
+web/dev-dist
