@@ -72,7 +72,7 @@ Development happens **on borkai-server itself** (Linux, the same machine
 that runs the live app), driven through Claude Code Remote Control. Keep
 development and the live app apart:
 
-- **Dev checkout**: `~/dev/HomeInventory`, with its own data directory
+- **Dev checkout**: `~/HomeInventory`, with its own data directory
   (gitignored, inside the checkout) and its own SQLite file. Never point it
   at the live data directory.
 - **Live app**: runs from Docker Compose in a separate directory with its
