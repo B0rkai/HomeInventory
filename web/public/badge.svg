@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- The notification badge: icon.svg's house as a one-colour silhouette on nothing,
+       since Android draws only the shape. Render to badge-96x96.png after changes. -->
+  <path fill-rule="evenodd" fill="#fff" d="M256 64 48 236h56v212h304V236h56z
+    M172 276h168a8 8 0 0 1 0 24H172a8 8 0 0 1 0-24z
+    M172 324h168a8 8 0 0 1 0 24H172a8 8 0 0 1 0-24z
+    M172 372h104a8 8 0 0 1 0 24H172a8 8 0 0 1 0-24z"/>
+</svg>

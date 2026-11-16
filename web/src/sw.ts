@@ -37,7 +37,8 @@ self.addEventListener('push', (event) => {
       // A newer message about the same thing replaces the older one.
       tag: message.tag,
       icon: '/pwa-192x192.png',
-      badge: '/pwa-64x64.png',
+      // Android draws only the badge's shape, in the status bar.
+      badge: '/badge-96x96.png',
       data: { url: message.url },
     }),
   )
