@@ -45,7 +45,7 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
     strictPort: true,
-    allowedHosts: ['borkai-server.tail61796b.ts.net'],
+    allowedHosts: ['borkai-server.tail61796b.ts.net', 'spajz.tail61796b.ts.net'],
     proxy: { '/api': 'http://127.0.0.1:8000' },
   },
 })

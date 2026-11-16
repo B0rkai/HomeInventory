@@ -86,17 +86,26 @@ development and the live app apart:
   own data directory, built from a pushed commit, never served from the dev
   checkout.
 - **Dev servers** bind to `127.0.0.1`: Uvicorn for the API, Vite for the
-  web client (proxying `/api` to Uvicorn). Vite is exposed on its own
-  `tailscale serve` HTTPS port, so the dev build opens on a phone with real
-  Tailscale identity, push and camera. Its `server.allowedHosts` must
-  include the `*.ts.net` name. Both run as systemd user services
+  web client (proxying `/api` to Uvicorn). Vite is exposed through the
+  Tailscale Service `svc:spajz` (`https://spajz.tail61796b.ts.net`) and on
+  its own HTTPS port of the server's name, so the dev build opens on a phone
+  with real Tailscale identity, push and camera. Its `server.allowedHosts`
+  must include both `*.ts.net` names. Both run as systemd user services
   (`homeinventory-dev-api`, `homeinventory-dev-web`, see
   `deploy/dev/README.md`) and reload on code changes: check or restart them,
   don't start a second copy.
 - **Ports** (checked against the torrent box's ports and `tailscale serve
   status`): dev API `127.0.0.1:8000`, dev Vite `127.0.0.1:5173`, dev HTTPS
-  `:8443`, live app `127.0.0.1:8100`, live HTTPS `:443`. The tailnet name
-  is `borkai-server.tail61796b.ts.net`.
+  `:8443`, live app `127.0.0.1:8100`. The server's tailnet name is
+  `borkai-server.tail61796b.ts.net`; its `:443` is the torrent box's start
+  page. The app's own name is the Tailscale Service `svc:spajz`
+  (`spajz.tail61796b.ts.net`; borkai-server is tagged `tag:server`, which
+  the tailnet policy auto-approves to host it): the dev build until the live
+  app exists, then the live app.
+- Because borkai-server is a tagged device, requests made **from the server
+  itself** through either name carry no user identity and get `401`. Test
+  identity with real headers against `127.0.0.1` (e.g. a headless browser
+  with `extraHTTPHeaders`), or from a phone.
 - Git pushes go out as the **B0rkai-Claude** GitHub account.
 
 ## Repository layout
@@ -133,6 +142,7 @@ npm run build && npm run lint
 npm run generate-api    # after any API change: re-exports openapi.json, regenerates src/api
 
 # phone access to the dev build (once; persists across reboots)
+tailscale serve --service=svc:spajz --https=443 http://127.0.0.1:5173
 tailscale serve --bg --https=8443 http://127.0.0.1:5173
 ```
 
@@ -143,8 +153,9 @@ tailscale serve --bg --https=8443 http://127.0.0.1:5173
 - *(planned)* Docker Compose from `deploy/`: one container; the API serves
   the built web client as static files. The SQLite file lives in a
   bind-mounted data directory on the host, never inside the image.
-- `tailscale serve` publishes the live app on HTTPS 443 and the dev Vite
-  server on 8443 (ports above). MagicDNS and HTTPS certificates are enabled
+- `tailscale serve` publishes the live app as the Tailscale Service
+  `svc:spajz` (moved over from the dev build) and the dev Vite server on
+  8443 (ports above). MagicDNS and HTTPS certificates are enabled
   in the tailnet admin console.
 - Backups: copy the database with SQLite's online backup (`sqlite3 db
   ".backup ..."` or the Python `backup()` API), never a plain file copy of a
