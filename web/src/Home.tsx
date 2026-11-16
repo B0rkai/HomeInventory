@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AddForm } from './AddForm'
+import { ChoreList } from './ChoreList'
 import { useHouse } from './house'
 import { Named } from './Named'
 import { href } from './route'
@@ -45,6 +46,7 @@ export function Home() {
           </div>
         </section>
       ))}
+      <ChoreList locationId={null} editing={editing} />
       {editing && (
         <div className="card edit-panel">
           <AddForm

@@ -471,3 +471,48 @@ def test_every_n_days_counts_from_done(api, house, clock) -> None:
     # Done on Saturday the 21st: due again on Tuesday the 24th.
     assert chore_of(api, id)["next_due_at"] == "2026-11-23T23:00:00Z"
     assert active(api) == []
+
+
+# Chores of the whole house
+
+
+def add_house_chore(api, name: str = "Porszívózás") -> int:
+    response = api("POST", "/chores", {"name": name})
+    assert response.status_code == 201, response.text
+    assert response.json()["location_id"] is None
+    return response.json()["id"]
+
+
+def test_house_chore_has_no_place(api, house) -> None:
+    id = add_house_chore(api)
+    assert chore_of(api, id)["location_id"] is None
+
+
+def test_house_chore_names_are_unique_ignoring_case(api, house) -> None:
+    add_house_chore(api, "Porszívózás")
+    assert api("POST", "/chores", {"name": "PORSZÍVÓZÁS"}).status_code == 409
+    # A place may have one of the same name.
+    add_chore(api, house["wc"], "Porszívózás")
+
+
+def test_report_and_finish_a_house_chore(api, house) -> None:
+    id = add_house_chore(api)
+    request = api("POST", f"/chores/{id}/requests").json()
+    assert (request["location_id"], request["chore_id"]) == (None, id)
+    api("POST", f"/requests/{request['id']}/claim", headers=BELA)
+    assert api("POST", f"/requests/{request['id']}/done").status_code == 200
+    assert chore_of(api, id)["last_done_by_name"] == "Anna Kovacs"
+
+
+def test_house_chore_can_repeat(api, house, clock) -> None:
+    id = add_house_chore(api)
+    schedule(api, id, repeat_days=1)
+    clock(days=1)
+    [request] = active(api)
+    assert (request["chore_id"], request["location_id"]) == (id, None)
+
+
+def test_deleting_places_leaves_house_chores(api, house) -> None:
+    id = add_house_chore(api)
+    api("DELETE", f"/locations/{house['wc']}")
+    assert chore_of(api, id)["name"] == "Porszívózás"

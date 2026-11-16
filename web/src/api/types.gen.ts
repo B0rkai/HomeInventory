@@ -11,7 +11,7 @@ export type ChoreCreate = {
     /**
      * Location Id
      */
-    location_id: number;
+    location_id?: number | null;
     /**
      * Name
      */
@@ -33,7 +33,7 @@ export type ChoreOut = {
     /**
      * Location Id
      */
-    location_id: number;
+    location_id: number | null;
     /**
      * Name
      */
@@ -268,7 +268,7 @@ export type RequestOut = {
     /**
      * Location Id
      */
-    location_id: number;
+    location_id: number | null;
     status: RequestStatus;
     /**
      * Created By Id

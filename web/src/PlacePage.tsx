@@ -1,17 +1,18 @@
 import { useState, type ReactNode } from 'react'
-import type { ChoreOut, ItemOut, RequestOut, StockOut } from './api'
+import type { ItemOut, StockOut } from './api'
 import { useHouse } from './house'
 import { IconPicker } from './IconPicker'
 import { COMMON_ITEMS } from './icons'
 import { LevelName, LevelPicker } from './LevelPicker'
 import { Named } from './Named'
 import { href } from './route'
-import { ScheduleEditor } from './ScheduleEditor'
 import { ShortageBadge } from './ShortageBadge'
 import { t } from './strings'
-import { ago, upcoming } from './time'
+import { ago } from './time'
 import { AddForm } from './AddForm'
 import { AddItemForm } from './AddItemForm'
+import { ChoreList } from './ChoreList'
+import { claimText } from './claims'
 import { MAX_DEPTH, childrenOf, pathTo, shortageIn } from './tree'
 import { byItem, findItem, fullName, groupByName, hasVariants } from './variants'
 
@@ -22,7 +23,7 @@ export function PlacePage({ id }: { id: number }) {
   // The item name whose "new variant" field is open.
   const [addingVariantTo, setAddingVariantTo] = useState<string>()
   if (!house) return null
-  const { locations, items, stock, chores, requests } = house
+  const { locations, items, stock, requests } = house
 
   const path = pathTo(locations, id)
   const place = path.at(-1)
@@ -48,14 +49,6 @@ export function PlacePage({ id }: { id: number }) {
     .map((row) => ({ ...row, item: itemsById.get(row.item_id)! }))
     .sort((a, b) => byItem(a.item, b.item))
   const groups = groupByName(rows, (row) => row.item)
-  const choresHere = chores.filter((chore) => chore.location_id === id)
-  // Who's on it, for an item claimed for this place.
-  const claimText = (request: RequestOut | undefined) =>
-    request?.claimed_by_id == null
-      ? undefined
-      : request.claimed_by_id === me.id
-        ? t.todo.mine
-        : t.todo.theirs(request.claimed_by_name ?? '')
   const keptHere = new Set(rows.map((row) => row.item_id))
   // Items not kept here yet, then common supplies not in the catalogue yet.
   const known = new Set(items.map((item) => item.name.toLocaleLowerCase('hu')))
@@ -91,6 +84,7 @@ export function PlacePage({ id }: { id: number }) {
       title={title}
       claim={claimText(
         requests.find((request) => request.item_id === r.item_id && request.location_id === id),
+        me,
       )}
       editing={editing}
       onLevel={(level) => actions.setLevel(id, r.item_id, level)}
@@ -270,117 +264,8 @@ export function PlacePage({ id }: { id: number }) {
         />
       </section>
 
-      <section className="card">
-        <h3>{t.place.choresTitle}</h3>
-        {choresHere.length === 0 && !editing && <p className="muted">{t.place.noChores}</p>}
-        <ul className="missing-rows">
-          {choresHere.map((chore) => (
-            <ChoreRow
-              key={chore.id}
-              chore={chore}
-              request={requests.find((request) => request.chore_id === chore.id)}
-              claim={claimText}
-              editing={editing}
-            />
-          ))}
-        </ul>
-        {editing && (
-          <AddForm
-            label={t.place.addChore}
-            placeholder={t.place.addChorePlaceholder}
-            onSubmit={async (name) => Boolean(await actions.addChore(id, name))}
-          />
-        )}
-      </section>
+      <ChoreList locationId={id} editing={editing} />
     </>
-  )
-}
-
-/** A chore here: report it, or say it's done (reported or not); and when it last was. */
-function ChoreRow({
-  chore,
-  request,
-  claim,
-  editing,
-}: {
-  chore: ChoreOut
-  request: RequestOut | undefined
-  claim: (request: RequestOut | undefined) => string | undefined
-  editing: boolean
-}) {
-  const { actions } = useHouse()
-  if (editing) {
-    return (
-      <li className="chore-edit">
-        <div className="chore">
-          <Named thing={chore} kind="chore" />
-          <button
-            type="button"
-            className="icon"
-            aria-label={t.place.removeChore(chore.name)}
-            onClick={() => {
-              if (window.confirm(t.place.confirmRemoveChore(chore.name))) {
-                void actions.deleteChore(chore.id)
-              }
-            }}
-          >
-            ×
-          </button>
-        </div>
-        <ScheduleEditor chore={chore} />
-      </li>
-    )
-  }
-  const done = (
-    <button
-      type="button"
-      className="secondary small-button"
-      onClick={() => actions.completeChore(chore.id)}
-    >
-      ✓ {t.todo.done}
-    </button>
-  )
-  let action: ReactNode
-  if (request) {
-    action = done
-  } else {
-    action = (
-      <>
-        {done}
-        <button
-          type="button"
-          className="small-button"
-          onClick={() => actions.reportChore(chore.id)}
-        >
-          {t.place.report}
-        </button>
-      </>
-    )
-  }
-  // A line each: who's on it, or when it was last done and when it's due next.
-  const lines = (
-    request
-      ? [claim(request) ?? t.place.reported]
-      : [
-          chore.last_done_at &&
-            t.place.lastDone(chore.last_done_by_name ?? '', ago(chore.last_done_at)),
-          chore.next_due_at && t.place.nextDue(upcoming(chore.next_due_at)),
-        ]
-  ).filter((line) => line)
-  return (
-    <li className="chore">
-      <Named thing={chore} kind="chore" />
-      <span className="chore-state">{action}</span>
-      {lines.length > 0 && (
-        <span className="chore-lines">
-          {lines.map((line) => (
-            <span key={line} className={`small ${request ? 'claim' : 'muted'}`}>
-              {line}
-            </span>
-          ))}
-        </span>
-      )}
-    </li>
   )
 }
 

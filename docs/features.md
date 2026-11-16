@@ -85,14 +85,15 @@ draft until its milestone.
   (`lots` | `plenty` | `low` | `out`), updated by, updated at. A row means the item
   is kept there.
 - **Chore**: a reportable job tied to a location: "Kuka ürítése" in
-  "Emelet › Fürdő". Not stock, but reported and claimed the same way. Names
-  are unique per location ignoring case; icons work as for items. Added and
+  "Emelet › Fürdő", or to the whole house (no location: "Porszívózás", on
+  the home screen). Not stock, but reported and claimed the same way. Names
+  are unique per location (or among the house's) ignoring case; icons work as for items. Added and
   deleted in a place's edit mode; deleting one deletes its requests.
   Optional schedule: `repeat_days` or `repeat_weekdays` (a bitmask, Monday
   = 1; the API speaks lists, Monday = 0), and `scheduled_at`, when it was
   last changed (earlier occurrences don't count). Logic in `schedule.py`.
 - **Request**: kind (`buy` | `chore`), item (buy) or chore (chore),
-  location, status (`open` | `claimed` | `done` | `cancelled`), created by
+  location (unset for a chore of the whole house), status (`open` | `claimed` | `done` | `cancelled`), created by
   (unset when a scheduled chore fell due by itself),
   claimed by, closed by, timestamps. At most one open/claimed request per
   (item, location) or chore (partial unique indexes), so reporting twice

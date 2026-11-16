@@ -26,6 +26,10 @@ export const t = {
     title: 'Helyek',
     empty: 'Még nincs egy hely sem. Kezdd a szintekkel, például: Pince, Földszint, Emelet.',
     addFloor: 'Új szint',
+    choresTitle: 'Feladatok – egész ház',
+    choresHint: 'Ami nem egy helyhez tartozik, például: Porszívózás, Kuka kihúzása az utcára.',
+    addChorePlaceholder: 'Például: Porszívózás',
+    wholeHouse: 'Egész ház',
     editHint:
       'Egy szint átnevezése, áthelyezése vagy törlése a szint saját oldalán, szerkesztés módban.',
   },

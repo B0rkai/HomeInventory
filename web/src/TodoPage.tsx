@@ -24,8 +24,10 @@ export function TodoPage() {
   const itemsById = new Map(items.map((item) => [item.id, item]))
   const choresById = new Map(chores.map((chore) => [chore.id, chore]))
   const order = new Map(treeOrder(locations).map((location, index) => [location.id, index]))
-  const byPlace = (a: { location_id: number }, b: { location_id: number }) =>
-    (order.get(a.location_id) ?? 0) - (order.get(b.location_id) ?? 0)
+  // The whole house's chores first.
+  const rank = (id: number | null) => (id === null ? -1 : (order.get(id) ?? 0))
+  const byPlace = (a: { location_id: number | null }, b: { location_id: number | null }) =>
+    rank(a.location_id) - rank(b.location_id)
 
   // Buy requests by item, and items by category ("Egyéb" last).
   const buying = new Map<number, RequestOut[]>()
@@ -47,7 +49,12 @@ export function TodoPage() {
     .filter((request) => request.chore_id !== null && choresById.has(request.chore_id))
     .sort(byPlace)
 
-  const placeLink = (id: number) => <a href={href.place(id)}>{placePath(locations, id)}</a>
+  const placeLink = (id: number | null) =>
+    id === null ? (
+      <a href={href.home}>{t.home.wholeHouse}</a>
+    ) : (
+      <a href={href.place(id)}>{placePath(locations, id)}</a>
+    )
 
   return (
     <>
@@ -123,7 +130,8 @@ export function TodoPage() {
                     >
                       <p className="small">
                         {wanted.map((request, index) => {
-                          const level = levels.get(request.location_id)
+                          // A buy request always has a place.
+                          const level = levels.get(request.location_id!)
                           return (
                             <span key={request.id}>
                               {index > 0 && ', '}

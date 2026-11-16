@@ -886,7 +886,14 @@
       "ChoreCreate": {
         "properties": {
           "location_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Location Id"
           },
           "name": {
@@ -910,7 +917,6 @@
         },
         "type": "object",
         "required": [
-          "location_id",
           "name"
         ],
         "title": "ChoreCreate"
@@ -922,7 +928,14 @@
             "title": "Id"
           },
           "location_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Location Id"
           },
           "name": {
@@ -1435,7 +1448,14 @@
             "title": "Chore Id"
           },
           "location_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Location Id"
           },
           "status": {

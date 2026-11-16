@@ -236,7 +236,7 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
           void reloadRequests()
         }
       },
-      async addChore(locationId: number, name: string) {
+      async addChore(locationId: number | null, name: string) {
         const chore = (
           await change(createChore({ body: { location_id: locationId, name } }), {
             409: t.errors.duplicateChore,

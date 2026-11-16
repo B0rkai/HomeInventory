@@ -136,7 +136,8 @@ class StockSet(BaseModel):
 
 class ChoreOut(BaseModel):
     id: int
-    location_id: int
+    # Unset for a chore of the whole house.
+    location_id: int | None
     name: str
     icon: str | None
     # When it was last done and by whom; unset if never.
@@ -151,7 +152,8 @@ class ChoreOut(BaseModel):
 
 
 class ChoreCreate(BaseModel):
-    location_id: int
+    # Unset for a chore of the whole house.
+    location_id: int | None = None
     name: Name
     icon: Icon = None
 
@@ -183,7 +185,8 @@ class RequestOut(BaseModel):
     item_id: int | None
     # Set for a chore request.
     chore_id: int | None
-    location_id: int
+    # Unset for a chore of the whole house.
+    location_id: int | None
     status: RequestStatus
     # Unset when a scheduled chore fell due by itself.
     created_by_id: int | None

@@ -85,14 +85,14 @@ def close_buy_requests(
 
 
 def _check_chore_name(
-    session: Session, location_id: int, name: str, own_id: int | None = None
+    session: Session, location_id: int | None, name: str, own_id: int | None = None
 ) -> None:
     folded = name.casefold()
     if any(
         chore.name.casefold() == folded and chore.id != own_id
         for chore in session.scalars(select(Chore).where(Chore.location_id == location_id))
     ):
-        raise conflict("This location already has a chore with this name")
+        raise conflict("This location (or the house) already has a chore with this name")
 
 
 def _last_done(session: Session, chore_ids: list[int]) -> dict[int, Request]:
@@ -214,7 +214,8 @@ def create_chore(
     session: Session = Depends(get_session),
     tz: ZoneInfo = Depends(household_timezone),
 ) -> ChoreOut:
-    get_or_404(session, Location, new.location_id)
+    if new.location_id is not None:
+        get_or_404(session, Location, new.location_id)
     _check_chore_name(session, new.location_id, new.name)
     chore = Chore(location_id=new.location_id, name=new.name, icon=new.icon)
     session.add(chore)

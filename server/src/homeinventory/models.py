@@ -158,7 +158,8 @@ class Chore(Base):
     __tablename__ = "chores"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    location_id: Mapped[int] = mapped_column(
+    # Unset for a chore of the whole house ("Porszívózás").
+    location_id: Mapped[int | None] = mapped_column(
         ForeignKey("locations.id", ondelete="CASCADE"), index=True
     )
     # Unique within its location, ignoring case (checked by the API).
@@ -205,7 +206,8 @@ class Request(Base):
     __tablename__ = "requests"
     __table_args__ = (
         CheckConstraint(
-            "(kind = 'buy' AND item_id IS NOT NULL AND chore_id IS NULL)"
+            "(kind = 'buy' AND item_id IS NOT NULL AND chore_id IS NULL"
+            " AND location_id IS NOT NULL)"
             " OR (kind = 'chore' AND chore_id IS NOT NULL AND item_id IS NULL)",
             name="target",
         ),
@@ -225,8 +227,8 @@ class Request(Base):
     kind: Mapped[RequestKind] = mapped_column(str_enum(RequestKind, "kind"))
     item_id: Mapped[int | None] = mapped_column(ForeignKey("items.id", ondelete="CASCADE"))
     chore_id: Mapped[int | None] = mapped_column(ForeignKey("chores.id", ondelete="CASCADE"))
-    # Where it's needed; a chore's own location.
-    location_id: Mapped[int] = mapped_column(
+    # Where it's needed; a chore's own location, unset for a chore of the whole house.
+    location_id: Mapped[int | None] = mapped_column(
         ForeignKey("locations.id", ondelete="CASCADE"), index=True
     )
     status: Mapped[RequestStatus] = mapped_column(str_enum(RequestStatus, "status"))
