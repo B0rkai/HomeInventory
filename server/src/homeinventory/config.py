@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     web_dir: Path | None = None
     # The household's time zone: scheduled chores fall due at its midnight.
     timezone: str = "Europe/Budapest"
+    # Who runs this server, for the push services (a mailto: or https: URL). The VAPID
+    # key pair itself is made on first use and kept in the data directory.
+    vapid_subject: str = "https://spajz.tail61796b.ts.net"
+
+    @property
+    def vapid_key_path(self) -> Path:
+        return self.data_dir / "vapid-private.pem"
 
     @property
     def db_path(self) -> Path:

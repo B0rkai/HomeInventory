@@ -252,3 +252,19 @@ class Request(Base):
     @property
     def claimed_by_name(self) -> str | None:
         return self.claimed_by and self.claimed_by.display_name
+
+
+class PushSubscription(Base):
+    """A device (a browser on a phone) that gets its user's notifications."""
+
+    __tablename__ = "push_subscriptions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    # The push service's URL for this device; a device signing in as the other user
+    # takes it over.
+    endpoint: Mapped[str] = mapped_column(String(1000), unique=True)
+    # The device's keys for encrypting the messages (base64url).
+    p256dh: Mapped[str] = mapped_column(String(200))
+    auth: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)

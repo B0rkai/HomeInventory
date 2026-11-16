@@ -1,3 +1,4 @@
+import json
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -19,9 +20,20 @@ def settings(tmp_path: Path) -> Settings:
 
 
 @pytest.fixture
-def app(settings: Settings) -> FastAPI:
+def pushes() -> list[tuple[str, dict]]:
+    """The notifications sent, as (endpoint, message); none really leave."""
+    return []
+
+
+@pytest.fixture
+def app(settings: Settings, pushes: list) -> FastAPI:
     app = create_app(settings)
     Base.metadata.create_all(app.state.engine)
+    notifier = app.state.notifier
+    notifier.run = lambda function, *args: function(*args)
+    notifier.sender = lambda subscription, data, _vapid, _claims: pushes.append(
+        (subscription["endpoint"], json.loads(data))
+    )
     return app
 
 

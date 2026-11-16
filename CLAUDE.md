@@ -23,13 +23,14 @@ records are out of scope.
 
 ## Status
 
-Milestones 1 (skeleton, live deployment), 2 (places and stock) and 3
-(requests) done: locations, items and stock levels (`places.py`), chores and
-requests with claiming (`requests.py`), and the web pages for them (home
-tree, place page, to-do list with the shopping list, shortages view, item
-catalogue, a bottom tab bar; hash routes in `web/src/route.ts`, shared data
-in `web/src/house.ts`). Next: milestone 4 (push notifications and live
-updates, `docs/features.md`). Anything marked *(planned)* describes intended
+Milestones 1-4 done: locations, items and stock levels (`places.py`); chores
+(per place or for the whole house, optionally repeating, `schedule.py`) and
+requests with claiming (`requests.py`); web push (`notify.py`, keys made on
+first use in the data directory) and live updates over SSE (`live.py`,
+`/api/v1/events`); and the web pages for them (home tree, place page, to-do
+list with the shopping list, shortages view, item catalogue, a bottom tab
+bar; hash routes in `web/src/route.ts`, shared data in `web/src/house.ts`).
+Next: the later ideas in `docs/features.md`, as the users ask. Anything marked *(planned)* describes intended
 setup, not code that exists yet.
 
 ## Tech stack
@@ -59,8 +60,12 @@ setup, not code that exists yet.
   Tabler (MIT, copied into `src/tablerIcons.gen.ts`) plus our own drawn in
   its style (`src/drawnIcons.ts`: 24px grid, 2px round strokes).
 - **Notifications**: Web Push (VAPID, `pywebpush` on the server, a service
-  worker in the client). **Live updates**: Server-Sent Events, so an open
-  list refreshes itself.
+  worker in the client). The server sends what happened; the service worker
+  writes the Hungarian text (`web/src/notificationText.ts`). **Live
+  updates**: Server-Sent Events, so an open list refreshes itself; routers
+  announce every successful change (`announce_changes` in `common.py`).
+  Uvicorn runs with `--timeout-graceful-shutdown`, since open streams never
+  end by themselves.
 - **No native mobile app** is planned; build one only if the PWA proves
   insufficient.
 

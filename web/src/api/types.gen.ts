@@ -244,6 +244,43 @@ export type LocationUpdate = {
 };
 
 /**
+ * PushKey
+ */
+export type PushKey = {
+    /**
+     * Public Key
+     */
+    public_key: string;
+};
+
+/**
+ * PushKeys
+ */
+export type PushKeys = {
+    /**
+     * P256Dh
+     */
+    p256dh: string;
+    /**
+     * Auth
+     */
+    auth: string;
+};
+
+/**
+ * PushSubscriptionIn
+ *
+ * A browser's PushSubscription, as its toJSON() gives it.
+ */
+export type PushSubscriptionIn = {
+    /**
+     * Endpoint
+     */
+    endpoint: string;
+    keys: PushKeys;
+};
+
+/**
  * RequestKind
  */
 export type RequestKind = 'buy' | 'chore';
@@ -1044,3 +1081,88 @@ export type CancelRequestResponses = {
 };
 
 export type CancelRequestResponse = CancelRequestResponses[keyof CancelRequestResponses];
+
+export type GetPushKeyData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/push/key';
+};
+
+export type GetPushKeyResponses = {
+    /**
+     * Successful Response
+     */
+    200: PushKey;
+};
+
+export type GetPushKeyResponse = GetPushKeyResponses[keyof GetPushKeyResponses];
+
+export type UnsubscribeData = {
+    body?: never;
+    path?: never;
+    query: {
+        /**
+         * Endpoint
+         */
+        endpoint: string;
+    };
+    url: '/api/v1/push/subscriptions';
+};
+
+export type UnsubscribeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UnsubscribeError = UnsubscribeErrors[keyof UnsubscribeErrors];
+
+export type UnsubscribeResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type UnsubscribeResponse = UnsubscribeResponses[keyof UnsubscribeResponses];
+
+export type SubscribeData = {
+    body: PushSubscriptionIn;
+    path?: never;
+    query?: never;
+    url: '/api/v1/push/subscriptions';
+};
+
+export type SubscribeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SubscribeError = SubscribeErrors[keyof SubscribeErrors];
+
+export type SubscribeResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type SubscribeResponse = SubscribeResponses[keyof SubscribeResponses];
+
+export type StreamEventsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/events';
+};
+
+export type StreamEventsResponses = {
+    /**
+     * Successful Response
+     */
+    200: unknown;
+};

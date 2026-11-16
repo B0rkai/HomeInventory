@@ -19,6 +19,11 @@ if [ "$(sqlite3 "$out" 'PRAGMA integrity_check')" != ok ]; then
     exit 1
 fi
 
+# The push key: without it every phone has to turn notifications on again.
+if [ -f "$DATA/vapid-private.pem" ]; then
+    install -m 600 "$DATA/vapid-private.pem" "$DEST/vapid-private.pem"
+fi
+
 # Newest first; everything past $KEEP goes.
 find "$DEST" -maxdepth 1 -name 'homeinventory-*.db' -printf '%T@ %p\n' | sort -rn |
     tail -n +$((KEEP + 1)) | cut -d' ' -f2- | xargs -r rm --

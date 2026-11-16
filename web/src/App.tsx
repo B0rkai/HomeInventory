@@ -8,6 +8,8 @@ import { ItemsPage } from './ItemsPage'
 import { MissingPage } from './MissingPage'
 import { NicknameForm } from './NicknameForm'
 import { PlacePage } from './PlacePage'
+import { refreshPush } from './push'
+import { PushSettings } from './PushSettings'
 import { href, useRoute, type Route } from './route'
 import { t } from './strings'
 import { TodoPage } from './TodoPage'
@@ -47,6 +49,12 @@ export default function App() {
     )
   }, [])
 
+  // Keeps the server's record of this device current (say, after a nickname change).
+  const userId = state.kind === 'ready' ? state.user.id : undefined
+  useEffect(() => {
+    if (userId !== undefined) refreshPush().catch(() => {})
+  }, [userId])
+
   function saved(user: UserOut) {
     setState({ kind: 'ready', user })
     setEditingNickname(false)
@@ -80,7 +88,10 @@ export default function App() {
         )}
         {user && !user.nickname && <NicknameForm user={user} onSaved={saved} />}
         {user?.nickname && editingNickname && (
-          <NicknameForm user={user} onSaved={saved} onCancel={() => setEditingNickname(false)} />
+          <>
+            <NicknameForm user={user} onSaved={saved} onCancel={() => setEditingNickname(false)} />
+            <PushSettings />
+          </>
         )}
         {user?.nickname && !editingNickname && (
           <HouseProvider me={user} onError={showError}>

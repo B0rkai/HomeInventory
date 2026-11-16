@@ -660,7 +660,7 @@
     "/api/v1/chores/{chore_id}/done": {
       "post": {
         "summary": "Complete Chore",
-        "description": "Records a chore as done just now: its open or claimed request if it has one, else a\nrequest that's done from the start (nobody needs telling about it).",
+        "description": "Records a chore as done just now: its open or claimed request if it has one (and\ntells the other), else a request that's done from the start (nobody needs telling).",
         "operationId": "complete_chore",
         "parameters": [
           {
@@ -876,6 +876,100 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/push/key": {
+      "get": {
+        "summary": "Get Push Key",
+        "description": "The server's public key, for subscribing a device.",
+        "operationId": "get_push_key",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushKey"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/push/subscriptions": {
+      "put": {
+        "summary": "Subscribe",
+        "description": "Sends this user's notifications to a device; sending one again refreshes it.",
+        "operationId": "subscribe",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushSubscriptionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Unsubscribe",
+        "description": "Stops notifications to a device (given by its endpoint); unknown ones are fine.",
+        "operationId": "unsubscribe",
+        "parameters": [
+          {
+            "name": "endpoint",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Endpoint"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events": {
+      "get": {
+        "summary": "Stream Events",
+        "description": "Server-Sent Events: `{\"by\": <user id or null>}` whenever the house changes.",
+        "operationId": "stream_events",
+        "responses": {
+          "200": {
+            "description": "Successful Response"
           }
         }
       }
@@ -1407,6 +1501,61 @@
         },
         "type": "object",
         "title": "LocationUpdate"
+      },
+      "PushKey": {
+        "properties": {
+          "public_key": {
+            "type": "string",
+            "title": "Public Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "public_key"
+        ],
+        "title": "PushKey"
+      },
+      "PushKeys": {
+        "properties": {
+          "p256dh": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "P256Dh"
+          },
+          "auth": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Auth"
+          }
+        },
+        "type": "object",
+        "required": [
+          "p256dh",
+          "auth"
+        ],
+        "title": "PushKeys"
+      },
+      "PushSubscriptionIn": {
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "maxLength": 1000,
+            "pattern": "^https://",
+            "title": "Endpoint"
+          },
+          "keys": {
+            "$ref": "#/components/schemas/PushKeys"
+          }
+        },
+        "type": "object",
+        "required": [
+          "endpoint",
+          "keys"
+        ],
+        "title": "PushSubscriptionIn",
+        "description": "A browser's PushSubscription, as its toJSON() gives it."
       },
       "RequestKind": {
         "type": "string",

@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CancelRequestData, CancelRequestErrors, CancelRequestResponses, ClaimRequestData, ClaimRequestErrors, ClaimRequestResponses, CompleteChoreData, CompleteChoreErrors, CompleteChoreResponses, CompleteRequestData, CompleteRequestErrors, CompleteRequestResponses, CreateChoreData, CreateChoreErrors, CreateChoreResponses, CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, DeleteChoreData, DeleteChoreErrors, DeleteChoreResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, ListChoresData, ListChoresResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListRequestsData, ListRequestsResponses, ListStockData, ListStockResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, ReportChoreData, ReportChoreErrors, ReportChoreResponses, SetStockData, SetStockErrors, SetStockResponses, UnclaimRequestData, UnclaimRequestErrors, UnclaimRequestResponses, UpdateChoreData, UpdateChoreErrors, UpdateChoreResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses } from './types.gen';
+import type { CancelRequestData, CancelRequestErrors, CancelRequestResponses, ClaimRequestData, ClaimRequestErrors, ClaimRequestResponses, CompleteChoreData, CompleteChoreErrors, CompleteChoreResponses, CompleteRequestData, CompleteRequestErrors, CompleteRequestResponses, CreateChoreData, CreateChoreErrors, CreateChoreResponses, CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, DeleteChoreData, DeleteChoreErrors, DeleteChoreResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, GetPushKeyData, GetPushKeyResponses, ListChoresData, ListChoresResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListRequestsData, ListRequestsResponses, ListStockData, ListStockResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, ReportChoreData, ReportChoreErrors, ReportChoreResponses, SetStockData, SetStockErrors, SetStockResponses, StreamEventsData, StreamEventsResponses, SubscribeData, SubscribeErrors, SubscribeResponses, UnclaimRequestData, UnclaimRequestErrors, UnclaimRequestResponses, UnsubscribeData, UnsubscribeErrors, UnsubscribeResponses, UpdateChoreData, UpdateChoreErrors, UpdateChoreResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -194,8 +194,8 @@ export const reportChore = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Complete Chore
  *
- * Records a chore as done just now: its open or claimed request if it has one, else a
- * request that's done from the start (nobody needs telling about it).
+ * Records a chore as done just now: its open or claimed request if it has one (and
+ * tells the other), else a request that's done from the start (nobody needs telling).
  */
 export const completeChore = <ThrowOnError extends boolean = false>(options: Options<CompleteChoreData, ThrowOnError>): RequestResult<CompleteChoreResponses, CompleteChoreErrors, ThrowOnError> => (options.client ?? client).post<CompleteChoreResponses, CompleteChoreErrors, ThrowOnError>({ url: '/api/v1/chores/{chore_id}/done', ...options });
 
@@ -233,3 +233,38 @@ export const completeRequest = <ThrowOnError extends boolean = false>(options: O
  * Drops a request that's no longer needed; a buy request leaves the level as it is.
  */
 export const cancelRequest = <ThrowOnError extends boolean = false>(options: Options<CancelRequestData, ThrowOnError>): RequestResult<CancelRequestResponses, CancelRequestErrors, ThrowOnError> => (options.client ?? client).post<CancelRequestResponses, CancelRequestErrors, ThrowOnError>({ url: '/api/v1/requests/{request_id}/cancel', ...options });
+
+/**
+ * Get Push Key
+ *
+ * The server's public key, for subscribing a device.
+ */
+export const getPushKey = <ThrowOnError extends boolean = false>(options?: Options<GetPushKeyData, ThrowOnError>): RequestResult<GetPushKeyResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetPushKeyResponses, unknown, ThrowOnError>({ url: '/api/v1/push/key', ...options });
+
+/**
+ * Unsubscribe
+ *
+ * Stops notifications to a device (given by its endpoint); unknown ones are fine.
+ */
+export const unsubscribe = <ThrowOnError extends boolean = false>(options: Options<UnsubscribeData, ThrowOnError>): RequestResult<UnsubscribeResponses, UnsubscribeErrors, ThrowOnError> => (options.client ?? client).delete<UnsubscribeResponses, UnsubscribeErrors, ThrowOnError>({ url: '/api/v1/push/subscriptions', ...options });
+
+/**
+ * Subscribe
+ *
+ * Sends this user's notifications to a device; sending one again refreshes it.
+ */
+export const subscribe = <ThrowOnError extends boolean = false>(options: Options<SubscribeData, ThrowOnError>): RequestResult<SubscribeResponses, SubscribeErrors, ThrowOnError> => (options.client ?? client).put<SubscribeResponses, SubscribeErrors, ThrowOnError>({
+    url: '/api/v1/push/subscriptions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Stream Events
+ *
+ * Server-Sent Events: `{"by": <user id or null>}` whenever the house changes.
+ */
+export const streamEvents = <ThrowOnError extends boolean = false>(options?: Options<StreamEventsData, ThrowOnError>): RequestResult<StreamEventsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<StreamEventsResponses, unknown, ThrowOnError>({ url: '/api/v1/events', ...options });

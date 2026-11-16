@@ -195,3 +195,20 @@ class RequestOut(BaseModel):
     claimed_by_id: int | None
     claimed_by_name: str | None
     claimed_at: datetime | None
+
+
+class PushKey(BaseModel):
+    # base64url, for PushManager.subscribe's applicationServerKey.
+    public_key: str
+
+
+class PushKeys(BaseModel):
+    p256dh: Annotated[str, StringConstraints(min_length=1, max_length=200)]
+    auth: Annotated[str, StringConstraints(min_length=1, max_length=100)]
+
+
+class PushSubscriptionIn(BaseModel):
+    """A browser's PushSubscription, as its toJSON() gives it."""
+
+    endpoint: Annotated[str, StringConstraints(pattern=r"^https://", max_length=1000)]
+    keys: PushKeys

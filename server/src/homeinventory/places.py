@@ -5,19 +5,22 @@ from sqlalchemy import select
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
-from homeinventory.common import NO_CONTENT, conflict, get_or_404
+from homeinventory.common import NO_CONTENT, announce_changes, conflict, get_notifier, get_or_404
 from homeinventory.db import get_session
 from homeinventory.identity import current_user
 from homeinventory.models import (
+    ACTIVE,
     LOCATION_MAX_DEPTH,
     Item,
     Level,
     Location,
+    Request,
     RequestStatus,
     Stock,
     User,
     utcnow,
 )
+from homeinventory.notify import Notifier, message_for
 from homeinventory.requests import close_buy_requests, open_buy_request
 from homeinventory.schemas import (
     ItemCreate,
@@ -31,7 +34,7 @@ from homeinventory.schemas import (
 )
 
 # Every route needs an identity, even the read-only ones: the app is for its users only.
-router = APIRouter(dependencies=[Depends(current_user)])
+router = APIRouter(dependencies=[Depends(current_user), Depends(announce_changes)])
 
 # Locations
 
@@ -193,6 +196,7 @@ def set_stock(
     new: StockSet,
     user: User = Depends(current_user),
     session: Session = Depends(get_session),
+    notifier: Notifier = Depends(get_notifier),
 ) -> StockOut:
     """Sets an item's level in a location, adding the item there if it isn't kept there yet."""
     get_or_404(session, Location, location_id)
@@ -206,11 +210,30 @@ def set_stock(
     )
     # Running low is a report: it puts the item on the shopping list. Filling it up again
     # takes it off, whoever did it.
+    opened, refilled = False, []
     if new.level in (Level.LOW, Level.OUT):
-        open_buy_request(session, item_id, location_id, user)
+        opened = open_buy_request(session, item_id, location_id, user)
     else:
-        close_buy_requests(session, item_id, location_id, user, RequestStatus.DONE)
+        refilled = close_buy_requests(session, item_id, location_id, user, RequestStatus.DONE)
     session.commit()
+    if opened:
+        request = session.scalars(
+            select(Request).where(
+                Request.item_id == item_id,
+                Request.location_id == location_id,
+                Request.status.in_(ACTIVE),
+            )
+        ).one()
+        notifier.send(
+            session,
+            user.id,
+            message_for(session, request, "reported", user.display_name, new.level),
+        )
+    for id in refilled:
+        request = session.get_one(Request, id)
+        notifier.send(
+            session, user.id, message_for(session, request, "refilled", user.display_name)
+        )
     stock = session.scalars(
         select(Stock)
         .where(Stock.item_id == item_id, Stock.location_id == location_id)

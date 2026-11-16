@@ -8,6 +8,7 @@ serves the built web client. Phones reach it as the Tailscale Service `svc:spajz
 |---|---|
 | Live checkout (built from GitHub, detached at the deployed commit) | `~/homeinventory-live` |
 | Database | `~/.local/share/homeinventory/homeinventory.db` |
+| Push key (VAPID, made on first use) | `~/.local/share/homeinventory/vapid-private.pem` |
 | Backups (other disk) | `/mnt/storage/backups/homeinventory/` |
 | Container port | `127.0.0.1:8100` |
 
@@ -44,6 +45,8 @@ The container restarts on its own after a reboot (`restart: unless-stopped`).
 
 Daily at 03:40 (and before every deploy) `backup.sh` takes an online SQLite backup,
 checks its integrity and keeps the newest 60. By hand: `deploy/backup.sh`.
+It also copies the push key next to the backups (`vapid-private.pem`); restore it
+with the database, or every phone has to turn notifications on again.
 
 Restore (stops the app for a moment):
 

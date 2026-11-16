@@ -1,9 +1,10 @@
 """Chores, and requests: something to buy or do, from open through claimed to done.
 
 Buy requests come from stock levels (see `places.set_stock`); chore requests are
-reported by hand, or open by themselves when a scheduled chore falls due (checked
-whenever chores or requests are listed, see `schedule.py`). Every state change is one
-conditional UPDATE, so when both users tap at once exactly one wins and the other gets 409.
+reported by hand, or open by themselves when a scheduled chore falls due (checked every
+minute and whenever chores or requests are listed, see `schedule.py`). Every state change
+is one conditional UPDATE, so when both users tap at once exactly one wins and the other
+gets 409. Reporting, claiming and finishing tell the other user (`notify.py`).
 """
 
 from datetime import UTC, datetime
@@ -15,9 +16,17 @@ from sqlalchemy import and_, case, func, select, update
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
-from homeinventory.common import NO_CONTENT, conflict, get_or_404
+from homeinventory.common import (
+    NO_CONTENT,
+    announce_changes,
+    conflict,
+    get_live,
+    get_notifier,
+    get_or_404,
+)
 from homeinventory.db import get_session
 from homeinventory.identity import current_user
+from homeinventory.live import LiveUpdates
 from homeinventory.models import (
     ACTIVE,
     ACTIVE_WHERE,
@@ -32,10 +41,11 @@ from homeinventory.models import (
     UTCDateTime,
     utcnow,
 )
+from homeinventory.notify import Notifier, message_for
 from homeinventory.schedule import History, due_at
 from homeinventory.schemas import ChoreCreate, ChoreOut, ChoreUpdate, RequestOut
 
-router = APIRouter(dependencies=[Depends(current_user)])
+router = APIRouter(dependencies=[Depends(current_user), Depends(announce_changes)])
 
 CLOSED = (RequestStatus.DONE, RequestStatus.CANCELLED)
 
@@ -47,9 +57,10 @@ def household_timezone(request: HTTPRequest) -> ZoneInfo:
 # Buy requests, driven by stock levels
 
 
-def open_buy_request(session: Session, item_id: int, location_id: int, user: User) -> None:
-    """Opens a request to buy an item for a location, unless one is already open or claimed."""
-    session.execute(
+def open_buy_request(session: Session, item_id: int, location_id: int, user: User) -> bool:
+    """Opens a request to buy an item for a location, unless one is already open or claimed.
+    Whether it opened one."""
+    inserted = session.execute(
         insert(Request)
         .values(
             kind=RequestKind.BUY,
@@ -63,13 +74,14 @@ def open_buy_request(session: Session, item_id: int, location_id: int, user: Use
             index_elements=[Request.item_id, Request.location_id], index_where=ACTIVE_WHERE
         )
     )
+    return bool(inserted.rowcount)
 
 
 def close_buy_requests(
     session: Session, item_id: int, location_id: int, user: User, closed: RequestStatus
-) -> None:
-    """Marks the active request to buy an item for a location done or cancelled."""
-    session.execute(
+) -> list[int]:
+    """Marks the active request to buy an item for a location done or cancelled; the ids."""
+    result = session.execute(
         update(Request)
         .where(
             Request.kind == RequestKind.BUY,
@@ -78,7 +90,9 @@ def close_buy_requests(
             Request.status.in_(ACTIVE),
         )
         .values(status=closed, closed_by_id=user.id, closed_at=utcnow())
+        .returning(Request.id)
     )
+    return list(result.scalars())
 
 
 # Chores
@@ -150,8 +164,12 @@ def _due_at(chore: Chore, history: History, now: datetime, tz: ZoneInfo) -> date
     return due and due.astimezone(UTC)
 
 
-def open_due_chores(session: Session, now: datetime, tz: ZoneInfo) -> None:
-    """Opens a request for every scheduled chore that has fallen due since it was dealt with."""
+def check_due_chores(
+    session: Session, notifier: Notifier, live: LiveUpdates, now: datetime, tz: ZoneInfo
+) -> None:
+    """Opens a request for every scheduled chore that has fallen due since it was dealt
+    with, and tells everyone."""
+    opened = []
     chores = list(session.scalars(select(Chore).where(Chore.scheduled_at.is_not(None))))
     histories = _histories(session, [chore.id for chore in chores])
     for chore in chores:
@@ -159,7 +177,7 @@ def open_due_chores(session: Session, now: datetime, tz: ZoneInfo) -> None:
         due = _due_at(chore, history, now, tz)
         if active or due is None or due > now:
             continue
-        session.execute(
+        inserted = session.execute(
             insert(Request)
             .values(
                 kind=RequestKind.CHORE,
@@ -170,8 +188,16 @@ def open_due_chores(session: Session, now: datetime, tz: ZoneInfo) -> None:
                 created_at=due,
             )
             .on_conflict_do_nothing(index_elements=[Request.chore_id], index_where=ACTIVE_WHERE)
+            .returning(Request.id)
         )
+        opened.extend(inserted.scalars())
     session.commit()
+    for id in opened:
+        notifier.send(
+            session, None, message_for(session, session.get_one(Request, id), "due", None)
+        )
+    if opened:
+        live.publish(None)
 
 
 def _chore_outs(session: Session, chores: list[Chore], tz: ZoneInfo) -> list[ChoreOut]:
@@ -201,9 +227,12 @@ def _chore_outs(session: Session, chores: list[Chore], tz: ZoneInfo) -> list[Cho
 
 @router.get("/chores")
 def list_chores(
-    session: Session = Depends(get_session), tz: ZoneInfo = Depends(household_timezone)
+    session: Session = Depends(get_session),
+    tz: ZoneInfo = Depends(household_timezone),
+    notifier: Notifier = Depends(get_notifier),
+    live: LiveUpdates = Depends(get_live),
 ) -> list[ChoreOut]:
-    open_due_chores(session, utcnow(), tz)
+    check_due_chores(session, notifier, live, utcnow(), tz)
     chores = session.scalars(select(Chore).order_by(Chore.location_id, Chore.id))
     return _chore_outs(session, list(chores), tz)
 
@@ -260,6 +289,7 @@ def report_chore(
     response: Response,
     user: User = Depends(current_user),
     session: Session = Depends(get_session),
+    notifier: Notifier = Depends(get_notifier),
 ) -> RequestOut:
     """Reports that a chore needs doing; if it's already reported, returns that request (200)."""
     chore = get_or_404(session, Chore, chore_id)
@@ -276,11 +306,15 @@ def report_chore(
         .on_conflict_do_nothing(index_elements=[Request.chore_id], index_where=ACTIVE_WHERE)
     )
     session.commit()
-    if not inserted.rowcount:
-        response.status_code = status.HTTP_200_OK
     request = session.scalars(
         select(Request).where(Request.chore_id == chore.id, Request.status.in_(ACTIVE))
     ).one()
+    if inserted.rowcount:
+        notifier.send(
+            session, user.id, message_for(session, request, "reported", user.display_name)
+        )
+    else:
+        response.status_code = status.HTTP_200_OK
     return RequestOut.model_validate(request)
 
 
@@ -290,9 +324,10 @@ def complete_chore(
     user: User = Depends(current_user),
     session: Session = Depends(get_session),
     tz: ZoneInfo = Depends(household_timezone),
+    notifier: Notifier = Depends(get_notifier),
 ) -> ChoreOut:
-    """Records a chore as done just now: its open or claimed request if it has one, else a
-    request that's done from the start (nobody needs telling about it)."""
+    """Records a chore as done just now: its open or claimed request if it has one (and
+    tells the other), else a request that's done from the start (nobody needs telling)."""
     chore = get_or_404(session, Chore, chore_id)
     now = utcnow()
     closed = {"status": RequestStatus.DONE, "closed_by_id": user.id, "closed_at": now}
@@ -300,8 +335,10 @@ def complete_chore(
         update(Request)
         .where(Request.chore_id == chore.id, Request.status.in_(ACTIVE))
         .values(**closed)
+        .returning(Request.id)
     )
-    if not finished.rowcount:
+    finished_ids = list(finished.scalars())
+    if not finished_ids:
         session.add(
             Request(
                 kind=RequestKind.CHORE,
@@ -313,6 +350,9 @@ def complete_chore(
             )
         )
     session.commit()
+    for id in finished_ids:
+        request = session.get_one(Request, id)
+        notifier.send(session, user.id, message_for(session, request, "done", user.display_name))
     return _chore_outs(session, [chore], tz)[0]
 
 
@@ -321,10 +361,13 @@ def complete_chore(
 
 @router.get("/requests")
 def list_requests(
-    session: Session = Depends(get_session), tz: ZoneInfo = Depends(household_timezone)
+    session: Session = Depends(get_session),
+    tz: ZoneInfo = Depends(household_timezone),
+    notifier: Notifier = Depends(get_notifier),
+    live: LiveUpdates = Depends(get_live),
 ) -> list[RequestOut]:
     """The open and claimed requests, oldest first, scheduled chores that fell due included."""
-    open_due_chores(session, utcnow(), tz)
+    check_due_chores(session, notifier, live, utcnow(), tz)
     requests = session.scalars(
         select(Request).where(Request.status.in_(ACTIVE)).order_by(Request.id)
     )
@@ -351,6 +394,7 @@ def claim_request(
     request_id: int,
     user: User = Depends(current_user),
     session: Session = Depends(get_session),
+    notifier: Notifier = Depends(get_notifier),
 ) -> RequestOut:
     """Says "I'm on it". Only an open request can be claimed."""
     request = _transition(
@@ -361,6 +405,7 @@ def claim_request(
         claimed_by_id=user.id,
         claimed_at=utcnow(),
     )
+    notifier.send(session, user.id, message_for(session, request, "claimed", user.display_name))
     return RequestOut.model_validate(request)
 
 
@@ -388,6 +433,7 @@ def complete_request(
     request_id: int,
     user: User = Depends(current_user),
     session: Session = Depends(get_session),
+    notifier: Notifier = Depends(get_notifier),
 ) -> RequestOut:
     """Marks a request done, whoever claimed it; a bought item's level goes back to plenty."""
     request = _transition(
@@ -405,6 +451,7 @@ def complete_request(
             .values(level=Level.PLENTY, updated_by_id=user.id, updated_at=utcnow())
         )
         session.commit()
+    notifier.send(session, user.id, message_for(session, request, "done", user.display_name))
     return RequestOut.model_validate(request)
 
 

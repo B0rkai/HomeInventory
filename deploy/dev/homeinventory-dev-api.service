@@ -8,7 +8,7 @@ Wants=network-online.target
 [Service]
 WorkingDirectory=%h/HomeInventory/server
 ExecStartPre=%h/.local/bin/uv run --frozen alembic upgrade head
-ExecStart=%h/.local/bin/uv run --frozen uvicorn --factory homeinventory.main:create_app --host 127.0.0.1 --port 8000 --reload
+ExecStart=%h/.local/bin/uv run --frozen uvicorn --factory homeinventory.main:create_app --host 127.0.0.1 --port 8000 --reload --timeout-graceful-shutdown 5
 Restart=on-failure
 RestartSec=5
 

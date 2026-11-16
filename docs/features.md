@@ -45,23 +45,28 @@ check stock remotely, and avoid duplicating the job.
    ("Esedékes"). Weekly: done earlier the same day counts, done the day
    before doesn't; a cancelled occurrence is skipped. The place shows when
    it's due next. Due chores are checked whenever chores or requests are
-   listed; milestone 4 adds a periodic check so the push goes out on time.
+   listed, and every minute, so the push goes out on time.
 5. **Shopping list.** The *Teendők* (to-do) tab: reported chores, then the
    open and claimed *buy* requests, one row per item however many places
    want it (its buttons act on all of them), grouped by category, with the
    places that have *lots* of it. Marking one bought sets its level back to
    *plenty* in each place. The tab counts the requests nobody has claimed.
-   Until live updates (milestone 4) the app refetches when it comes back
-   on screen and when the tab opens.
-6. **Notifications.** Push to the other user when a request is created,
-   claimed or done. Nobody is notified about their own actions.
-7. **Live updates.** An open list updates itself without a refresh.
+6. **Notifications.** Web push to the other user's devices when something
+   is reported (a level set to *low*/*out*, a chore reported), claimed,
+   done, or refilled (a level set back to *plenty*/*lots*), and to everyone
+   when a repeating chore falls due. Nobody is notified about their own
+   actions; giving back a claim, cancelling and doing a chore on the spot
+   notify nobody. Messages about the same item or chore replace each other
+   on the phone; a tap opens the to-do list. Turned on per device: a card on
+   the to-do list offers it, the nickname screen turns it on or off.
+7. **Live updates.** An open page refetches the house when the other user
+   changes something (SSE), and whenever the app comes back on screen.
 
 ## Data model
 
-Built so far: User, Location, Item, Stock, Chore, Request (tables `users`,
-`locations`, `items`, `stock`, `chores`, `requests`). PushSubscription is a
-draft until its milestone.
+Built: User, Location, Item, Stock, Chore, Request, PushSubscription
+(tables `users`, `locations`, `items`, `stock`, `chores`, `requests`,
+`push_subscriptions`).
 
 - **User**: Tailscale login (unique), display name. Created on first request
   from a new login.
@@ -99,8 +104,9 @@ draft until its milestone.
   (item, location) or chore (partial unique indexes), so reporting twice
   finds the first one. Closed requests stay in the table (history, later).
   No note yet: nothing has needed typing.
-- **PushSubscription**: user, endpoint, keys. A user can have several
-  devices.
+- **PushSubscription**: user, endpoint (unique: a device that signs in as
+  the other user moves over), keys. A user can have several devices; ones
+  the push service reports gone (404/410) are deleted.
 
 Setting stock to *low* or *out* opens a *buy* request (or keeps the active
 one, claim included); setting it to *plenty* or *lots* marks it done, and

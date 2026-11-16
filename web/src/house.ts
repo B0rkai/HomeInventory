@@ -97,8 +97,35 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
     void reload()
   }, [reload])
 
-  // Until live updates arrive (milestone 4), catch up on the other's changes whenever the
-  // app comes back to the screen, e.g. when the phone is unlocked.
+  // Live updates: the server says when the house changed (and who changed it); the
+  // other's changes are fetched again, ours are already here. A reconnect catches up.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let dropped = false
+    const reloadSoon = () => {
+      // Several changes in a row (a shopping row acts on each place) are one fetch.
+      clearTimeout(timer)
+      timer = setTimeout(() => void reload(), 300)
+    }
+    const events = new EventSource('/api/v1/events')
+    events.onmessage = (event) => {
+      const { by } = JSON.parse(event.data as string) as { by: number | null }
+      if (by !== me.id) reloadSoon()
+    }
+    events.onerror = () => {
+      dropped = true
+    }
+    events.onopen = () => {
+      if (dropped) reloadSoon()
+      dropped = false
+    }
+    return () => {
+      clearTimeout(timer)
+      events.close()
+    }
+  }, [me.id, reload])
+
+  // A phone may have slept through some events: catch up whenever the app comes back.
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState === 'visible') void reload()

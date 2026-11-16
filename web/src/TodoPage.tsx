@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import type { ItemOut, RequestOut } from './api'
 import { useHouse } from './house'
 import { LevelName } from './LevelPicker'
@@ -7,6 +7,7 @@ import { href } from './route'
 import { t } from './strings'
 import { ago } from './time'
 import { placePath, treeOrder } from './tree'
+import { PushSettings } from './PushSettings'
 import { byItem, fullName } from './variants'
 
 /**
@@ -14,11 +15,7 @@ import { byItem, fullName } from './variants'
  * places want it, grouped by category for the shop) and the reported chores.
  */
 export function TodoPage() {
-  const { house, reload } = useHouse()
-  // The other may have claimed or bought something since; until live updates, ask again.
-  useEffect(() => {
-    void reload()
-  }, [reload])
+  const { house } = useHouse()
   if (!house) return null
   const { locations, items, stock, chores, requests } = house
   const itemsById = new Map(items.map((item) => [item.id, item]))
@@ -59,6 +56,7 @@ export function TodoPage() {
   return (
     <>
       <h2>{t.todo.title}</h2>
+      <PushSettings prompt />
       {buying.size === 0 && choreRequests.length === 0 && (
         <div className="card">
           <p>{t.todo.none}</p>
