@@ -122,7 +122,9 @@ its own window of the `claude` tmux session and pre-accepts the folder
 trust dialog:
 
 ```bash
-rc-start ~/HomeInventory HomeInventory
+rc-start ~/HomeInventory HomeInventory      # start
+rc-start -r ~/HomeInventory HomeInventory   # restart that window
+rc-start --restart-all                      # new tmux server, every window again
 # reattach: tmux attach -t claude    detach: Ctrl+B, then D
 ```
 
@@ -140,9 +142,9 @@ Notes:
   parallel sessions don't edit the same files.
 - **Group changes need a new tmux server.** Everything started inside tmux
   inherits the tmux server's groups, so after joining a group (such as
-  `docker`), restarting `claude remote-control` in an old window is not
-  enough. From a fresh SSH login, run `tmux kill-server` (this stops every
-  window, other projects included) and `rc-start` each folder again.
+  `docker`), `rc-start -r` is not enough. From a fresh SSH login (not
+  inside tmux), run `rc-start --restart-all`: it stops every window, other
+  projects included, and starts them again in a new tmux server.
 - If it stops (reboot, Ctrl+C), run `claude remote-control` again in the
   same folder within about four hours to bring its sessions back. It also
   exits after about 10 minutes without network.
