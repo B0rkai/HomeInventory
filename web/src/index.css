@@ -798,3 +798,34 @@ h2 .tile .icon-art {
 .variant-form {
   padding-bottom: 0.25rem;
 }
+
+/* Shortages: dense rows to read, the level on the right */
+
+.missing-rows li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 0.75rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.missing-rows li:last-child {
+  border-bottom: 0;
+}
+
+.missing-rows li > :first-child {
+  min-width: 0;
+}
+
+.missing-rows li > .level-name {
+  flex: none;
+}
+
+.missing-rows .named {
+  align-items: center;
+}
+
+.missing-rows li:has(.named) {
+  align-items: center;
+}

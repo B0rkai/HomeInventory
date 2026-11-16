@@ -1,7 +1,8 @@
 import type { Level } from './api'
 import { t } from './strings'
 
-const LEVELS: Level[] = ['lots', 'plenty', 'low', 'out']
+// Emptiest first: more fills to the right.
+const LEVELS: Level[] = ['out', 'low', 'plenty', 'lots']
 
 const BARS: Record<Level, number> = { lots: 3, plenty: 2, low: 1, out: 0 }
 

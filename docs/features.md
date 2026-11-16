@@ -24,7 +24,7 @@ check stock remotely, and avoid duplicating the job.
 3. **Check remotely.** See what any place has or lacks, from anywhere on the
    tailnet (e.g. at the shop). The *shortages* view lists everything low or
    out, by item (with the places that have *lots* of it, to fetch from) or
-   by place.
+   by place, as a dense read-only list; levels change on a place's page.
    Items and places show a two-tone icon (a line icon on a tile coloured
    by group: food, drinks, cleaning, hygiene, household, places), guessed
    from the name or chosen; without one, the first letter stands in. Adding an item suggests common

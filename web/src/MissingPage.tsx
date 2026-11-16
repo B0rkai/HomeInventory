@@ -1,28 +1,23 @@
-import { useState } from 'react'
 import type { ItemOut, LocationOut, StockOut } from './api'
 import { useHouse } from './house'
-import { LevelName, LevelPicker } from './LevelPicker'
+import { LevelName } from './LevelPicker'
 import { Named } from './Named'
 import { href, type MissingView } from './route'
 import { t } from './strings'
 import { isShort, pathTo, treeOrder } from './tree'
-import { byItem, fullName, groupByName, hasVariants } from './variants'
+import { byItem, groupByName, hasVariants } from './variants'
 
 const key = (row: StockOut) => `${row.location_id}-${row.item_id}`
 
-/** What's low or out: by item (with where there's lots to fetch from), or by place. */
+/**
+ * What's low or out, by item (with where there's lots to fetch from) or by place. A list
+ * to read, so it's dense; levels are changed on a place's page, one tap away.
+ */
 export function MissingPage({ view }: { view: MissingView }) {
-  const { house, actions } = useHouse()
-  // Rows changed here stay listed until the page is left, so they don't jump away mid-tap.
-  const [touched, setTouched] = useState(() => new Set<string>())
+  const { house } = useHouse()
   if (!house) return null
   const { locations, items, stock } = house
-
-  const listed = stock.filter((row) => isShort(row) || touched.has(key(row)))
-  const setLevel = (row: StockOut, level: StockOut['level']) => {
-    setTouched((keys) => new Set(keys).add(key(row)))
-    void actions.setLevel(row.location_id, row.item_id, level)
-  }
+  const listed = stock.filter(isShort)
 
   return (
     <>
@@ -50,15 +45,9 @@ export function MissingPage({ view }: { view: MissingView }) {
         </div>
       )}
       {view === 'items' ? (
-        <ByItem
-          items={items}
-          locations={locations}
-          stock={stock}
-          listed={listed}
-          onLevel={setLevel}
-        />
+        <ByItem items={items} locations={locations} stock={stock} listed={listed} />
       ) : (
-        <ByPlace items={items} locations={locations} listed={listed} onLevel={setLevel} />
+        <ByPlace items={items} locations={locations} listed={listed} />
       )}
     </>
   )
@@ -68,7 +57,6 @@ type Props = {
   items: ItemOut[]
   locations: LocationOut[]
   listed: StockOut[]
-  onLevel: (row: StockOut, level: StockOut['level']) => void
 }
 
 function placePath(locations: LocationOut[], id: number): string {
@@ -77,7 +65,11 @@ function placePath(locations: LocationOut[], id: number): string {
     .join(' › ')
 }
 
-function ByItem({ items, locations, stock, listed, onLevel }: Props & { stock: StockOut[] }) {
+// Out before low.
+const bySeverity = (a: StockOut, b: StockOut) =>
+  a.level === b.level ? 0 : a.level === 'out' ? -1 : 1
+
+function ByItem({ items, locations, stock, listed }: Props & { stock: StockOut[] }) {
   const order = new Map(treeOrder(locations).map((location, index) => [location.id, index]))
   const itemsById = new Map(items.map((item) => [item.id, item]))
   const byPlace = (a: StockOut, b: StockOut) =>
@@ -91,7 +83,10 @@ function ByItem({ items, locations, stock, listed, onLevel }: Props & { stock: S
 
   return groups.map((group) => {
     const rows = group.rows.sort(
-      (a, b) => byItem(itemsById.get(a.item_id)!, itemsById.get(b.item_id)!) || byPlace(a, b),
+      (a, b) =>
+        byItem(itemsById.get(a.item_id)!, itemsById.get(b.item_id)!) ||
+        bySeverity(a, b) ||
+        byPlace(a, b),
     )
     const variants = hasVariants(group, (row) => itemsById.get(row.item_id)!)
     // Where there's lots of the very variants that are short.
@@ -104,27 +99,18 @@ function ByItem({ items, locations, stock, listed, onLevel }: Props & { stock: S
         <h3 className="item-title">
           <Named thing={{ name: group.name, icon: group.first.icon }} kind="item" />
         </h3>
-        <ul className="stock">
+        <ul className="missing-rows">
           {rows.map((row) => {
             const item = itemsById.get(row.item_id)!
             return (
               <li key={key(row)}>
-                <div className="stock-name">
-                  <span>
-                    {variants && (
-                      <span className="variant-label">{item.variant ?? t.items.noVariant} · </span>
-                    )}
-                    <a href={href.place(row.location_id)}>
-                      {placePath(locations, row.location_id)}
-                    </a>
-                  </span>
-                  <LevelName level={row.level} />
-                </div>
-                <LevelPicker
-                  level={row.level}
-                  label={`${fullName(item)}: ${placePath(locations, row.location_id)}`}
-                  onChange={(level) => onLevel(row, level)}
-                />
+                <span>
+                  {variants && (
+                    <span className="variant-label">{item.variant ?? t.items.noVariant} · </span>
+                  )}
+                  <a href={href.place(row.location_id)}>{placePath(locations, row.location_id)}</a>
+                </span>
+                <LevelName level={row.level} />
               </li>
             )
           })}
@@ -149,31 +135,24 @@ function ByItem({ items, locations, stock, listed, onLevel }: Props & { stock: S
   })
 }
 
-function ByPlace({ items, locations, listed, onLevel }: Props) {
+function ByPlace({ items, locations, listed }: Props) {
   const itemsById = new Map(items.map((item) => [item.id, item]))
   return treeOrder(locations).map((location) => {
     const rows = listed
       .filter((row) => row.location_id === location.id && itemsById.has(row.item_id))
       .map((row) => ({ row, item: itemsById.get(row.item_id)! }))
-      .sort((a, b) => byItem(a.item, b.item))
+      .sort((a, b) => bySeverity(a.row, b.row) || byItem(a.item, b.item))
     if (!rows.length) return null
     return (
       <section key={location.id} className="card">
         <h3>
           <a href={href.place(location.id)}>{placePath(locations, location.id)}</a>
         </h3>
-        <ul className="stock">
+        <ul className="missing-rows">
           {rows.map(({ row, item }) => (
             <li key={key(row)}>
-              <div className="stock-name">
-                <Named thing={item} kind="item" />
-                <LevelName level={row.level} />
-              </div>
-              <LevelPicker
-                level={row.level}
-                label={fullName(item)}
-                onChange={(level) => onLevel(row, level)}
-              />
+              <Named thing={item} kind="item" />
+              <LevelName level={row.level} />
             </li>
           ))}
         </ul>
