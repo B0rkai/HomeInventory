@@ -25,6 +25,137 @@ export type Health = {
 };
 
 /**
+ * ItemCreate
+ */
+export type ItemCreate = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Category
+     */
+    category?: string | null;
+};
+
+/**
+ * ItemOut
+ */
+export type ItemOut = {
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Category
+     */
+    category: string | null;
+};
+
+/**
+ * ItemUpdate
+ */
+export type ItemUpdate = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Category
+     */
+    category?: string | null;
+};
+
+/**
+ * Level
+ */
+export type Level = 'plenty' | 'low' | 'out';
+
+/**
+ * LocationCreate
+ */
+export type LocationCreate = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Parent Id
+     */
+    parent_id?: number | null;
+};
+
+/**
+ * LocationOut
+ */
+export type LocationOut = {
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Parent Id
+     */
+    parent_id: number | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Position
+     */
+    position: number;
+};
+
+/**
+ * LocationUpdate
+ */
+export type LocationUpdate = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Position
+     */
+    position?: number | null;
+};
+
+/**
+ * StockOut
+ */
+export type StockOut = {
+    /**
+     * Item Id
+     */
+    item_id: number;
+    /**
+     * Location Id
+     */
+    location_id: number;
+    level: Level;
+    /**
+     * Updated By Name
+     */
+    updated_by_name: string;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+};
+
+/**
+ * StockSet
+ */
+export type StockSet = {
+    level: Level;
+};
+
+/**
  * UserOut
  */
 export type UserOut = {
@@ -144,3 +275,295 @@ export type UpdateCurrentUserResponses = {
 };
 
 export type UpdateCurrentUserResponse = UpdateCurrentUserResponses[keyof UpdateCurrentUserResponses];
+
+export type ListLocationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/locations';
+};
+
+export type ListLocationsResponses = {
+    /**
+     * Response List Locations
+     *
+     * Successful Response
+     */
+    200: Array<LocationOut>;
+};
+
+export type ListLocationsResponse = ListLocationsResponses[keyof ListLocationsResponses];
+
+export type CreateLocationData = {
+    body: LocationCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/locations';
+};
+
+export type CreateLocationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateLocationError = CreateLocationErrors[keyof CreateLocationErrors];
+
+export type CreateLocationResponses = {
+    /**
+     * Successful Response
+     */
+    201: LocationOut;
+};
+
+export type CreateLocationResponse = CreateLocationResponses[keyof CreateLocationResponses];
+
+export type DeleteLocationData = {
+    body?: never;
+    path: {
+        /**
+         * Location Id
+         */
+        location_id: number;
+    };
+    query?: never;
+    url: '/api/v1/locations/{location_id}';
+};
+
+export type DeleteLocationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteLocationError = DeleteLocationErrors[keyof DeleteLocationErrors];
+
+export type DeleteLocationResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteLocationResponse = DeleteLocationResponses[keyof DeleteLocationResponses];
+
+export type UpdateLocationData = {
+    body: LocationUpdate;
+    path: {
+        /**
+         * Location Id
+         */
+        location_id: number;
+    };
+    query?: never;
+    url: '/api/v1/locations/{location_id}';
+};
+
+export type UpdateLocationErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateLocationError = UpdateLocationErrors[keyof UpdateLocationErrors];
+
+export type UpdateLocationResponses = {
+    /**
+     * Successful Response
+     */
+    200: LocationOut;
+};
+
+export type UpdateLocationResponse = UpdateLocationResponses[keyof UpdateLocationResponses];
+
+export type ListItemsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/items';
+};
+
+export type ListItemsResponses = {
+    /**
+     * Response List Items
+     *
+     * Successful Response
+     */
+    200: Array<ItemOut>;
+};
+
+export type ListItemsResponse = ListItemsResponses[keyof ListItemsResponses];
+
+export type CreateItemData = {
+    body: ItemCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/items';
+};
+
+export type CreateItemErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateItemError = CreateItemErrors[keyof CreateItemErrors];
+
+export type CreateItemResponses = {
+    /**
+     * Successful Response
+     */
+    201: ItemOut;
+};
+
+export type CreateItemResponse = CreateItemResponses[keyof CreateItemResponses];
+
+export type DeleteItemData = {
+    body?: never;
+    path: {
+        /**
+         * Item Id
+         */
+        item_id: number;
+    };
+    query?: never;
+    url: '/api/v1/items/{item_id}';
+};
+
+export type DeleteItemErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteItemError = DeleteItemErrors[keyof DeleteItemErrors];
+
+export type DeleteItemResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteItemResponse = DeleteItemResponses[keyof DeleteItemResponses];
+
+export type UpdateItemData = {
+    body: ItemUpdate;
+    path: {
+        /**
+         * Item Id
+         */
+        item_id: number;
+    };
+    query?: never;
+    url: '/api/v1/items/{item_id}';
+};
+
+export type UpdateItemErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateItemError = UpdateItemErrors[keyof UpdateItemErrors];
+
+export type UpdateItemResponses = {
+    /**
+     * Successful Response
+     */
+    200: ItemOut;
+};
+
+export type UpdateItemResponse = UpdateItemResponses[keyof UpdateItemResponses];
+
+export type ListStockData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/stock';
+};
+
+export type ListStockResponses = {
+    /**
+     * Response List Stock
+     *
+     * Successful Response
+     */
+    200: Array<StockOut>;
+};
+
+export type ListStockResponse = ListStockResponses[keyof ListStockResponses];
+
+export type RemoveStockData = {
+    body?: never;
+    path: {
+        /**
+         * Location Id
+         */
+        location_id: number;
+        /**
+         * Item Id
+         */
+        item_id: number;
+    };
+    query?: never;
+    url: '/api/v1/locations/{location_id}/stock/{item_id}';
+};
+
+export type RemoveStockErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RemoveStockError = RemoveStockErrors[keyof RemoveStockErrors];
+
+export type RemoveStockResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type RemoveStockResponse = RemoveStockResponses[keyof RemoveStockResponses];
+
+export type SetStockData = {
+    body: StockSet;
+    path: {
+        /**
+         * Location Id
+         */
+        location_id: number;
+        /**
+         * Item Id
+         */
+        item_id: number;
+    };
+    query?: never;
+    url: '/api/v1/locations/{location_id}/stock/{item_id}';
+};
+
+export type SetStockErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type SetStockError = SetStockErrors[keyof SetStockErrors];
+
+export type SetStockResponses = {
+    /**
+     * Successful Response
+     */
+    200: StockOut;
+};
+
+export type SetStockResponse = SetStockResponses[keyof SetStockResponses];

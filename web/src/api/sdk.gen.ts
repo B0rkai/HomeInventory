@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses } from './types.gen';
+import type { CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListStockData, ListStockResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, SetStockData, SetStockErrors, SetStockResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -35,6 +35,112 @@ export const getCurrentUser = <ThrowOnError extends boolean = false>(options?: O
  */
 export const updateCurrentUser = <ThrowOnError extends boolean = false>(options: Options<UpdateCurrentUserData, ThrowOnError>): RequestResult<UpdateCurrentUserResponses, UpdateCurrentUserErrors, ThrowOnError> => (options.client ?? client).patch<UpdateCurrentUserResponses, UpdateCurrentUserErrors, ThrowOnError>({
     url: '/api/v1/users/me',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List Locations
+ *
+ * Every location, ordered by parent, then position; the client builds the tree.
+ */
+export const listLocations = <ThrowOnError extends boolean = false>(options?: Options<ListLocationsData, ThrowOnError>): RequestResult<ListLocationsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListLocationsResponses, unknown, ThrowOnError>({ url: '/api/v1/locations', ...options });
+
+/**
+ * Create Location
+ *
+ * Adds a location as the last of its siblings.
+ */
+export const createLocation = <ThrowOnError extends boolean = false>(options: Options<CreateLocationData, ThrowOnError>): RequestResult<CreateLocationResponses, CreateLocationErrors, ThrowOnError> => (options.client ?? client).post<CreateLocationResponses, CreateLocationErrors, ThrowOnError>({
+    url: '/api/v1/locations',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete Location
+ *
+ * Deletes a location and its stock rows; refuses while it has child locations.
+ */
+export const deleteLocation = <ThrowOnError extends boolean = false>(options: Options<DeleteLocationData, ThrowOnError>): RequestResult<DeleteLocationResponses, DeleteLocationErrors, ThrowOnError> => (options.client ?? client).delete<DeleteLocationResponses, DeleteLocationErrors, ThrowOnError>({ url: '/api/v1/locations/{location_id}', ...options });
+
+/**
+ * Update Location
+ *
+ * Renames a location or moves it among its siblings.
+ */
+export const updateLocation = <ThrowOnError extends boolean = false>(options: Options<UpdateLocationData, ThrowOnError>): RequestResult<UpdateLocationResponses, UpdateLocationErrors, ThrowOnError> => (options.client ?? client).patch<UpdateLocationResponses, UpdateLocationErrors, ThrowOnError>({
+    url: '/api/v1/locations/{location_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List Items
+ */
+export const listItems = <ThrowOnError extends boolean = false>(options?: Options<ListItemsData, ThrowOnError>): RequestResult<ListItemsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListItemsResponses, unknown, ThrowOnError>({ url: '/api/v1/items', ...options });
+
+/**
+ * Create Item
+ */
+export const createItem = <ThrowOnError extends boolean = false>(options: Options<CreateItemData, ThrowOnError>): RequestResult<CreateItemResponses, CreateItemErrors, ThrowOnError> => (options.client ?? client).post<CreateItemResponses, CreateItemErrors, ThrowOnError>({
+    url: '/api/v1/items',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete Item
+ *
+ * Deletes an item and its stock rows in every location.
+ */
+export const deleteItem = <ThrowOnError extends boolean = false>(options: Options<DeleteItemData, ThrowOnError>): RequestResult<DeleteItemResponses, DeleteItemErrors, ThrowOnError> => (options.client ?? client).delete<DeleteItemResponses, DeleteItemErrors, ThrowOnError>({ url: '/api/v1/items/{item_id}', ...options });
+
+/**
+ * Update Item
+ */
+export const updateItem = <ThrowOnError extends boolean = false>(options: Options<UpdateItemData, ThrowOnError>): RequestResult<UpdateItemResponses, UpdateItemErrors, ThrowOnError> => (options.client ?? client).patch<UpdateItemResponses, UpdateItemErrors, ThrowOnError>({
+    url: '/api/v1/items/{item_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List Stock
+ *
+ * Every stock row in the house; small enough to send whole.
+ */
+export const listStock = <ThrowOnError extends boolean = false>(options?: Options<ListStockData, ThrowOnError>): RequestResult<ListStockResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListStockResponses, unknown, ThrowOnError>({ url: '/api/v1/stock', ...options });
+
+/**
+ * Remove Stock
+ *
+ * Stops keeping an item in a location.
+ */
+export const removeStock = <ThrowOnError extends boolean = false>(options: Options<RemoveStockData, ThrowOnError>): RequestResult<RemoveStockResponses, RemoveStockErrors, ThrowOnError> => (options.client ?? client).delete<RemoveStockResponses, RemoveStockErrors, ThrowOnError>({ url: '/api/v1/locations/{location_id}/stock/{item_id}', ...options });
+
+/**
+ * Set Stock
+ *
+ * Sets an item's level in a location, adding the item there if it isn't kept there yet.
+ */
+export const setStock = <ThrowOnError extends boolean = false>(options: Options<SetStockData, ThrowOnError>): RequestResult<SetStockResponses, SetStockErrors, ThrowOnError> => (options.client ?? client).put<SetStockResponses, SetStockErrors, ThrowOnError>({
+    url: '/api/v1/locations/{location_id}/stock/{item_id}',
     ...options,
     headers: {
         'Content-Type': 'application/json',

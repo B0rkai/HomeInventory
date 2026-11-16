@@ -23,10 +23,11 @@ records are out of scope.
 
 ## Status
 
-Milestone 1 (skeleton) done: server (settings, SQLite, Alembic, identity,
-nicknames), web client (Hungarian PWA shell, generated API client), dev
-servers as services, and the live deployment. Next: milestone 2 (places and
-stock, `docs/features.md`). Anything marked *(planned)* describes intended
+Milestones 1 (skeleton, live deployment) and 2 (places and stock) done:
+locations, items and stock levels with their API (`places.py`) and the web
+pages for them (home tree, place page, item catalogue; hash routes in
+`web/src/route.ts`, shared data in `web/src/house.ts`). Next: milestone 3
+(requests and the shopping list, `docs/features.md`). Anything marked *(planned)* describes intended
 setup, not code that exists yet.
 
 ## Tech stack

@@ -31,19 +31,25 @@ check stock remotely, and avoid duplicating the job.
    claimed or done. Nobody is notified about their own actions.
 7. **Live updates.** An open list updates itself without a refresh.
 
-## Data model (draft)
+## Data model
 
-Names are provisional; settle them in the first schema migration.
+Built so far: User, Location, Item, Stock (tables `users`, `locations`,
+`items`, `stock`). The rest is a draft until its milestone.
 
 - **User**: Tailscale login (unique), display name. Created on first request
   from a new login.
 - **Location**: a tree via `parent_id`: floor → room → spot (e.g. "Ground
-  floor" → "Kitchen" → "Pantry shelf 2"). Keep it shallow: add the spot
-  level only where a room really has several places to tell apart.
-- **Item**: a supply in the catalogue: "Sugar", "Toilet paper", "Milk".
-  Optional category for grouping the shopping list.
+  floor" → "Kitchen" → "Pantry shelf 2"), at most three deep, ordered among
+  siblings by `position`. Sibling names are unique ignoring case. Keep it
+  shallow: add the spot level only where a room really has several places to
+  tell apart. Only a location without children can be deleted; its stock
+  goes with it.
+- **Item**: a supply in the catalogue: "Sugar", "Toilet paper", "Milk",
+  unique ignoring case. Optional category for grouping the shopping list.
+  Items are added from a place's page; deleting one removes its stock.
 - **Stock**: one row per (item, location), unique on that pair: level
-  (`plenty` | `low` | `out`), updated by, updated at.
+  (`plenty` | `low` | `out`), updated by, updated at. A row means the item
+  is kept there.
 - **Chore**: a reportable job tied to a location: "Empty bin" on "Floor 2
   bathroom bin". Not stock, but reported and claimed the same way.
 - **Request**: kind (`buy` | `chore`), item or chore, location, optional

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from homeinventory.db import get_session
 from homeinventory.identity import current_user
 from homeinventory.models import User
+from homeinventory.places import router as places_router
 from homeinventory.schemas import Health, UserOut, UserUpdate
 
 router = APIRouter(prefix="/api/v1")
@@ -31,3 +32,6 @@ def update_current_user(
     user.nickname = update.nickname
     session.commit()
     return UserOut.model_validate(user)
+
+
+router.include_router(places_router)

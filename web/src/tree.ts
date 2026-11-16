@@ -1,0 +1,51 @@
+import type { LocationOut, StockOut } from './api'
+
+// Floor -> room -> spot; the server's limit too.
+export const MAX_DEPTH = 3
+
+export function childrenOf(locations: LocationOut[], parentId: number | null): LocationOut[] {
+  return locations
+    .filter((location) => location.parent_id === parentId)
+    .sort((a, b) => a.position - b.position || a.id - b.id)
+}
+
+/** The location and its ancestors, floor first. */
+export function pathTo(locations: LocationOut[], id: number): LocationOut[] {
+  const byId = new Map(locations.map((location) => [location.id, location]))
+  const path: LocationOut[] = []
+  for (let location = byId.get(id); location; location = byId.get(location.parent_id ?? NaN)) {
+    path.unshift(location)
+  }
+  return path
+}
+
+function subtreeIds(locations: LocationOut[], id: number): Set<number> {
+  const ids = new Set([id])
+  // Parents come before children only by accident, so repeat until nothing is added.
+  for (let grew = true; grew;) {
+    grew = false
+    for (const location of locations) {
+      if (location.parent_id !== null && ids.has(location.parent_id) && !ids.has(location.id)) {
+        ids.add(location.id)
+        grew = true
+      }
+    }
+  }
+  return ids
+}
+
+export type Shortage = { low: number; out: number }
+
+/** How many items run low or out in a location, including the places inside it. */
+export function shortageIn(locations: LocationOut[], stock: StockOut[], id: number): Shortage {
+  const ids = subtreeIds(locations, id)
+  const shortage = { low: 0, out: 0 }
+  for (const row of stock) {
+    if (ids.has(row.location_id) && row.level !== 'plenty') shortage[row.level]++
+  }
+  return shortage
+}
+
+export function byName(a: { name: string }, b: { name: string }): number {
+  return a.name.localeCompare(b.name, 'hu')
+}

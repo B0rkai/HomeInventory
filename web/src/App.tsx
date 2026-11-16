@@ -1,6 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { getCurrentUser, type UserOut } from './api'
+import { Home } from './Home'
+import { useHouse } from './house'
+import { HouseProvider } from './HouseProvider'
+import { ItemsPage } from './ItemsPage'
 import { NicknameForm } from './NicknameForm'
+import { PlacePage } from './PlacePage'
+import { href, useRoute } from './route'
 import { t } from './strings'
 
 type State =
@@ -19,6 +25,14 @@ function errorMessage(status: number | undefined): string {
 export default function App() {
   const [state, setState] = useState<State>({ kind: 'loading' })
   const [editingNickname, setEditingNickname] = useState(false)
+  const [notice, setNotice] = useState<string>()
+  const showError = useCallback((message: string) => setNotice(message), [])
+
+  useEffect(() => {
+    if (!notice) return
+    const timer = setTimeout(() => setNotice(undefined), 5000)
+    return () => clearTimeout(timer)
+  }, [notice])
 
   useEffect(() => {
     getCurrentUser().then(
@@ -42,7 +56,9 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>{t.appName}</h1>
+        <h1>
+          <a href={href.home}>{t.appName}</a>
+        </h1>
         {user?.nickname && (
           <button
             type="button"
@@ -66,12 +82,39 @@ export default function App() {
           <NicknameForm user={user} onSaved={saved} onCancel={() => setEditingNickname(false)} />
         )}
         {user?.nickname && !editingNickname && (
-          <div className="card">
-            <p>{t.greeting(user.display_name)}</p>
-            <p className="muted">{t.comingSoon}</p>
-          </div>
+          <HouseProvider onError={showError}>
+            <Pages />
+          </HouseProvider>
         )}
       </main>
+      {notice && (
+        <div className="notice" role="alert" onClick={() => setNotice(undefined)}>
+          {notice}
+        </div>
+      )}
     </div>
   )
+}
+
+function Pages() {
+  const route = useRoute()
+  const { house, loadError, reload } = useHouse()
+
+  if (!house) {
+    return loadError ? (
+      <div className="card" role="alert">
+        <p>{loadError}</p>
+        <div className="actions">
+          <button type="button" onClick={reload}>
+            {t.retry}
+          </button>
+        </div>
+      </div>
+    ) : (
+      <p className="muted">{t.loading}</p>
+    )
+  }
+  if (route.page === 'place') return <PlacePage key={route.id} id={route.id} />
+  if (route.page === 'items') return <ItemsPage />
+  return <Home />
 }

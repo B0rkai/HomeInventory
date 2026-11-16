@@ -1,9 +1,22 @@
 from datetime import UTC, datetime
+from enum import StrEnum
 
-from sqlalchemy import DateTime, MetaData, String, TypeDecorator
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import (
+    DateTime,
+    Enum,
+    ForeignKey,
+    MetaData,
+    String,
+    TypeDecorator,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 NICKNAME_MAX_LENGTH = 40
+NAME_MAX_LENGTH = 60
+CATEGORY_MAX_LENGTH = 40
+# Floor -> room -> spot.
+LOCATION_MAX_DEPTH = 3
 
 
 def utcnow() -> datetime:
@@ -55,3 +68,66 @@ class User(Base):
     @property
     def display_name(self) -> str:
         return self.nickname or self.name
+
+
+class Location(Base):
+    """A place in the house: a tree of floor -> room -> spot."""
+
+    __tablename__ = "locations"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    # A location with children can't be deleted (the API refuses), so no cascade here.
+    parent_id: Mapped[int | None] = mapped_column(ForeignKey("locations.id"), index=True)
+    name: Mapped[str] = mapped_column(String(NAME_MAX_LENGTH))
+    # Order among its siblings, 0 first: floors read bottom-up or top-down, not by name.
+    position: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
+class Item(Base):
+    """A supply in the catalogue: "Cukor", "WC-papír"."""
+
+    __tablename__ = "items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    # Unique ignoring case; the API checks it, since SQLite's NOCASE only folds ASCII.
+    name: Mapped[str] = mapped_column(String(NAME_MAX_LENGTH))
+    # Groups the shopping list ("Tejtermék", "Tisztítószer"); optional.
+    category: Mapped[str | None] = mapped_column(String(CATEGORY_MAX_LENGTH))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
+class Level(StrEnum):
+    PLENTY = "plenty"
+    LOW = "low"
+    OUT = "out"
+
+
+class Stock(Base):
+    """How much of an item a location has. A row means the item is kept there."""
+
+    __tablename__ = "stock"
+    __table_args__ = (UniqueConstraint("item_id", "location_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    item_id: Mapped[int] = mapped_column(ForeignKey("items.id", ondelete="CASCADE"))
+    location_id: Mapped[int] = mapped_column(
+        ForeignKey("locations.id", ondelete="CASCADE"), index=True
+    )
+    level: Mapped[Level] = mapped_column(
+        Enum(
+            Level,
+            name="level",
+            native_enum=False,
+            create_constraint=True,
+            values_callable=lambda levels: [level.value for level in levels],
+        )
+    )
+    updated_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+    updated_by: Mapped[User] = relationship(lazy="joined")
+
+    @property
+    def updated_by_name(self) -> str:
+        return self.updated_by.display_name
