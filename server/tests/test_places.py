@@ -144,9 +144,9 @@ def test_item_names_are_unique_ignoring_case(api) -> None:
 def test_update_item_only_changes_what_is_sent(api) -> None:
     milk = add_item(api, "Tej", "Tejtermék")
     response = api("PATCH", f"/items/{milk}", {"name": "Zabtej"})
-    assert response.json() == {"id": milk, "name": "Zabtej", "category": "Tejtermék"}
+    assert response.json() == {"id": milk, "name": "Zabtej", "category": "Tejtermék", "icon": None}
     response = api("PATCH", f"/items/{milk}", {"category": "  "})
-    assert response.json() == {"id": milk, "name": "Zabtej", "category": None}
+    assert response.json() == {"id": milk, "name": "Zabtej", "category": None, "icon": None}
 
 
 def test_rename_item_to_existing_name_is_409(api) -> None:
@@ -236,3 +236,38 @@ def test_remove_stock(api) -> None:
 )
 def test_places_need_identity(api, method: str, path: str) -> None:
     assert api(method, path, {"name": "x", "level": "low"}, headers={}).status_code == 401
+
+
+# Icons and the lots level
+
+
+def test_icons_default_to_unset(api) -> None:
+    add_location(api, "Konyha")
+    add_item(api, "Tej")
+    assert api("GET", "/locations").json()[0]["icon"] is None
+    assert api("GET", "/items").json()[0]["icon"] is None
+
+
+def test_set_and_clear_icons(api) -> None:
+    kitchen = add_location(api, "Konyha")
+    milk = api("POST", "/items", {"name": "Tej", "icon": "🥛"}).json()
+    assert milk["icon"] == "🥛"
+    # Empty means "no icon", unlike null, which lets the client guess.
+    assert api("PATCH", f"/items/{milk['id']}", {"icon": ""}).json()["icon"] == ""
+    assert api("PATCH", f"/items/{milk['id']}", {"name": "Zabtej"}).json()["icon"] == ""
+    assert api("PATCH", f"/items/{milk['id']}", {"icon": None}).json()["icon"] is None
+    assert api("PATCH", f"/locations/{kitchen}", {"icon": "🍳"}).json()["icon"] == "🍳"
+    assert api("PATCH", f"/locations/{kitchen}", {"name": "Főző"}).json()["icon"] == "🍳"
+
+
+def test_icons_allow_multi_code_point_emoji(api) -> None:
+    family = "👨‍👩‍👧"  # five code points
+    assert api("POST", "/items", {"name": "Pelenka", "icon": family}).json()["icon"] == family
+    assert api("POST", "/items", {"name": "Hosszú", "icon": "x" * 17}).status_code == 422
+
+
+def test_lots_level(api) -> None:
+    basement = add_location(api, "Alagsor")
+    paper = add_item(api, "WC-papír")
+    stock = api("PUT", f"/locations/{basement}/stock/{paper}", {"level": "lots"}).json()
+    assert stock["level"] == "lots"

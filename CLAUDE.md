@@ -25,8 +25,9 @@ records are out of scope.
 
 Milestones 1 (skeleton, live deployment) and 2 (places and stock) done:
 locations, items and stock levels with their API (`places.py`) and the web
-pages for them (home tree, place page, item catalogue; hash routes in
-`web/src/route.ts`, shared data in `web/src/house.ts`). Next: milestone 3
+pages for them (home tree, place page, shortages view, item catalogue, a
+bottom tab bar; hash routes in `web/src/route.ts`, shared data in
+`web/src/house.ts`). Next: milestone 3
 (requests and the shopping list, `docs/features.md`). Anything marked *(planned)* describes intended
 setup, not code that exists yet.
 
@@ -41,7 +42,9 @@ setup, not code that exists yet.
   - Run a single Uvicorn worker: SQLite has one writer at a time, and the
     live-update fan-out lives in that process's memory.
   - Every schema change is an Alembic migration; never edit the schema by
-    hand or call `create_all` outside tests.
+    hand or call `create_all` outside tests. Migrations run with foreign
+    keys off (batch mode rebuilds tables) and check them at the end
+    (`alembic/env.py`); autogenerate misses new enum values.
   - Claiming a request is one conditional `UPDATE ... WHERE status = 'open'`;
     a zero row count means someone else won. Never read-then-write.
 - **Web client**: **React + TypeScript** on **Vite**, an installable

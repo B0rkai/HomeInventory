@@ -141,7 +141,7 @@
     "/api/v1/locations/{location_id}": {
       "patch": {
         "summary": "Update Location",
-        "description": "Renames a location or moves it among its siblings.",
+        "description": "Renames a location, changes its icon or moves it among its siblings.",
         "operationId": "update_location",
         "parameters": [
           {
@@ -528,6 +528,18 @@
               }
             ],
             "title": "Category"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
           }
         },
         "type": "object",
@@ -556,13 +568,25 @@
               }
             ],
             "title": "Category"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
           }
         },
         "type": "object",
         "required": [
           "id",
           "name",
-          "category"
+          "category",
+          "icon"
         ],
         "title": "ItemOut"
       },
@@ -592,6 +616,18 @@
               }
             ],
             "title": "Category"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
           }
         },
         "type": "object",
@@ -600,6 +636,7 @@
       "Level": {
         "type": "string",
         "enum": [
+          "lots",
           "plenty",
           "low",
           "out"
@@ -624,6 +661,18 @@
               }
             ],
             "title": "Parent Id"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
           }
         },
         "type": "object",
@@ -656,6 +705,17 @@
           "position": {
             "type": "integer",
             "title": "Position"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
           }
         },
         "type": "object",
@@ -663,7 +723,8 @@
           "id",
           "parent_id",
           "name",
-          "position"
+          "position",
+          "icon"
         ],
         "title": "LocationOut"
       },
@@ -681,6 +742,18 @@
               }
             ],
             "title": "Name"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
           },
           "position": {
             "anyOf": [

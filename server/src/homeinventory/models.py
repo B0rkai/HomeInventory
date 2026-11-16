@@ -15,6 +15,8 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 NICKNAME_MAX_LENGTH = 40
 NAME_MAX_LENGTH = 60
 CATEGORY_MAX_LENGTH = 40
+# An emoji, which can be several code points (e.g. a flag or a skin tone).
+ICON_MAX_LENGTH = 16
 # Floor -> room -> spot.
 LOCATION_MAX_DEPTH = 3
 
@@ -81,6 +83,8 @@ class Location(Base):
     name: Mapped[str] = mapped_column(String(NAME_MAX_LENGTH))
     # Order among its siblings, 0 first: floors read bottom-up or top-down, not by name.
     position: Mapped[int] = mapped_column(default=0)
+    # Unset: the client guesses one from the name. Empty: no icon.
+    icon: Mapped[str | None] = mapped_column(String(ICON_MAX_LENGTH))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
 
@@ -94,10 +98,14 @@ class Item(Base):
     name: Mapped[str] = mapped_column(String(NAME_MAX_LENGTH))
     # Groups the shopping list ("Tejtermék", "Tisztítószer"); optional.
     category: Mapped[str | None] = mapped_column(String(CATEGORY_MAX_LENGTH))
+    # Unset: the client guesses one from the name. Empty: no icon.
+    icon: Mapped[str | None] = mapped_column(String(ICON_MAX_LENGTH))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
 
 class Level(StrEnum):
+    # Stocked up for weeks, e.g. a 20-pack of toilet paper in the basement.
+    LOTS = "lots"
     PLENTY = "plenty"
     LOW = "low"
     OUT = "out"

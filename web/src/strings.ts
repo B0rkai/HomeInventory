@@ -7,16 +7,39 @@ export const t = {
   back: 'Vissza',
   save: 'Mentés',
   add: 'Hozzáadás',
+  edit: 'Szerkesztés',
+  done: 'Kész',
   cancel: 'Mégse',
   levels: {
+    lots: 'Sok',
     plenty: 'Van',
     low: 'Kevés',
     out: 'Elfogyott',
   },
+  nav: {
+    places: 'Helyek',
+    missing: 'Hiányok',
+    items: 'Termékek',
+  },
   home: {
+    title: 'Helyek',
     empty: 'Még nincs egy hely sem. Kezdd a szintekkel, például: Pince, Földszint, Emelet.',
     addFloor: 'Új szint',
-    items: 'Termékek',
+    editHint:
+      'Egy szint átnevezése, áthelyezése vagy törlése a szint saját oldalán, szerkesztés módban.',
+  },
+  missing: {
+    title: 'Hiányok',
+    byItem: 'Termékenként',
+    byPlace: 'Helyenként',
+    none: 'Minden megvan. 🎉',
+    lotsAt: 'Sok van itt:',
+  },
+  icons: {
+    label: 'Ikon',
+    auto: 'Automatikus',
+    autoHint: 'Automatikus, a név alapján',
+    none: 'Nincs',
   },
   place: {
     // By depth: under a floor come rooms, under a room the places within it.
@@ -26,8 +49,6 @@ export const t = {
     noStock: 'Itt még nem tartunk semmit.',
     addItem: 'Termék hozzáadása',
     addItemPlaceholder: 'Például: Cukor',
-    edit: 'Szerkesztés',
-    done: 'Kész',
     rename: 'Név',
     moveUp: 'Előrébb',
     moveDown: 'Hátrébb',
@@ -37,7 +58,7 @@ export const t = {
       `Törlöd ezt a helyet: ${name}? Az itt tartott termékek készletszintje is törlődik.`,
     removeItem: (name: string) => `${name} levétele erről a helyről`,
     notFound: 'Ez a hely már nem létezik.',
-    updated: (name: string, when: string) => `${name}, ${when}`,
+    updated: (name: string, when: string) => ` · ${name}, ${when}`,
   },
   items: {
     title: 'Termékek',

@@ -2,6 +2,7 @@ from logging.config import fileConfig
 from pathlib import Path
 
 from alembic import context
+from sqlalchemy import text
 
 from homeinventory.config import Settings
 from homeinventory.db import create_db_engine
@@ -27,6 +28,11 @@ def run_migrations() -> None:
     db_path = config.attributes.get("db_path") or Settings().db_path
     engine = create_db_engine(Path(db_path))
     with engine.connect() as connection:
+        # Batch mode drops and recreates tables, which fails (or cascades) while other
+        # tables reference them. SQLite ignores this pragma inside a transaction, so it
+        # goes first; the check below catches any reference the migration broke.
+        connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
+        connection.commit()  # end the autobegun transaction, or Alembic won't commit its own
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
@@ -35,6 +41,9 @@ def run_migrations() -> None:
         )
         with context.begin_transaction():
             context.run_migrations()
+            broken = connection.execute(text("PRAGMA foreign_key_check")).all()
+            if broken:
+                raise RuntimeError(f"migration broke foreign keys: {broken}")
     engine.dispose()
 
 

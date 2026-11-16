@@ -73,7 +73,7 @@ export const deleteLocation = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Update Location
  *
- * Renames a location or moves it among its siblings.
+ * Renames a location, changes its icon or moves it among its siblings.
  */
 export const updateLocation = <ThrowOnError extends boolean = false>(options: Options<UpdateLocationData, ThrowOnError>): RequestResult<UpdateLocationResponses, UpdateLocationErrors, ThrowOnError> => (options.client ?? client).patch<UpdateLocationResponses, UpdateLocationErrors, ThrowOnError>({
     url: '/api/v1/locations/{location_id}',

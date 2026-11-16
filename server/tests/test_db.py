@@ -49,10 +49,15 @@ def test_naive_times_are_refused(app: FastAPI) -> None:
             session.commit()
 
 
-def test_migrations_match_models(settings: Settings) -> None:
+def alembic_config(settings: Settings) -> Config:
     config = Config(SERVER_DIR / "alembic.ini")
     config.attributes["db_path"] = settings.db_path
     config.attributes["configure_logger"] = False
+    return config
+
+
+def test_migrations_match_models(settings: Settings) -> None:
+    config = alembic_config(settings)
     command.upgrade(config, "head")
 
     engine = create_db_engine(settings.db_path)
@@ -62,3 +67,29 @@ def test_migrations_match_models(settings: Settings) -> None:
     assert diff == []
 
     command.downgrade(config, "base")
+
+
+def test_migrations_keep_data_across_table_rebuilds(settings: Settings) -> None:
+    # Batch mode recreates tables that others reference; the rows must survive.
+    config = alembic_config(settings)
+    command.upgrade(config, "head")
+    engine = create_db_engine(settings.db_path)
+    created = "'2026-01-01'"
+    with engine.begin() as connection:
+        for statement in [
+            f"INSERT INTO users (id, login, name, created_at) VALUES (1, 'a', 'A', {created})",
+            f"INSERT INTO locations (id, name, position, created_at) VALUES (1, 'P', 0, {created})",
+            f"INSERT INTO items (id, name, created_at) VALUES (1, 'C', {created})",
+            "INSERT INTO stock (item_id, location_id, level, updated_by_id, updated_at)"
+            f" VALUES (1, 1, 'lots', 1, {created})",
+        ]:
+            connection.execute(text(statement))
+
+    command.downgrade(config, "-1")  # drops the icon columns and the lots level
+    with engine.connect() as connection:
+        assert connection.execute(text("SELECT level FROM stock")).scalars().all() == ["plenty"]
+    command.upgrade(config, "head")
+    with engine.connect() as connection:
+        assert connection.execute(text("SELECT count(*) FROM locations")).scalar() == 1
+        assert connection.execute(text("SELECT count(*) FROM stock")).scalar() == 1
+    engine.dispose()

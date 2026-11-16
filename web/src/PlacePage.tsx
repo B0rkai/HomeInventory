@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useHouse } from './house'
-import { LevelPicker } from './LevelPicker'
+import { IconPicker } from './IconPicker'
+import { LevelName, LevelPicker } from './LevelPicker'
+import { Named } from './Named'
 import { href } from './route'
 import { ShortageBadge } from './ShortageBadge'
 import { t } from './strings'
@@ -71,9 +73,11 @@ export function PlacePage({ id }: { id: number }) {
         ))}
       </nav>
       <div className="title-row">
-        <h2>{place.name}</h2>
+        <h2>
+          <Named thing={place} kind="place" />
+        </h2>
         <button type="button" className="secondary" onClick={() => setEditing(!editing)}>
-          {editing ? t.place.done : t.place.edit}
+          {editing ? t.done : t.edit}
         </button>
       </div>
 
@@ -84,6 +88,12 @@ export function PlacePage({ id }: { id: number }) {
             label={t.place.rename}
             initial={place.name}
             onSubmit={async (name) => Boolean(await actions.updateLocation(id, { name }))}
+          />
+          <IconPicker
+            kind="place"
+            name={place.name}
+            value={place.icon}
+            onChange={(icon) => actions.updateLocation(id, { icon })}
           />
           {siblings.length > 1 && (
             <div className="actions">
@@ -129,7 +139,7 @@ export function PlacePage({ id }: { id: number }) {
           <div className="chips">
             {children.map((child) => (
               <a key={child.id} className="chip" href={href.place(child.id)}>
-                {child.name}
+                <Named thing={child} kind="place" />
                 <ShortageBadge shortage={shortageIn(locations, stock, child.id)} />
               </a>
             ))}
@@ -144,7 +154,7 @@ export function PlacePage({ id }: { id: number }) {
           {rows.map((row) => (
             <li key={row.item_id}>
               <div className="stock-name">
-                <span>{row.item.name}</span>
+                <Named thing={row.item} kind="item" />
                 {editing ? (
                   <button
                     type="button"
@@ -155,8 +165,11 @@ export function PlacePage({ id }: { id: number }) {
                     ×
                   </button>
                 ) : (
-                  <span className="muted small">
-                    {t.place.updated(row.updated_by_name, ago(row.updated_at))}
+                  <span className="small">
+                    <LevelName level={row.level} />
+                    <span className="muted">
+                      {t.place.updated(row.updated_by_name, ago(row.updated_at))}
+                    </span>
                   </span>
                 )}
               </div>

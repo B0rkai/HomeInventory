@@ -3,7 +3,13 @@ from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints
 
-from homeinventory.models import CATEGORY_MAX_LENGTH, NAME_MAX_LENGTH, NICKNAME_MAX_LENGTH, Level
+from homeinventory.models import (
+    CATEGORY_MAX_LENGTH,
+    ICON_MAX_LENGTH,
+    NAME_MAX_LENGTH,
+    NICKNAME_MAX_LENGTH,
+    Level,
+)
 
 
 class Health(BaseModel):
@@ -45,6 +51,9 @@ Category = Annotated[
     AfterValidator(_blank_to_none),
 ]
 
+# Null: let the client guess from the name; empty: no icon.
+Icon = Annotated[str, StringConstraints(strip_whitespace=True, max_length=ICON_MAX_LENGTH)] | None
+
 
 class LocationOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -53,16 +62,20 @@ class LocationOut(BaseModel):
     parent_id: int | None
     name: str
     position: int
+    icon: str | None
 
 
 class LocationCreate(BaseModel):
     name: Name
     # Unset for a floor.
     parent_id: int | None = None
+    icon: Icon = None
 
 
 class LocationUpdate(BaseModel):
+    # Only the fields sent change.
     name: Name | None = None
+    icon: Icon = None
     # The new index among its siblings; past the end means last.
     position: int | None = Field(default=None, ge=0)
 
@@ -73,17 +86,20 @@ class ItemOut(BaseModel):
     id: int
     name: str
     category: str | None
+    icon: str | None
 
 
 class ItemCreate(BaseModel):
     name: Name
     category: Category = None
+    icon: Icon = None
 
 
 class ItemUpdate(BaseModel):
     # Only the fields sent change; send a blank or null category to clear it.
     name: Name | None = None
     category: Category = None
+    icon: Icon = None
 
 
 class StockOut(BaseModel):

@@ -86,6 +86,7 @@ def create_location(new: LocationCreate, session: Session = Depends(get_session)
     location = Location(
         name=new.name,
         parent_id=new.parent_id,
+        icon=new.icon,
         position=max((s.position for s in siblings), default=-1) + 1,
     )
     session.add(location)
@@ -97,12 +98,14 @@ def create_location(new: LocationCreate, session: Session = Depends(get_session)
 def update_location(
     location_id: int, update: LocationUpdate, session: Session = Depends(get_session)
 ) -> LocationOut:
-    """Renames a location or moves it among its siblings."""
+    """Renames a location, changes its icon or moves it among its siblings."""
     location = _get(session, Location, location_id)
     siblings = _siblings(session, location.parent_id)
     if update.name is not None:
         _check_location_name(siblings, update.name, own_id=location.id)
         location.name = update.name
+    if "icon" in update.model_fields_set:
+        location.icon = update.icon
     if update.position is not None:
         siblings.remove(location)
         siblings.insert(update.position, location)
@@ -142,7 +145,7 @@ def list_items(session: Session = Depends(get_session)) -> list[ItemOut]:
 @router.post("/items", status_code=status.HTTP_201_CREATED)
 def create_item(new: ItemCreate, session: Session = Depends(get_session)) -> ItemOut:
     _check_item_name(session, new.name)
-    item = Item(name=new.name, category=new.category)
+    item = Item(name=new.name, category=new.category, icon=new.icon)
     session.add(item)
     session.commit()
     return ItemOut.model_validate(item)
@@ -158,6 +161,8 @@ def update_item(
         item.name = update.name
     if "category" in update.model_fields_set:
         item.category = update.category
+    if "icon" in update.model_fields_set:
+        item.icon = update.icon
     session.commit()
     return ItemOut.model_validate(item)
 

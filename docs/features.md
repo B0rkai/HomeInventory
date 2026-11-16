@@ -17,11 +17,15 @@ check stock remotely, and avoid duplicating the job.
    WC", "bin on floor 2 is full". The home screen shows the places as a tree
    that fits on one phone screen without scrolling (floor → room), so
    reaching a place is a tap or two, and reporting one more.
-2. **Stock levels per place.** Each supply has a level, **plenty / low /
-   out**, per place it is kept (pantry, basement, each bathroom). No exact
-   counts.
+2. **Stock levels per place.** Each supply has a level, **lots / plenty /
+   low / out**, per place it is kept (pantry, basement, each bathroom). No
+   exact counts. *Lots* means stocked up for weeks (20+ rolls of toilet
+   paper in the basement, where a WC only keeps 3-4).
 3. **Check remotely.** See what any place has or lacks, from anywhere on the
-   tailnet (e.g. at the shop).
+   tailnet (e.g. at the shop). The *shortages* view lists everything low or
+   out, by item (with the places that have *lots* of it, to fetch from) or
+   by place.
+   Items and places show an emoji icon, guessed from the name or chosen.
 4. **Requests with claiming.** Every report becomes a request: **open →
    claimed → done** (or cancelled). Claiming shows who is on it, so two
    people don't buy the same milk.
@@ -46,9 +50,11 @@ Built so far: User, Location, Item, Stock (tables `users`, `locations`,
   goes with it.
 - **Item**: a supply in the catalogue: "Sugar", "Toilet paper", "Milk",
   unique ignoring case. Optional category for grouping the shopping list.
+  Items and locations have an optional `icon` (an emoji): null means the
+  client guesses one from the name (`web/src/icons.ts`), empty means none.
   Items are added from a place's page; deleting one removes its stock.
 - **Stock**: one row per (item, location), unique on that pair: level
-  (`plenty` | `low` | `out`), updated by, updated at. A row means the item
+  (`lots` | `plenty` | `low` | `out`), updated by, updated at. A row means the item
   is kept there.
 - **Chore**: a reportable job tied to a location: "Empty bin" on "Floor 2
   bathroom bin". Not stock, but reported and claimed the same way.
@@ -76,8 +82,9 @@ stock back to *plenty*. Claiming is a single conditional update (see
 ## Later ideas (not scheduled)
 
 - Recurring chores ("bins out on Tuesday") with reminders.
-- "Fetch, don't buy": when the guest WC is low but the basement has plenty,
-  suggest bringing some up instead of adding it to the shopping list.
+- "Fetch, don't buy": when the guest WC is low but the basement has lots,
+  suggest bringing some up instead of adding it to the shopping list (the
+  shortages view already shows where there's lots).
 - QR stickers (or NFC tags) on bins, toilets and shelves that open that
   place's report page. Scanning isn't faster than two taps on a small tree,
   so only worth it if the tree grows past one screen.

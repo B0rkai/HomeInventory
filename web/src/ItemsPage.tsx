@@ -1,7 +1,8 @@
 import { type FormEvent, useState } from 'react'
 import type { ItemOut } from './api'
 import { useHouse } from './house'
-import { href } from './route'
+import { IconPicker } from './IconPicker'
+import { Named } from './Named'
 import { t } from './strings'
 import { byName } from './tree'
 
@@ -25,11 +26,6 @@ export function ItemsPage() {
 
   return (
     <>
-      <nav className="crumbs">
-        <a href={href.home} aria-label={t.back}>
-          ←
-        </a>
-      </nav>
       <h2>{t.items.title}</h2>
       <p className="muted">{t.items.hint}</p>
       {items.length === 0 && (
@@ -53,7 +49,7 @@ export function ItemsPage() {
               ) : (
                 <li key={item.id}>
                   <button type="button" className="item-row" onClick={() => setEditingId(item.id)}>
-                    <span>{item.name}</span>
+                    <Named thing={item} kind="item" />
                     <span className="muted small">
                       {t.items.places(stock.filter((row) => row.item_id === item.id).length)}
                     </span>
@@ -80,12 +76,13 @@ function ItemForm({
   const { actions } = useHouse()
   const [name, setName] = useState(item.name)
   const [category, setCategory] = useState(item.category ?? '')
+  const [icon, setIcon] = useState(item.icon)
   const [saving, setSaving] = useState(false)
 
   async function save(event: FormEvent) {
     event.preventDefault()
     setSaving(true)
-    const saved = await actions.updateItem(item.id, { name, category })
+    const saved = await actions.updateItem(item.id, { name, category, icon })
     setSaving(false)
     if (saved) onDone()
   }
@@ -111,6 +108,7 @@ function ItemForm({
           autoComplete="off"
         />
       </label>
+      <IconPicker kind="item" name={name} value={icon} onChange={setIcon} />
       <datalist id="categories">
         {categories.map((c) => (
           <option key={c} value={c} />

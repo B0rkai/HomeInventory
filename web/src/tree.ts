@@ -41,11 +41,30 @@ export function shortageIn(locations: LocationOut[], stock: StockOut[], id: numb
   const ids = subtreeIds(locations, id)
   const shortage = { low: 0, out: 0 }
   for (const row of stock) {
-    if (ids.has(row.location_id) && row.level !== 'plenty') shortage[row.level]++
+    if (ids.has(row.location_id) && (row.level === 'low' || row.level === 'out')) {
+      shortage[row.level]++
+    }
   }
   return shortage
 }
 
 export function byName(a: { name: string }, b: { name: string }): number {
   return a.name.localeCompare(b.name, 'hu')
+}
+
+export function isShort(row: StockOut): boolean {
+  return row.level === 'low' || row.level === 'out'
+}
+
+/** Every location in tree order: each floor, then what's inside it, by position. */
+export function treeOrder(locations: LocationOut[]): LocationOut[] {
+  const ordered: LocationOut[] = []
+  const visit = (parentId: number | null) => {
+    for (const location of childrenOf(locations, parentId)) {
+      ordered.push(location)
+      visit(location.id)
+    }
+  }
+  visit(null)
+  return ordered
 }

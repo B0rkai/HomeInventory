@@ -36,6 +36,10 @@ export type ItemCreate = {
      * Category
      */
     category?: string | null;
+    /**
+     * Icon
+     */
+    icon?: string | null;
 };
 
 /**
@@ -54,6 +58,10 @@ export type ItemOut = {
      * Category
      */
     category: string | null;
+    /**
+     * Icon
+     */
+    icon: string | null;
 };
 
 /**
@@ -68,12 +76,16 @@ export type ItemUpdate = {
      * Category
      */
     category?: string | null;
+    /**
+     * Icon
+     */
+    icon?: string | null;
 };
 
 /**
  * Level
  */
-export type Level = 'plenty' | 'low' | 'out';
+export type Level = 'lots' | 'plenty' | 'low' | 'out';
 
 /**
  * LocationCreate
@@ -87,6 +99,10 @@ export type LocationCreate = {
      * Parent Id
      */
     parent_id?: number | null;
+    /**
+     * Icon
+     */
+    icon?: string | null;
 };
 
 /**
@@ -109,6 +125,10 @@ export type LocationOut = {
      * Position
      */
     position: number;
+    /**
+     * Icon
+     */
+    icon: string | null;
 };
 
 /**
@@ -119,6 +139,10 @@ export type LocationUpdate = {
      * Name
      */
     name?: string | null;
+    /**
+     * Icon
+     */
+    icon?: string | null;
     /**
      * Position
      */
