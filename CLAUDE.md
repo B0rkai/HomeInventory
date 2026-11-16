@@ -89,7 +89,10 @@ development and the live app apart:
   web client (proxying `/api` to Uvicorn). Vite is exposed on its own
   `tailscale serve` HTTPS port, so the dev build opens on a phone with real
   Tailscale identity, push and camera. Its `server.allowedHosts` must
-  include the `*.ts.net` name.
+  include the `*.ts.net` name. Both run as systemd user services
+  (`homeinventory-dev-api`, `homeinventory-dev-web`, see
+  `deploy/dev/README.md`) and reload on code changes: check or restart them,
+  don't start a second copy.
 - **Ports** (checked against the torrent box's ports and `tailscale serve
   status`): dev API `127.0.0.1:8000`, dev Vite `127.0.0.1:5173`, dev HTTPS
   `:8443`, live app `127.0.0.1:8100`, live HTTPS `:443`. The tailnet name
@@ -101,7 +104,8 @@ development and the live app apart:
 ```
 server/      FastAPI app (src/homeinventory/...), alembic/, tests/
 web/         Vite + React + TS PWA
-deploy/      (planned) docker-compose.yml, tailscale serve notes, backup script
+deploy/      dev/: systemd user units for the dev servers; (planned) docker-compose.yml,
+             tailscale serve notes, backup script
 docs/        features.md and other design notes
 ```
 

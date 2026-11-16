@@ -1,0 +1,23 @@
+# HomeInventory dev web client: Vite on 127.0.0.1:5173, from the dev checkout. Phones reach
+# it through `tailscale serve` on HTTPS :8443. User unit; install with deploy/dev/README.md.
+[Unit]
+Description=HomeInventory dev web client (Vite, 127.0.0.1:5173)
+After=network-online.target homeinventory-dev-api.service
+Wants=network-online.target homeinventory-dev-api.service
+
+[Service]
+WorkingDirectory=%h/HomeInventory/web
+ExecStart=%h/HomeInventory/web/node_modules/.bin/vite --clearScreen false
+Restart=on-failure
+RestartSec=5
+
+# Sandboxing: read-only system and home, except the checkout (Vite caches in node_modules).
+PrivateUsers=yes
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/HomeInventory
+
+[Install]
+WantedBy=default.target

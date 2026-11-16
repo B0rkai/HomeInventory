@@ -150,3 +150,11 @@ Notes:
   exits after about 10 minutes without network.
 - When the login expires, sessions stop making progress: run `/login` again
   when the startup warning appears.
+
+## 9. Dev servers
+
+Once the code is cloned and `uv sync` / `npm install` have run, install the dev
+API and web client as systemd user services, and expose the web client on the
+tailnet: see `deploy/dev/README.md`. User services start at boot only with
+lingering on (`loginctl show-user "$USER" -p Linger`; if it says `no`, run
+`sudo loginctl enable-linger "$USER"` once).

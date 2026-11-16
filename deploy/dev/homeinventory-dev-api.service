@@ -1,0 +1,25 @@
+# HomeInventory dev API: Uvicorn with --reload on 127.0.0.1:8000, from the dev checkout.
+# User unit; install with deploy/dev/README.md. Migrates the dev database on start.
+[Unit]
+Description=HomeInventory dev API (Uvicorn, 127.0.0.1:8000)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=%h/HomeInventory/server
+ExecStartPre=%h/.local/bin/uv run --frozen alembic upgrade head
+ExecStart=%h/.local/bin/uv run --frozen uvicorn --factory homeinventory.main:create_app --host 127.0.0.1 --port 8000 --reload
+Restart=on-failure
+RestartSec=5
+
+# Sandboxing: read-only system and home, except the checkout (code, .venv, data/) and
+# uv's cache. In user units the filesystem protections need PrivateUsers=yes.
+PrivateUsers=yes
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/HomeInventory %C/uv
+
+[Install]
+WantedBy=default.target
