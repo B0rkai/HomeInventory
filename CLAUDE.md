@@ -23,9 +23,9 @@ records are out of scope.
 
 ## Status
 
-Milestone 1 (skeleton) in progress: the server skeleton exists (settings,
-SQLite, Alembic, identity, `/api/v1/health`, `/api/v1/users/me`); the web
-client and deployment don't yet. Sections marked *(planned)* describe the
+Milestone 1 (skeleton) in progress: the server skeleton (settings, SQLite,
+Alembic, identity, `/api/v1/health`, `/api/v1/users/me`) and the web client
+skeleton (PWA shell, generated API client) exist; deployment doesn't yet. Sections marked *(planned)* describe the
 intended setup, not code that exists yet. Turn them into real instructions as
 the code lands.
 
@@ -46,7 +46,11 @@ the code lands.
 - **Web client**: **React + TypeScript** on **Vite**, an installable
   **PWA**, designed phone-first (Android Chrome is the only target; desktop
   just has to work). Generate the API client and types from the server's
-  OpenAPI schema; don't hand-write DTOs.
+  OpenAPI schema (`@hey-api/openapi-ts` into `web/src/api/`, committed);
+  don't hand-write DTOs. A server test fails until `web/openapi.json` is
+  regenerated after an API change. TypeScript stays on 6.x: the generator
+  needs its JavaScript API, which TypeScript 7 dropped.
+  `vite-plugin-pwa` with our own service worker (`web/src/sw.ts`).
 - **Notifications**: Web Push (VAPID, `pywebpush` on the server, a service
   worker in the client). **Live updates**: Server-Sent Events, so an open
   list refreshes itself.
@@ -96,7 +100,7 @@ development and the live app apart:
 
 ```
 server/      FastAPI app (src/homeinventory/...), alembic/, tests/
-web/         (planned) Vite + React + TS PWA
+web/         Vite + React + TS PWA
 deploy/      (planned) docker-compose.yml, tailscale serve notes, backup script
 docs/        features.md and other design notes
 ```
@@ -118,11 +122,14 @@ uv run pytest
 uv run ruff check . && uv run ruff format .
 uv run alembic revision --autogenerate -m "..."  # review the output before committing
 
-# web (planned)
+# web
 cd web && npm install
-npm run dev
-npm run build
-npm run generate-api    # regenerate the client from the server's OpenAPI schema
+npm run dev             # 127.0.0.1:5173, proxies /api to the dev API
+npm run build && npm run lint
+npm run generate-api    # after any API change: re-exports openapi.json, regenerates src/api
+
+# phone access to the dev build (once; persists across reboots)
+tailscale serve --bg --https=8443 http://127.0.0.1:5173
 ```
 
 ## Deployment

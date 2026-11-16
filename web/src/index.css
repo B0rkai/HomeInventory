@@ -1,0 +1,82 @@
+:root {
+  --bg: #f4efe6;
+  --surface: #fffdf9;
+  --text: #2b2a27;
+  --muted: #6f6a60;
+  --accent: #2f6b4f;
+  --on-accent: #f4efe6;
+  --border: #e2dbcd;
+
+  font: 17px/1.45 system-ui, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: light dark;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171a18;
+    --surface: #212522;
+    --text: #ece8df;
+    --muted: #a39e93;
+    --accent: #6fb38f;
+    --on-accent: #10140f;
+    --border: #343a36;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+}
+
+.app {
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+}
+
+.app-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--accent);
+}
+
+.user {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.card {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.card p {
+  margin: 0;
+}
+
+.card p + p {
+  margin-top: 0.5rem;
+}
+
+.muted {
+  color: var(--muted);
+}
