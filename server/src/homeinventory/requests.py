@@ -7,7 +7,7 @@ is one conditional UPDATE, so when both users tap at once exactly one wins and t
 gets 409. Reporting, claiming and finishing tell the other user (`notify.py`).
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, time
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Response, status
@@ -404,6 +404,9 @@ def claim_request(
         status=RequestStatus.CLAIMED,
         claimed_by_id=user.id,
         claimed_at=utcnow(),
+        # A nudge was about an earlier claim.
+        reminded_by_id=None,
+        reminded_at=None,
     )
     notifier.send(session, user.id, message_for(session, request, "claimed", user.display_name))
     return RequestOut.model_validate(request)
@@ -424,6 +427,8 @@ def unclaim_request(
         status=RequestStatus.OPEN,
         claimed_by_id=None,
         claimed_at=None,
+        reminded_by_id=None,
+        reminded_at=None,
     )
     return RequestOut.model_validate(request)
 
@@ -463,6 +468,36 @@ def complete_request(
         )
         session.commit()
     notifier.send(session, user.id, message_for(session, request, event, user.display_name))
+    return RequestOut.model_validate(request)
+
+
+@router.post("/requests/{request_id}/remind")
+def remind_request(
+    request_id: int,
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+    tz: ZoneInfo = Depends(household_timezone),
+    notifier: Notifier = Depends(get_notifier),
+) -> RequestOut:
+    """Asks whoever claimed a request when it'll be done: a push to their devices. Only
+    someone else's claim, and once a (local) day; 409 otherwise."""
+    now = utcnow()
+    today = datetime.combine(now.astimezone(tz).date(), time(), tz)
+    request = _transition(
+        session,
+        request_id,
+        Request.status == RequestStatus.CLAIMED,
+        Request.claimed_by_id != user.id,
+        (Request.reminded_at.is_(None)) | (Request.reminded_at < today),
+        reminded_by_id=user.id,
+        reminded_at=now,
+    )
+    notifier.send(
+        session,
+        user.id,
+        message_for(session, request, "reminder", user.display_name),
+        to_user_id=request.claimed_by_id,
+    )
     return RequestOut.model_validate(request)
 
 

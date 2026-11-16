@@ -331,6 +331,14 @@ export type RequestOut = {
      * Claimed At
      */
     claimed_at: string | null;
+    /**
+     * Reminded By Name
+     */
+    reminded_by_name: string | null;
+    /**
+     * Reminded At
+     */
+    reminded_at: string | null;
 };
 
 /**
@@ -1051,6 +1059,36 @@ export type CompleteRequestResponses = {
 };
 
 export type CompleteRequestResponse = CompleteRequestResponses[keyof CompleteRequestResponses];
+
+export type RemindRequestData = {
+    body?: never;
+    path: {
+        /**
+         * Request Id
+         */
+        request_id: number;
+    };
+    query?: never;
+    url: '/api/v1/requests/{request_id}/remind';
+};
+
+export type RemindRequestErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RemindRequestError = RemindRequestErrors[keyof RemindRequestErrors];
+
+export type RemindRequestResponses = {
+    /**
+     * Successful Response
+     */
+    200: RequestOut;
+};
+
+export type RemindRequestResponse = RemindRequestResponses[keyof RemindRequestResponses];
 
 export type CancelRequestData = {
     body?: never;

@@ -240,10 +240,14 @@ class Request(Base):
     # Who marked it done or cancelled it, and when.
     closed_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     closed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    # The latest "when will it be done?" nudge to whoever claimed it; once a day at most.
+    reminded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+    reminded_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
 
     created_by: Mapped[User | None] = relationship(foreign_keys=[created_by_id], lazy="joined")
     claimed_by: Mapped[User | None] = relationship(foreign_keys=[claimed_by_id], lazy="joined")
     closed_by: Mapped[User | None] = relationship(foreign_keys=[closed_by_id], lazy="joined")
+    reminded_by: Mapped[User | None] = relationship(foreign_keys=[reminded_by_id], lazy="joined")
 
     @property
     def created_by_name(self) -> str | None:
@@ -252,6 +256,10 @@ class Request(Base):
     @property
     def claimed_by_name(self) -> str | None:
         return self.claimed_by and self.claimed_by.display_name
+
+    @property
+    def reminded_by_name(self) -> str | None:
+        return self.reminded_by and self.reminded_by.display_name
 
 
 class PushSubscription(Base):

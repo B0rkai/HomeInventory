@@ -267,3 +267,57 @@ def test_done_with_lots_elsewhere_is_fetched(api, house, phones, pushes) -> None
     # The basement keeps its lots; the pantry is filled.
     levels = {r["location_id"]: r["level"] for r in api("GET", "/stock").json()}
     assert levels == {basement: "lots", house["pantry"]: "plenty"}
+
+
+# Reminders
+
+
+@pytest.fixture
+def claimed_by_bela(api, house) -> int:
+    set_level(api, house, "out")
+    id = active(api)[0]["id"]
+    api("POST", f"/requests/{id}/claim", headers=BELA)
+    return id
+
+
+def test_remind_whoever_claimed_it(api, claimed_by_bela, phones, pushes) -> None:
+    pushes.clear()
+    response = api("POST", f"/requests/{claimed_by_bela}/remind")
+    assert response.status_code == 200
+    assert response.json()["reminded_by_name"] == "Anna Kovacs"
+    assert response.json()["reminded_at"] is not None
+    [(to, message)] = pushes
+    assert (to, message["event"], message["actor"]) == (BELAS_PHONE, "reminder", "Anna Kovacs")
+
+
+def test_remind_once_a_day(api, claimed_by_bela, phones, pushes, monkeypatch) -> None:
+    now = datetime(2026, 11, 17, 21, tzinfo=UTC)  # 22:00 in Budapest
+    monkeypatch.setattr(requests, "utcnow", lambda: now)
+    assert api("POST", f"/requests/{claimed_by_bela}/remind").status_code == 200
+    monkeypatch.setattr(requests, "utcnow", lambda: now + timedelta(hours=1, minutes=30))
+    # 23:30, the same day.
+    assert api("POST", f"/requests/{claimed_by_bela}/remind").status_code == 409
+    monkeypatch.setattr(requests, "utcnow", lambda: now + timedelta(hours=2, minutes=30))
+    # Past midnight: a new day.
+    assert api("POST", f"/requests/{claimed_by_bela}/remind").status_code == 200
+
+
+def test_no_reminding_oneself(api, claimed_by_bela) -> None:
+    assert api("POST", f"/requests/{claimed_by_bela}/remind", headers=BELA).status_code == 409
+
+
+def test_no_reminding_an_open_request(api, house) -> None:
+    set_level(api, house, "out")
+    assert api("POST", f"/requests/{active(api)[0]['id']}/remind").status_code == 409
+
+
+def test_remind_unknown_request_is_404(api) -> None:
+    assert api("POST", "/requests/999/remind").status_code == 404
+
+
+def test_a_new_claim_starts_without_a_reminder(api, claimed_by_bela) -> None:
+    api("POST", f"/requests/{claimed_by_bela}/remind")
+    api("POST", f"/requests/{claimed_by_bela}/unclaim", headers=BELA)
+    claimed = api("POST", f"/requests/{claimed_by_bela}/claim", headers=BELA).json()
+    assert (claimed["reminded_at"], claimed["reminded_by_name"]) == (None, None)
+    assert api("POST", f"/requests/{claimed_by_bela}/remind").status_code == 200

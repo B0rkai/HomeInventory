@@ -28,7 +28,8 @@ TTL_SECONDS = 24 * 60 * 60
 
 # "fetched": a buy request done while another place had lots of it, so it was brought
 # from there rather than bought.
-Event = Literal["reported", "claimed", "done", "fetched", "refilled", "due"]
+# "reminder": the other asks when a claimed request will be done.
+Event = Literal["reported", "claimed", "done", "fetched", "refilled", "due", "reminder"]
 
 
 @dataclass(frozen=True)
@@ -141,11 +142,19 @@ class Notifier:
         raw = self.vapid.public_key.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
         return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
 
-    def send(self, session: Session, actor_id: int | None, message: Message) -> None:
-        """Queues a message for every device except the actor's."""
+    def send(
+        self,
+        session: Session,
+        actor_id: int | None,
+        message: Message,
+        to_user_id: int | None = None,
+    ) -> None:
+        """Queues a message for every device except the actor's, or only one user's."""
         query = select(PushSubscription)
         if actor_id is not None:
             query = query.where(PushSubscription.user_id != actor_id)
+        if to_user_id is not None:
+            query = query.where(PushSubscription.user_id == to_user_id)
         targets = [
             (s.id, {"endpoint": s.endpoint, "keys": {"p256dh": s.p256dh, "auth": s.auth}})
             for s in session.scalars(query)

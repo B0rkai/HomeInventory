@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CancelRequestData, CancelRequestErrors, CancelRequestResponses, ClaimRequestData, ClaimRequestErrors, ClaimRequestResponses, CompleteChoreData, CompleteChoreErrors, CompleteChoreResponses, CompleteRequestData, CompleteRequestErrors, CompleteRequestResponses, CreateChoreData, CreateChoreErrors, CreateChoreResponses, CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, DeleteChoreData, DeleteChoreErrors, DeleteChoreResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, GetPushKeyData, GetPushKeyResponses, ListChoresData, ListChoresResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListRequestsData, ListRequestsResponses, ListStockData, ListStockResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, ReportChoreData, ReportChoreErrors, ReportChoreResponses, SetStockData, SetStockErrors, SetStockResponses, StreamEventsData, StreamEventsResponses, SubscribeData, SubscribeErrors, SubscribeResponses, UnclaimRequestData, UnclaimRequestErrors, UnclaimRequestResponses, UnsubscribeData, UnsubscribeErrors, UnsubscribeResponses, UpdateChoreData, UpdateChoreErrors, UpdateChoreResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses } from './types.gen';
+import type { CancelRequestData, CancelRequestErrors, CancelRequestResponses, ClaimRequestData, ClaimRequestErrors, ClaimRequestResponses, CompleteChoreData, CompleteChoreErrors, CompleteChoreResponses, CompleteRequestData, CompleteRequestErrors, CompleteRequestResponses, CreateChoreData, CreateChoreErrors, CreateChoreResponses, CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, DeleteChoreData, DeleteChoreErrors, DeleteChoreResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, GetPushKeyData, GetPushKeyResponses, ListChoresData, ListChoresResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListRequestsData, ListRequestsResponses, ListStockData, ListStockResponses, RemindRequestData, RemindRequestErrors, RemindRequestResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, ReportChoreData, ReportChoreErrors, ReportChoreResponses, SetStockData, SetStockErrors, SetStockResponses, StreamEventsData, StreamEventsResponses, SubscribeData, SubscribeErrors, SubscribeResponses, UnclaimRequestData, UnclaimRequestErrors, UnclaimRequestResponses, UnsubscribeData, UnsubscribeErrors, UnsubscribeResponses, UpdateChoreData, UpdateChoreErrors, UpdateChoreResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -226,6 +226,14 @@ export const unclaimRequest = <ThrowOnError extends boolean = false>(options: Op
  * Marks a request done, whoever claimed it; a bought item's level goes back to plenty.
  */
 export const completeRequest = <ThrowOnError extends boolean = false>(options: Options<CompleteRequestData, ThrowOnError>): RequestResult<CompleteRequestResponses, CompleteRequestErrors, ThrowOnError> => (options.client ?? client).post<CompleteRequestResponses, CompleteRequestErrors, ThrowOnError>({ url: '/api/v1/requests/{request_id}/done', ...options });
+
+/**
+ * Remind Request
+ *
+ * Asks whoever claimed a request when it'll be done: a push to their devices. Only
+ * someone else's claim, and once a (local) day; 409 otherwise.
+ */
+export const remindRequest = <ThrowOnError extends boolean = false>(options: Options<RemindRequestData, ThrowOnError>): RequestResult<RemindRequestResponses, RemindRequestErrors, ThrowOnError> => (options.client ?? client).post<RemindRequestResponses, RemindRequestErrors, ThrowOnError>({ url: '/api/v1/requests/{request_id}/remind', ...options });
 
 /**
  * Cancel Request

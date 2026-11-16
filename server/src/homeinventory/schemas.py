@@ -195,6 +195,9 @@ class RequestOut(BaseModel):
     claimed_by_id: int | None
     claimed_by_name: str | None
     claimed_at: datetime | None
+    # The latest nudge to whoever claimed it, and who sent it.
+    reminded_by_name: str | None
+    reminded_at: datetime | None
 
 
 class PushKey(BaseModel):

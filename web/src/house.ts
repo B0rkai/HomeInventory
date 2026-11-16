@@ -6,6 +6,7 @@ import {
   completeRequest,
   createChore,
   createItem,
+  remindRequest,
   createLocation,
   deleteChore,
   deleteItem,
@@ -45,13 +46,14 @@ export type House = {
   requests: RequestOut[]
 }
 
-export type RequestAction = 'claim' | 'unclaim' | 'done' | 'cancel'
+export type RequestAction = 'claim' | 'unclaim' | 'done' | 'cancel' | 'remind'
 
 const REQUEST_ACTIONS = {
   claim: claimRequest,
   unclaim: unclaimRequest,
   done: completeRequest,
   cancel: cancelRequest,
+  remind: remindRequest,
 }
 
 type Result<T> = Promise<{ data?: T; response?: Response }>
@@ -324,7 +326,7 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
         const results = await Promise.all(
           ids.map((id) =>
             change(REQUEST_ACTIONS[action]({ path: { request_id: id } }), {
-              409: t.errors.requestChanged,
+              409: action === 'remind' ? t.errors.remindedToday : t.errors.requestChanged,
             }),
           ),
         )

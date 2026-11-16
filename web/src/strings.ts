@@ -41,6 +41,10 @@ export const t = {
     poolEmpty: 'Nincs szabad teendő: mindent elvállalt valaki.',
     mineEmpty: 'Nincs elvállalt teendőd. A Szabad fülön vállalhatsz.',
     theirsTitle: (name: string) => `${name} intézi`,
+    remind: 'Érdeklődöm',
+    remindHint: (name: string) => `Emlékeztető ${name} számára: mikor lesz kész?`,
+    remindedByMe: (when: string) => `Érdeklődtél, ${when}`,
+    remindedMe: (name: string, when: string) => `${name} érdeklődött, ${when}`,
     noneHint:
       'Ami kevés vagy elfogyott, ide kerül a bevásárláshoz; a feladatokat a helyeknél jelezheted.',
     shopping: 'Bevásárlás',
@@ -162,6 +166,8 @@ export const t = {
     refilled: (name: string) => `Van már: ${name}`,
     refilledBy: (place: string, actor: string) => `${place} · ${actor} töltötte fel`,
     due: (name: string) => `Esedékes: ${name}`,
+    reminder: (actor: string, name: string) => `${actor} érdeklődik: ${name}`,
+    reminderBody: (place: string) => `Mikor lesz kész? · ${place}`,
   },
   nickname: {
     prompt: 'Hogy szólítsunk?',
@@ -181,6 +187,7 @@ export const t = {
     duplicateLocation: 'Itt már van ilyen nevű hely.',
     duplicateItem: 'Már van ilyen nevű termék.',
     duplicateChore: 'Itt már van ilyen nevű feladat.',
+    remindedToday: 'Ma már érdeklődtél erről. Holnap újra lehet.',
     requestChanged: 'Ezt közben a másik már elvállalta vagy elintézte. Frissítettem.',
     tooDeep: 'Ennél mélyebbre nem lehet helyet tenni.',
     notFound: 'Ez közben törlődött. Frissítettem a listát.',

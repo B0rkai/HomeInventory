@@ -5,7 +5,7 @@ import { LevelName } from './LevelPicker'
 import { Named } from './Named'
 import { href, type TodoView } from './route'
 import { t } from './strings'
-import { ago } from './time'
+import { ago, isToday } from './time'
 import { placePath, treeOrder } from './tree'
 import { PushSettings } from './PushSettings'
 import { byItem, fullName } from './variants'
@@ -267,6 +267,17 @@ function RequestRow({
   const ids = (list: RequestOut[]) => list.map((request) => request.id)
   const open = requests.filter((request) => request.status === 'open')
   const mine = requests.filter((request) => request.claimed_by_id === me.id)
+  // Claimed by the other: they can be asked, once a day, when it'll be done.
+  const theirs = requests.filter(
+    (request) => request.status === 'claimed' && request.claimed_by_id !== me.id,
+  )
+  const lastReminder = (list: RequestOut[]) =>
+    list
+      .filter((request) => request.reminded_at)
+      .sort((a, b) => b.reminded_at!.localeCompare(a.reminded_at!))[0]
+  const askedMe = lastReminder(mine)
+  const asked = lastReminder(theirs)
+  const askedToday = asked && isToday(asked.reminded_at!)
   return (
     <li>
       <div className="request-head">
@@ -287,7 +298,17 @@ function RequestRow({
       </div>
       {/* Where and who, with the buttons beside it when it's short enough. */}
       <div className="request-body">
-        <div className="request-info">{children}</div>
+        <div className="request-info">
+          {children}
+          {askedMe && (
+            <p className="small claim">
+              {t.todo.remindedMe(askedMe.reminded_by_name ?? '', ago(askedMe.reminded_at!))}
+            </p>
+          )}
+          {askedToday && (
+            <p className="small muted">{t.todo.remindedByMe(ago(asked.reminded_at!))}</p>
+          )}
+        </div>
         <div className="request-actions">
           {open.length > 0 && (
             <button
@@ -305,6 +326,17 @@ function RequestRow({
               onClick={() => actions.act('unclaim', ids(mine))}
             >
               {t.todo.unclaim}
+            </button>
+          )}
+          {!open.length && !mine.length && theirs.length > 0 && !askedToday && (
+            <button
+              type="button"
+              className="secondary small-button"
+              title={t.todo.remindHint(theirs[0].claimed_by_name ?? '')}
+              // One nudge per row: the item's other places would only repeat it.
+              onClick={() => actions.act('remind', [theirs[0].id])}
+            >
+              🔔 {t.todo.remind}
             </button>
           )}
           <button

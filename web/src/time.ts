@@ -30,3 +30,8 @@ export function upcoming(iso: string, now = new Date()): string {
   if (days < 7) return t.time.weekdays[(then.getDay() + 6) % 7]
   return date.format(then)
 }
+
+/** Whether a time falls on today's date, in the phone's time zone. */
+export function isToday(iso: string, now = new Date()): boolean {
+  return daysBetween(new Date(iso), now) === 0
+}

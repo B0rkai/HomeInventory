@@ -840,6 +840,46 @@
         }
       }
     },
+    "/api/v1/requests/{request_id}/remind": {
+      "post": {
+        "summary": "Remind Request",
+        "description": "Asks whoever claimed a request when it'll be done: a push to their devices. Only\nsomeone else's claim, and once a (local) day; 409 otherwise.",
+        "operationId": "remind_request",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/requests/{request_id}/cancel": {
       "post": {
         "summary": "Cancel Request",
@@ -1670,6 +1710,29 @@
               }
             ],
             "title": "Claimed At"
+          },
+          "reminded_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reminded By Name"
+          },
+          "reminded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reminded At"
           }
         },
         "type": "object",
@@ -1685,7 +1748,9 @@
           "created_at",
           "claimed_by_id",
           "claimed_by_name",
-          "claimed_at"
+          "claimed_at",
+          "reminded_by_name",
+          "reminded_at"
         ],
         "title": "RequestOut"
       },

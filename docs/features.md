@@ -53,7 +53,9 @@ check stock remotely, and avoid duplicating the job.
 5. **Shopping list.** The *Teendők* (to-do) tab has two lists: *Szabad*,
    the pool of open requests nobody has claimed (and below it, what the
    other has claimed), and *Enyém*, what I've claimed; claiming moves a row
-   from one to the other. Each list shows reported chores, then the *buy*
+   from one to the other. Under the other's claims an *Érdeklődöm* button
+   pushes them "when will it be done?", once a (local) day per request;
+   the claimer sees who asked and when. A new claim starts afresh. Each list shows reported chores, then the *buy*
    requests, one row per item however many places
    want it (its buttons act on all of them). An item another place has
    *lots* of goes under *Utántöltés* (refill: "Hozd innen: Pince", done as
