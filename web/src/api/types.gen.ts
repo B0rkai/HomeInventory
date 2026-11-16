@@ -50,6 +50,18 @@ export type ChoreOut = {
      * Last Done By Name
      */
     last_done_by_name: string | null;
+    /**
+     * Repeat Days
+     */
+    repeat_days: number | null;
+    /**
+     * Repeat Weekdays
+     */
+    repeat_weekdays: Array<number>;
+    /**
+     * Next Due At
+     */
+    next_due_at: string | null;
 };
 
 /**
@@ -64,6 +76,14 @@ export type ChoreUpdate = {
      * Icon
      */
     icon?: string | null;
+    /**
+     * Repeat Days
+     */
+    repeat_days?: number | null;
+    /**
+     * Repeat Weekdays
+     */
+    repeat_weekdays?: Array<number> | null;
 };
 
 /**
@@ -253,11 +273,11 @@ export type RequestOut = {
     /**
      * Created By Id
      */
-    created_by_id: number;
+    created_by_id: number | null;
     /**
      * Created By Name
      */
-    created_by_name: string;
+    created_by_name: string | null;
     /**
      * Created At
      */

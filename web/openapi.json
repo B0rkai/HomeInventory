@@ -700,7 +700,7 @@
     "/api/v1/requests": {
       "get": {
         "summary": "List Requests",
-        "description": "The open and claimed requests, oldest first.",
+        "description": "The open and claimed requests, oldest first, scheduled chores that fell due included.",
         "operationId": "list_requests",
         "responses": {
           "200": {
@@ -962,6 +962,36 @@
               }
             ],
             "title": "Last Done By Name"
+          },
+          "repeat_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repeat Days"
+          },
+          "repeat_weekdays": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Repeat Weekdays"
+          },
+          "next_due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Due At"
           }
         },
         "type": "object",
@@ -971,7 +1001,10 @@
           "name",
           "icon",
           "last_done_at",
-          "last_done_by_name"
+          "last_done_by_name",
+          "repeat_days",
+          "repeat_weekdays",
+          "next_due_at"
         ],
         "title": "ChoreOut"
       },
@@ -1001,6 +1034,37 @@
               }
             ],
             "title": "Icon"
+          },
+          "repeat_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 365.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repeat Days"
+          },
+          "repeat_weekdays": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer",
+                  "maximum": 6.0,
+                  "minimum": 0.0
+                },
+                "type": "array",
+                "maxItems": 7,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repeat Weekdays"
           }
         },
         "type": "object",
@@ -1378,11 +1442,25 @@
             "$ref": "#/components/schemas/RequestStatus"
           },
           "created_by_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Created By Id"
           },
           "created_by_name": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Created By Name"
           },
           "created_at": {

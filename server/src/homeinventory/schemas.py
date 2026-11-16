@@ -1,7 +1,14 @@
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    model_validator,
+)
 
 from homeinventory.models import (
     CATEGORY_MAX_LENGTH,
@@ -135,6 +142,12 @@ class ChoreOut(BaseModel):
     # When it was last done and by whom; unset if never.
     last_done_at: datetime | None
     last_done_by_name: str | None
+    # Repeats every so many days after it's done, or on these weekdays (Monday = 0).
+    repeat_days: int | None
+    repeat_weekdays: list[int]
+    # When it falls due next; if that's past, it has an open request. Unset if it
+    # doesn't repeat.
+    next_due_at: datetime | None
 
 
 class ChoreCreate(BaseModel):
@@ -143,10 +156,22 @@ class ChoreCreate(BaseModel):
     icon: Icon = None
 
 
+Weekday = Annotated[int, Field(ge=0, le=6)]
+
+
 class ChoreUpdate(BaseModel):
-    # Only the fields sent change.
+    # Only the fields sent change. Setting one schedule clears the other; sending both as
+    # null stops the chore repeating.
     name: Name | None = None
     icon: Icon = None
+    repeat_days: Annotated[int, Field(ge=1, le=365)] | None = None
+    repeat_weekdays: Annotated[list[Weekday], Field(min_length=1, max_length=7)] | None = None
+
+    @model_validator(mode="after")
+    def one_schedule(self) -> "ChoreUpdate":
+        if self.repeat_days is not None and self.repeat_weekdays is not None:
+            raise ValueError("Set repeat_days or repeat_weekdays, not both")
+        return self
 
 
 class RequestOut(BaseModel):
@@ -160,8 +185,9 @@ class RequestOut(BaseModel):
     chore_id: int | None
     location_id: int
     status: RequestStatus
-    created_by_id: int
-    created_by_name: str
+    # Unset when a scheduled chore fell due by itself.
+    created_by_id: int | None
+    created_by_name: str | None
     created_at: datetime
     claimed_by_id: int | None
     claimed_by_name: str | None

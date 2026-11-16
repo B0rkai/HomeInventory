@@ -6,9 +6,10 @@ import { COMMON_ITEMS } from './icons'
 import { LevelName, LevelPicker } from './LevelPicker'
 import { Named } from './Named'
 import { href } from './route'
+import { ScheduleEditor } from './ScheduleEditor'
 import { ShortageBadge } from './ShortageBadge'
 import { t } from './strings'
-import { ago } from './time'
+import { ago, upcoming } from './time'
 import { AddForm } from './AddForm'
 import { AddItemForm } from './AddItemForm'
 import { MAX_DEPTH, childrenOf, pathTo, shortageIn } from './tree'
@@ -308,6 +309,28 @@ function ChoreRow({
   editing: boolean
 }) {
   const { actions } = useHouse()
+  if (editing) {
+    return (
+      <li className="chore-edit">
+        <div className="chore">
+          <Named thing={chore} kind="chore" />
+          <button
+            type="button"
+            className="icon"
+            aria-label={t.place.removeChore(chore.name)}
+            onClick={() => {
+              if (window.confirm(t.place.confirmRemoveChore(chore.name))) {
+                void actions.deleteChore(chore.id)
+              }
+            }}
+          >
+            ×
+          </button>
+        </div>
+        <ScheduleEditor chore={chore} />
+      </li>
+    )
+  }
   const done = (
     <button
       type="button"
@@ -318,22 +341,7 @@ function ChoreRow({
     </button>
   )
   let action: ReactNode
-  if (editing) {
-    action = (
-      <button
-        type="button"
-        className="icon"
-        aria-label={t.place.removeChore(chore.name)}
-        onClick={() => {
-          if (window.confirm(t.place.confirmRemoveChore(chore.name))) {
-            void actions.deleteChore(chore.id)
-          }
-        }}
-      >
-        ×
-      </button>
-    )
-  } else if (request) {
+  if (request) {
     action = done
   } else {
     action = (
@@ -349,16 +357,29 @@ function ChoreRow({
       </>
     )
   }
-  const status = request
-    ? (claim(request) ?? t.place.reported)
-    : chore.last_done_at && t.place.lastDone(chore.last_done_by_name ?? '', ago(chore.last_done_at))
+  // A line each: who's on it, or when it was last done and when it's due next.
+  const lines = (
+    request
+      ? [claim(request) ?? t.place.reported]
+      : [
+          chore.last_done_at &&
+            t.place.lastDone(chore.last_done_by_name ?? '', ago(chore.last_done_at)),
+          chore.next_due_at && t.place.nextDue(upcoming(chore.next_due_at)),
+        ]
+  ).filter((line) => line)
   return (
     <li className="chore">
-      <span className="chore-name">
-        <Named thing={chore} kind="chore" />
-        {status && <span className={`small ${request ? 'claim' : 'muted'}`}>{status}</span>}
-      </span>
+      <Named thing={chore} kind="chore" />
       <span className="chore-state">{action}</span>
+      {lines.length > 0 && (
+        <span className="chore-lines">
+          {lines.map((line) => (
+            <span key={line} className={`small ${request ? 'claim' : 'muted'}`}>
+              {line}
+            </span>
+          ))}
+        </span>
+      )}
     </li>
   )
 }

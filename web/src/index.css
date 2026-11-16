@@ -894,12 +894,70 @@ h2 .tile .icon-art {
 .variant-block .lots-hint {
   margin: 0.25rem 0 0 0.75rem !important;
 }
-.chore-name {
+.missing-rows li.chore {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+.chore-lines {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.75rem;
+  padding-left: 2.25rem;
+}
+.chore-edit {
+  display: block !important;
+}
+.chore-edit > .chore {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.schedule {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
-  min-width: 0;
+  gap: 0.5rem;
+  margin: 0.4rem 0 0.25rem 2.25rem;
 }
-.chore-name > .small {
-  padding-left: 2.25rem;
+.schedule p {
+  margin: 0;
+}
+.segmented,
+.weekdays {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+.segmented button,
+.weekdays button {
+  flex: 1;
+  min-height: 2.25rem;
+  padding: 0.25rem 0.4rem;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.segmented button + button,
+.weekdays button + button {
+  border-left: 1px solid var(--border);
+}
+.segmented button[aria-checked='true'],
+.weekdays button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.weekdays button:disabled {
+  opacity: 1;
+}
+.every-days {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+.every-days input {
+  width: 4.5rem;
 }

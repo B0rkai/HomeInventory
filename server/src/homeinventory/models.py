@@ -166,6 +166,18 @@ class Chore(Base):
     # Unset: the client guesses one from the name. Empty: no icon.
     icon: Mapped[str | None] = mapped_column(String(ICON_MAX_LENGTH))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    # A repeating chore falls due by itself (schedule.py): every so many days after it was
+    # last done, or on these weekdays (a bit per day, Monday = 1). At most one is set.
+    repeat_days: Mapped[int | None]
+    repeat_weekdays: Mapped[int | None]
+    # When the schedule was last changed; occurrences before it don't count.
+    scheduled_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+
+    @property
+    def weekdays(self) -> frozenset[int]:
+        """The repeat weekdays, Monday = 0."""
+        bits = self.repeat_weekdays or 0
+        return frozenset(day for day in range(7) if bits & (1 << day))
 
 
 class RequestKind(StrEnum):
@@ -218,7 +230,8 @@ class Request(Base):
         ForeignKey("locations.id", ondelete="CASCADE"), index=True
     )
     status: Mapped[RequestStatus] = mapped_column(str_enum(RequestStatus, "status"))
-    created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    # Unset when a scheduled chore fell due by itself.
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     claimed_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     claimed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
@@ -226,13 +239,13 @@ class Request(Base):
     closed_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     closed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
 
-    created_by: Mapped[User] = relationship(foreign_keys=[created_by_id], lazy="joined")
+    created_by: Mapped[User | None] = relationship(foreign_keys=[created_by_id], lazy="joined")
     claimed_by: Mapped[User | None] = relationship(foreign_keys=[claimed_by_id], lazy="joined")
     closed_by: Mapped[User | None] = relationship(foreign_keys=[closed_by_id], lazy="joined")
 
     @property
-    def created_by_name(self) -> str:
-        return self.created_by.display_name
+    def created_by_name(self) -> str | None:
+        return self.created_by and self.created_by.display_name
 
     @property
     def claimed_by_name(self) -> str | None:

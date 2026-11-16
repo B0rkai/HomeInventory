@@ -20,3 +20,13 @@ export function ago(iso: string, now = new Date()): string {
   if (days < 7) return t.time.days(days)
   return date.format(then)
 }
+
+/** When something is coming: "ma", "holnap", a weekday within the week ("kedd"), else a date. */
+export function upcoming(iso: string, now = new Date()): string {
+  const then = new Date(iso)
+  const days = -daysBetween(then, now)
+  if (days <= 0) return t.time.today
+  if (days === 1) return t.time.tomorrow
+  if (days < 7) return t.time.weekdays[(then.getDay() + 6) % 7]
+  return date.format(then)
+}

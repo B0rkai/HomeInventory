@@ -45,6 +45,7 @@ export const t = {
     mine: 'Te intézed',
     theirs: (name: string) => `${name} intézi`,
     reported: (name: string, when: string) => `${name} jelezte, ${when}`,
+    due: (when: string) => `Esedékes, ${when}`,
   },
   missing: {
     title: 'Hiányok',
@@ -59,6 +60,11 @@ export const t = {
     hours: (n: number) => `${n} órája`,
     yesterday: 'tegnap',
     days: (n: number) => `${n} napja`,
+    today: 'ma',
+    tomorrow: 'holnap',
+    // Monday first.
+    weekdays: ['hétfő', 'kedd', 'szerda', 'csütörtök', 'péntek', 'szombat', 'vasárnap'],
+    weekdaysShort: ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'],
   },
   icons: {
     label: 'Ikon',
@@ -93,6 +99,13 @@ export const t = {
     report: 'Szólok',
     reported: 'Jelezve',
     lastDone: (name: string, when: string) => `Utoljára: ${name}, ${when}`,
+    nextDue: (when: string) => `Következő: ${when}`,
+    repeat: 'Ismétlés',
+    repeatNone: 'Nincs',
+    repeatWeekly: 'Hetente',
+    repeatDays: 'Naponta',
+    everyDays: 'naponta, az utolsó elvégzéstől',
+    repeatHint: 'Esedékességkor magától felkerül a Teendők közé.',
     removeChore: (name: string) => `${name} törlése`,
     confirmRemoveChore: (name: string) => `Törlöd ezt a feladatot: ${name}?`,
     notFound: 'Ez a hely már nem létezik.',

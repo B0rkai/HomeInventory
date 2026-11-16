@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     # The built web client (web/dist) to serve next to the API, as in the live image.
     # Unset in development, where Vite serves it.
     web_dir: Path | None = None
+    # The household's time zone: scheduled chores fall due at its midnight.
+    timezone: str = "Europe/Budapest"
 
     @property
     def db_path(self) -> Path:

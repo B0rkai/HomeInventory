@@ -1,4 +1,8 @@
+from datetime import UTC, datetime, timedelta
+
 import pytest
+
+from homeinventory import requests
 
 ANNA = {"Tailscale-User-Login": "anna@example.com", "Tailscale-User-Name": "Anna Kovacs"}
 BELA = {"Tailscale-User-Login": "bela@example.com", "Tailscale-User-Name": "Bela Kovacs"}
@@ -203,6 +207,9 @@ def test_chores_belong_to_a_place(api, house) -> None:
             "icon": None,
             "last_done_at": None,
             "last_done_by_name": None,
+            "repeat_days": None,
+            "repeat_weekdays": [],
+            "next_due_at": None,
         }
     ]
 
@@ -333,3 +340,134 @@ def test_cancelled_doesnt_count_as_done(api, house) -> None:
 
 def test_done_unknown_chore_is_404(api) -> None:
     assert api("POST", "/chores/999/done").status_code == 404
+
+
+# Scheduled chores
+
+
+@pytest.fixture
+def clock(monkeypatch):
+    """Sets the server's time; starts on Monday 16 November 2026, 12:00 in Budapest."""
+    now = [datetime(2026, 11, 16, 11, tzinfo=UTC)]
+    monkeypatch.setattr(requests, "utcnow", lambda: now[0])
+
+    def advance(**delta) -> None:
+        now[0] += timedelta(**delta)
+
+    return advance
+
+
+def schedule(api, chore: int, **fields) -> dict:
+    response = api("PATCH", f"/chores/{chore}", fields)
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def test_weekly_schedule(api, house, clock) -> None:
+    chore = schedule(api, add_chore(api, house["wc"]), repeat_weekdays=[3, 1, 1])
+    assert chore["repeat_weekdays"] == [1, 3]
+    assert chore["repeat_days"] is None
+    # Tuesday midnight in Budapest.
+    assert chore["next_due_at"] == "2026-11-16T23:00:00Z"
+
+
+def test_every_n_days_schedule(api, house, clock) -> None:
+    chore = schedule(api, add_chore(api, house["wc"]), repeat_days=3)
+    assert chore["repeat_days"] == 3
+    assert chore["repeat_weekdays"] == []
+    assert chore["next_due_at"] == "2026-11-18T23:00:00Z"
+
+
+def test_one_schedule_replaces_the_other(api, house, clock) -> None:
+    id = add_chore(api, house["wc"])
+    schedule(api, id, repeat_weekdays=[1])
+    chore = schedule(api, id, repeat_days=7)
+    assert (chore["repeat_days"], chore["repeat_weekdays"]) == (7, [])
+
+
+def test_stop_repeating(api, house, clock) -> None:
+    id = add_chore(api, house["wc"])
+    schedule(api, id, repeat_days=7)
+    chore = schedule(api, id, repeat_days=None, repeat_weekdays=None)
+    assert (chore["repeat_days"], chore["next_due_at"]) == (None, None)
+
+
+def test_renaming_keeps_the_schedule(api, house, clock) -> None:
+    id = add_chore(api, house["wc"])
+    schedule(api, id, repeat_days=7)
+    assert schedule(api, id, name="Kuka")["repeat_days"] == 7
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [
+        {"repeat_days": 3, "repeat_weekdays": [1]},
+        {"repeat_days": 0},
+        {"repeat_weekdays": []},
+        {"repeat_weekdays": [7]},
+    ],
+)
+def test_bad_schedules_are_422(api, house, fields: dict) -> None:
+    id = add_chore(api, house["wc"])
+    assert api("PATCH", f"/chores/{id}", fields).status_code == 422
+
+
+def test_falling_due_opens_a_request(api, house, clock) -> None:
+    id = add_chore(api, house["wc"])
+    schedule(api, id, repeat_weekdays=[1])
+    assert active(api) == []
+    clock(days=1)
+    [request] = active(api)
+    assert request["chore_id"] == id
+    assert request["status"] == "open"
+    assert (request["created_by_id"], request["created_by_name"]) == (None, None)
+    assert request["created_at"] == "2026-11-16T23:00:00Z"
+
+
+def test_due_chore_opens_once(api, house, clock) -> None:
+    id = add_chore(api, house["wc"])
+    schedule(api, id, repeat_weekdays=[1])
+    clock(days=1)
+    first = active(api)
+    api("GET", "/chores")
+    assert active(api) == first
+
+
+def test_done_waits_for_the_next_time(api, house, clock) -> None:
+    id = add_chore(api, house["wc"])
+    schedule(api, id, repeat_weekdays=[1])
+    clock(days=1)
+    api("POST", f"/chores/{id}/done")
+    assert active(api) == []
+    assert chore_of(api, id)["next_due_at"] == "2026-11-23T23:00:00Z"
+    clock(days=7)
+    assert len(active(api)) == 1
+
+
+def test_done_early_still_falls_due(api, house, clock) -> None:
+    # Doing it on Monday doesn't stand for Tuesday's.
+    id = add_chore(api, house["wc"])
+    schedule(api, id, repeat_weekdays=[1])
+    api("POST", f"/chores/{id}/done")
+    clock(days=1)
+    assert len(active(api)) == 1
+
+
+def test_cancelled_occurrence_is_skipped(api, house, clock) -> None:
+    id = add_chore(api, house["wc"])
+    schedule(api, id, repeat_weekdays=[1])
+    clock(days=1)
+    api("POST", f"/requests/{active(api)[0]['id']}/cancel")
+    assert active(api) == []
+
+
+def test_every_n_days_counts_from_done(api, house, clock) -> None:
+    id = add_chore(api, house["wc"])
+    schedule(api, id, repeat_days=3)
+    clock(days=3)
+    request = active(api)[0]
+    clock(days=2)
+    api("POST", f"/requests/{request['id']}/done")
+    # Done on Saturday the 21st: due again on Tuesday the 24th.
+    assert chore_of(api, id)["next_due_at"] == "2026-11-23T23:00:00Z"
+    assert active(api) == []

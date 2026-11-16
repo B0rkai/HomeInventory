@@ -202,7 +202,7 @@ export const completeChore = <ThrowOnError extends boolean = false>(options: Opt
 /**
  * List Requests
  *
- * The open and claimed requests, oldest first.
+ * The open and claimed requests, oldest first, scheduled chores that fell due included.
  */
 export const listRequests = <ThrowOnError extends boolean = false>(options?: Options<ListRequestsData, ThrowOnError>): RequestResult<ListRequestsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListRequestsResponses, unknown, ThrowOnError>({ url: '/api/v1/requests', ...options });
 

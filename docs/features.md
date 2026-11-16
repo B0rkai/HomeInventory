@@ -38,6 +38,14 @@ check stock remotely, and avoid duplicating the job.
    the claimer can give a claim back. A chore done on the spot is marked
    done without a report (a request that's done from the start, so nobody
    gets notified), and its place shows who did it last and when.
+   A chore can **repeat**: on chosen weekdays ("kuka: kedd") or every N days
+   after it was last done ("ágynemű: 14 naponta"), set in the place's edit
+   mode. It falls due at local midnight (`TIMEZONE`, default
+   Europe/Budapest) and then opens a request by itself, with no creator
+   ("Esedékes"). Weekly: done earlier the same day counts, done the day
+   before doesn't; a cancelled occurrence is skipped. The place shows when
+   it's due next. Due chores are checked whenever chores or requests are
+   listed; milestone 4 adds a periodic check so the push goes out on time.
 5. **Shopping list.** The *Teendők* (to-do) tab: reported chores, then the
    open and claimed *buy* requests, one row per item however many places
    want it (its buttons act on all of them), grouped by category, with the
@@ -80,8 +88,12 @@ draft until its milestone.
   "Emelet › Fürdő". Not stock, but reported and claimed the same way. Names
   are unique per location ignoring case; icons work as for items. Added and
   deleted in a place's edit mode; deleting one deletes its requests.
+  Optional schedule: `repeat_days` or `repeat_weekdays` (a bitmask, Monday
+  = 1; the API speaks lists, Monday = 0), and `scheduled_at`, when it was
+  last changed (earlier occurrences don't count). Logic in `schedule.py`.
 - **Request**: kind (`buy` | `chore`), item (buy) or chore (chore),
-  location, status (`open` | `claimed` | `done` | `cancelled`), created by,
+  location, status (`open` | `claimed` | `done` | `cancelled`), created by
+  (unset when a scheduled chore fell due by itself),
   claimed by, closed by, timestamps. At most one open/claimed request per
   (item, location) or chore (partial unique indexes), so reporting twice
   finds the first one. Closed requests stay in the table (history, later).
@@ -108,7 +120,7 @@ change is a single conditional update (see `CLAUDE.md`); losing a race is
 
 ## Later ideas (not scheduled)
 
-- Recurring chores ("bins out on Tuesday") with reminders.
+- Reminders for repeating chores beyond the push when they fall due (e.g. the evening before).
 - "Fetch, don't buy": when the guest WC is low but the basement has lots,
   suggest bringing some up instead of adding it to the shopping list (the
   shortages view already shows where there's lots).

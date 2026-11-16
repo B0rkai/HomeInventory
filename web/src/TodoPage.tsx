@@ -75,7 +75,9 @@ export function TodoPage() {
                 >
                   <p className="small muted">
                     {placeLink(request.location_id)} ·{' '}
-                    {t.todo.reported(request.created_by_name, ago(request.created_at))}
+                    {request.created_by_name
+                      ? t.todo.reported(request.created_by_name, ago(request.created_at))
+                      : t.todo.due(ago(request.created_at))}
                   </p>
                 </RequestRow>
               )
