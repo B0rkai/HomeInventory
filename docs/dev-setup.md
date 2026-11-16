@@ -57,8 +57,8 @@ Either way, your user must be in the `docker` group to run it without
 sudo usermod -aG docker "$USER"
 ```
 
-Log out and back in, and restart the Remote Control session (step 8) so it
-picks up the group. `docker ps` should then work without `sudo`.
+Log out and back in, and restart Remote Control with a new tmux server
+(see the notes in step 8) so it picks up the group. `docker ps` should then work without `sudo`.
 
 ## 5. GitHub access and clone
 
@@ -116,13 +116,14 @@ claude
 
 ## 8. Remote Control
 
-Start Remote Control inside tmux so it survives SSH disconnects:
+Remote Control runs inside tmux so it survives SSH disconnects. The helper
+`rc-start` (in `~/.local/bin`, not in this repo) starts it for a folder in
+its own window of the `claude` tmux session and pre-accepts the folder
+trust dialog:
 
 ```bash
-tmux new -s homeinventory
-cd ~/HomeInventory
-claude remote-control --name "HomeInventory"
-# detach: Ctrl+B, then D    reattach: tmux attach -t homeinventory
+rc-start ~/HomeInventory HomeInventory
+# reattach: tmux attach -t claude    detach: Ctrl+B, then D
 ```
 
 The first run asks to enable Remote Control; answer `y`. Then open the
@@ -137,8 +138,11 @@ Notes:
 - Within this folder it is server mode: you can open several sessions from
   the app. `--spawn worktree` gives each one its own git worktree, so
   parallel sessions don't edit the same files.
-- To restart it (for example after a group change): attach to the tmux
-  session, press Ctrl+C, and run the same command again.
+- **Group changes need a new tmux server.** Everything started inside tmux
+  inherits the tmux server's groups, so after joining a group (such as
+  `docker`), restarting `claude remote-control` in an old window is not
+  enough. From a fresh SSH login, run `tmux kill-server` (this stops every
+  window, other projects included) and `rc-start` each folder again.
 - If it stops (reboot, Ctrl+C), run `claude remote-control` again in the
   same folder within about four hours to bring its sessions back. It also
   exits after about 10 minutes without network.
