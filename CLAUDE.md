@@ -60,8 +60,31 @@ that exists yet. Turn them into real instructions as the code lands.
 - Those headers are trustworthy only because nothing but `tailscale serve`
   can reach the app: bind it to `127.0.0.1` (in Docker, publish the port as
   `127.0.0.1:<port>:<port>`). Never bind it to `0.0.0.0` on the server.
-- A request with no identity header gets `401`, except in local development,
-  where a `DEV_USER` setting stands in for the header.
+- A request with no identity header gets `401`, unless a `DEV_USER` setting
+  stands in for the header (tests, or running without `tailscale serve` in
+  front). `DEV_USER` is never set in the live deployment.
+
+## Development environment
+
+Development happens **on borkai-server itself** (Linux, the same machine
+that runs the live app), driven through Claude Code Remote Control. Keep
+development and the live app apart:
+
+- **Dev checkout**: `~/dev/HomeInventory`, with its own data directory
+  (gitignored, inside the checkout) and its own SQLite file. Never point it
+  at the live data directory.
+- **Live app**: runs from Docker Compose in a separate directory with its
+  own data directory, built from a pushed commit, never served from the dev
+  checkout.
+- **Dev servers** bind to `127.0.0.1`: Uvicorn for the API, Vite for the
+  web client (proxying `/api` to Uvicorn). Vite is exposed on its own
+  `tailscale serve` HTTPS port, so the dev build opens on a phone with real
+  Tailscale identity, push and camera. Its `server.allowedHosts` must
+  include the `*.ts.net` name.
+- **Ports**: pick them after checking `tailscale serve status` (the torrent
+  box already runs here) and record them here: dev API, dev Vite, dev
+  HTTPS, live app, live HTTPS.
+- Git pushes go out as the **B0rkai-Claude** GitHub account.
 
 ## Repository layout *(planned)*
 
@@ -93,7 +116,7 @@ npm run generate-api    # regenerate the client from the server's OpenAPI schema
 ## Deployment
 
 - Target: **`borkai-server`**, Ubuntu Server (latest release), already on
-  the tailnet (it also runs the torrent box).
+  the tailnet (it also runs the torrent box and the dev environment above).
 - *(planned)* Docker Compose from `deploy/`: one container; the API serves
   the built web client as static files. The SQLite file lives in a
   bind-mounted data directory on the host, never inside the image.
@@ -107,9 +130,9 @@ npm run generate-api    # regenerate the client from the server's OpenAPI schema
 
 ## Conventions
 
-- Development happens on Windows, deployment is Linux: use `pathlib`, no
-  hard-coded separators, and keep LF line endings in the repo (add a
-  `.gitattributes` with the first code).
+- Use `pathlib` for paths and keep LF line endings in the repo (add a
+  `.gitattributes` with the first code): development is on Linux, but the
+  repo may still be edited from Windows.
 - Configuration comes from environment variables (Pydantic Settings): data
   directory, DB path, VAPID keys, `DEV_USER`. No secrets in the repo; commit
   a `.env.example`.
