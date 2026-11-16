@@ -884,3 +884,17 @@ h2 .tile .icon-art {
   gap: 0.5rem;
   flex: none;
 }
+.variant-head {
+  margin: 0.75rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.variant-block:first-of-type .variant-head {
+  margin-top: 0;
+}
+.variant-block .missing-rows {
+  padding-left: 0.75rem;
+}
+.variant-block .lots-hint {
+  margin: 0.25rem 0 0 0.75rem !important;
+}

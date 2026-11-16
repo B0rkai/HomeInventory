@@ -10,8 +10,9 @@ import { ShortageBadge } from './ShortageBadge'
 import { t } from './strings'
 import { ago } from './time'
 import { AddForm } from './AddForm'
+import { AddItemForm } from './AddItemForm'
 import { MAX_DEPTH, childrenOf, pathTo, shortageIn } from './tree'
-import { byItem, findItem, fullName, groupByName, hasVariants, parseFullName } from './variants'
+import { byItem, findItem, fullName, groupByName, hasVariants } from './variants'
 
 /** One place: the places inside it, and the level of everything kept here. */
 export function PlacePage({ id }: { id: number }) {
@@ -252,14 +253,19 @@ export function PlacePage({ id }: { id: number }) {
             ),
           )}
         </ul>
-        <AddForm
-          label={t.place.addItem}
-          placeholder={t.place.addItemPlaceholder}
+        <AddItemForm
           suggestions={suggestions}
-          onSubmit={(text) => {
-            const { name, variant } = parseFullName(text)
-            return addItem(name, variant)
-          }}
+          variantsOf={(name) =>
+            items
+              .filter(
+                (i) =>
+                  i.variant &&
+                  !keptHere.has(i.id) &&
+                  i.name.toLocaleLowerCase('hu') === name.toLocaleLowerCase('hu'),
+              )
+              .map((i) => i.variant!)
+          }
+          onSubmit={addItem}
         />
       </section>
 

@@ -24,7 +24,8 @@ check stock remotely, and avoid duplicating the job.
 3. **Check remotely.** See what any place has or lacks, from anywhere on the
    tailnet (e.g. at the shop). The *shortages* view lists everything low or
    out, by item (with the places that have *lots* of it, to fetch from) or
-   by place, as a dense read-only list; levels change on a place's page.
+   by place, as a dense read-only list (by item, each variant is a block of its own: the
+   variant, then a row per place); levels change on a place's page.
    Items and places show a two-tone icon (a line icon on a tile coloured
    by group: food, drinks, cleaning, hygiene, household, places), guessed
    from the name or chosen; without one, the first letter stands in. Adding an item suggests common
@@ -64,6 +65,7 @@ draft until its milestone.
   An optional `variant` tells apart kinds kept of the same supply
   ("Konzerv" kukorica / vörösbab / borsó, "Szemeteszsák" 35 l / 60 l);
   items sharing a name show as one group, each variant with its own stock.
+  A place's add form has an optional variant field next to the name.
   Name and variant together are unique, ignoring case. Optional category for grouping the shopping list.
   Items and locations have an optional `icon`, a name from the web client's
   icon set (`web/src/icons.ts`): null means the client guesses one from the

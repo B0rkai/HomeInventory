@@ -75,6 +75,7 @@ export const t = {
     addItem: 'Termék hozzáadása',
     addItemPlaceholder: 'Például: Cukor',
     addVariant: 'Fajta',
+    variantPlaceholder: 'Fajta, ha van (pl. kukorica)',
     addVariantLabel: (name: string) => `Új fajta: ${name}`,
     addVariantPlaceholder: 'Például: kukorica, 35 literes',
     rename: 'Név',
