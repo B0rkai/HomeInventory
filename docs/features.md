@@ -50,8 +50,11 @@ check stock remotely, and avoid duplicating the job.
    before doesn't; a cancelled occurrence is skipped. The place shows when
    it's due next. Due chores are checked whenever chores or requests are
    listed, and every minute, so the push goes out on time.
-5. **Shopping list.** The *Teendők* (to-do) tab: reported chores, then the
-   open and claimed *buy* requests, one row per item however many places
+5. **Shopping list.** The *Teendők* (to-do) tab has two lists: *Szabad*,
+   the pool of open requests nobody has claimed (and below it, what the
+   other has claimed), and *Enyém*, what I've claimed; claiming moves a row
+   from one to the other. Each list shows reported chores, then the *buy*
+   requests, one row per item however many places
    want it (its buttons act on all of them). An item another place has
    *lots* of goes under *Utántöltés* (refill: "Hozd innen: Pince", done as
    "Feltöltöttem"); the rest is the shopping list, grouped by category.

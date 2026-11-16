@@ -130,13 +130,13 @@ function Pages() {
   if (route.page === 'place') return <PlacePage key={route.id} id={route.id} />
   if (route.page === 'items') return <ItemsPage />
   if (route.page === 'missing') return <MissingPage view={route.view} />
-  if (route.page === 'todo') return <TodoPage />
+  if (route.page === 'todo') return <TodoPage view={route.view} />
   return <Home />
 }
 
 const TABS: { page: Route['page']; href: string; icon: string; label: string }[] = [
   { page: 'home', href: href.home, icon: 'home', label: t.nav.places },
-  { page: 'todo', href: href.todo, icon: 'list-check', label: t.nav.todo },
+  { page: 'todo', href: href.todo(), icon: 'list-check', label: t.nav.todo },
   { page: 'missing', href: href.missing(), icon: 'shopping-cart', label: t.nav.missing },
   { page: 'items', href: href.items, icon: 'clipboard-list', label: t.nav.items },
 ]

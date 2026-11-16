@@ -36,6 +36,11 @@ export const t = {
   todo: {
     title: 'Teendők',
     none: 'Nincs teendő. 🎉',
+    pool: 'Szabad',
+    mineTab: 'Enyém',
+    poolEmpty: 'Nincs szabad teendő: mindent elvállalt valaki.',
+    mineEmpty: 'Nincs elvállalt teendőd. A Szabad fülön vállalhatsz.',
+    theirsTitle: (name: string) => `${name} intézi`,
     noneHint:
       'Ami kevés vagy elfogyott, ide kerül a bevásárláshoz; a feladatokat a helyeknél jelezheted.',
     shopping: 'Bevásárlás',

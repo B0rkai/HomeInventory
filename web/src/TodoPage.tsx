@@ -3,7 +3,7 @@ import type { ItemOut, RequestOut } from './api'
 import { useHouse } from './house'
 import { LevelName } from './LevelPicker'
 import { Named } from './Named'
-import { href } from './route'
+import { href, type TodoView } from './route'
 import { t } from './strings'
 import { ago } from './time'
 import { placePath, treeOrder } from './tree'
@@ -11,14 +11,82 @@ import { PushSettings } from './PushSettings'
 import { byItem, fullName } from './variants'
 
 /**
- * What needs doing: the reported chores, the refills (items running low where another
- * place has lots: fetch, don't buy) and the shopping list (the rest, grouped by category
- * for the shop). An item is one row however many places want it.
+ * What needs doing, in two lists: the pool (open requests nobody has taken yet, then what
+ * the other has taken) and mine (what I've claimed).
  */
-export function TodoPage() {
+export function TodoPage({ view }: { view: TodoView }) {
+  const { me, house } = useHouse()
+  if (!house) return null
+  const pool = house.requests.filter((request) => request.status === 'open')
+  const mine = house.requests.filter((request) => request.claimed_by_id === me.id)
+  const theirs = house.requests.filter(
+    (request) => request.status === 'claimed' && request.claimed_by_id !== me.id,
+  )
+  const counts = { open: pool.length, mine: mine.length }
+  // Usually one other person; their name heads what they've taken.
+  const otherNames = [...new Set(theirs.map((request) => request.claimed_by_name ?? ''))]
+
+  return (
+    <>
+      <h2>{t.todo.title}</h2>
+      <div className="tabs" role="tablist">
+        {(['open', 'mine'] as const).map((tab) => (
+          <a
+            key={tab}
+            role="tab"
+            aria-selected={view === tab}
+            href={href.todo(tab)}
+            onClick={(event) => {
+              // Switching views shouldn't add to the back button's history.
+              event.preventDefault()
+              window.location.replace(href.todo(tab))
+            }}
+          >
+            {tab === 'open' ? t.todo.pool : t.todo.mineTab}
+            {counts[tab] > 0 && <span className="tab-badge">{counts[tab]}</span>}
+          </a>
+        ))}
+      </div>
+      <PushSettings prompt />
+      {view === 'open' ? (
+        <>
+          {pool.length === 0 && (
+            <div className="card">
+              <p>{theirs.length || mine.length ? t.todo.poolEmpty : t.todo.none}</p>
+              {!theirs.length && !mine.length && <p className="muted">{t.todo.noneHint}</p>}
+            </div>
+          )}
+          <Sections requests={pool} />
+          {theirs.length > 0 && (
+            <>
+              <h2 className="sub-title">{t.todo.theirsTitle(otherNames.join(', '))}</h2>
+              <Sections requests={theirs} />
+            </>
+          )}
+        </>
+      ) : (
+        <>
+          {mine.length === 0 && (
+            <div className="card">
+              <p>{t.todo.mineEmpty}</p>
+            </div>
+          )}
+          <Sections requests={mine} />
+        </>
+      )}
+    </>
+  )
+}
+
+/**
+ * Some requests as the chores, the refills (items running low where another place has
+ * lots: fetch, don't buy) and the shopping list (the rest, grouped by category for the
+ * shop). An item is one row however many of the places that want it are listed.
+ */
+function Sections({ requests }: { requests: RequestOut[] }) {
   const { house } = useHouse()
   if (!house) return null
-  const { locations, items, stock, chores, requests } = house
+  const { locations, items, stock, chores } = house
   const itemsById = new Map(items.map((item) => [item.id, item]))
   const choresById = new Map(chores.map((chore) => [chore.id, chore]))
   const order = new Map(treeOrder(locations).map((location, index) => [location.id, index]))
@@ -33,9 +101,14 @@ export function TodoPage() {
     if (request.item_id === null || !itemsById.has(request.item_id)) continue
     buying.set(request.item_id, [...(buying.get(request.item_id) ?? []), request])
   }
-  // Where another place has lots of it: fetch from there instead of buying.
+  // Where another place has lots of it: fetch from there instead of buying. Places that
+  // want it themselves don't count, whichever list they're on.
   const lotsFor = (itemId: number) => {
-    const wantedAt = new Set(buying.get(itemId)!.map((request) => request.location_id))
+    const wantedAt = new Set(
+      house.requests
+        .filter((request) => request.item_id === itemId)
+        .map((request) => request.location_id),
+    )
     return stock
       .filter(
         (row) => row.item_id === itemId && row.level === 'lots' && !wantedAt.has(row.location_id),
@@ -120,15 +193,6 @@ export function TodoPage() {
 
   return (
     <>
-      <h2>{t.todo.title}</h2>
-      <PushSettings prompt />
-      {buying.size === 0 && choreRequests.length === 0 && (
-        <div className="card">
-          <p>{t.todo.none}</p>
-          <p className="muted">{t.todo.noneHint}</p>
-        </div>
-      )}
-
       {choreRequests.length > 0 && (
         <section className="card">
           <h3>{t.todo.chores}</h3>
@@ -182,8 +246,9 @@ export function TodoPage() {
 }
 
 /**
- * One thing to buy or do, with who's on it and the buttons: claim, give back, done, not
- * needed. An item wanted in several places is one row; its buttons act on all of them.
+ * One thing to buy or do, with its buttons: claim, give back, done, not needed. Who's on
+ * it shows from the list it's in. An item wanted in several places is one row; its
+ * buttons act on all of them.
  */
 function RequestRow({
   title,
@@ -202,19 +267,11 @@ function RequestRow({
   const ids = (list: RequestOut[]) => list.map((request) => request.id)
   const open = requests.filter((request) => request.status === 'open')
   const mine = requests.filter((request) => request.claimed_by_id === me.id)
-  const theirs = requests.find(
-    (request) => request.status === 'claimed' && request.claimed_by_id !== me.id,
-  )
-  const who = mine.length
-    ? t.todo.mine
-    : theirs?.claimed_by_name && t.todo.theirs(theirs.claimed_by_name)
-
   return (
     <li>
       <div className="request-head">
         {title}
         <span className="request-who">
-          {who && <span className={`claim ${mine.length ? 'mine' : ''}`}>{who}</span>}
           <button
             type="button"
             className="icon"

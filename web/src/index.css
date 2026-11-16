@@ -986,3 +986,27 @@ h2 .tile .icon-art {
 .push-settings p {
   margin: 0 0 0.5rem;
 }
+.tab-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  margin-left: 0.35rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: var(--border);
+  color: var(--text);
+  font-size: 0.75rem;
+}
+.tabs a[aria-selected='true'] .tab-badge {
+  background: var(--on-accent);
+  color: var(--accent);
+}
+.tabs a {
+  grid-auto-flow: column;
+}
+.sub-title {
+  margin-top: 1rem;
+  font-size: 1rem;
+  color: var(--muted);
+}
