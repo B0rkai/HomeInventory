@@ -11,7 +11,7 @@ When a decision below changes, update this file in the same change.
 
 ## What this project is
 
-**HomeInventory**: a self-hosted app that keeps a three-floor house's
+**HomeInventory** (shown to its users as **Spájz**): a self-hosted app that keeps a three-floor house's
 supplies and small chores coordinated between its two users (husband and
 wife). Anyone can report "out of sugar", "upstairs bin is full" or "guest WC
 low on toilet paper" in seconds from a phone; the other gets notified, either
@@ -162,6 +162,10 @@ tailscale serve --bg --https=8443 http://127.0.0.1:5173
   every request and response.
 - UI: every common action (report, claim, mark done) is one or two taps on a
   phone. If a flow needs typing, it needs a reason.
+- UI language: **Hungarian only**, every user-facing text in
+  `web/src/strings.ts` (no hard-coded strings in components). Code, comments,
+  commits, docs and API error details stay in English. "HomeInventory" is the
+  dev name (repo, code, services); users only ever see "Spájz".
 - Every server change comes with tests; API tests run against a temporary
   SQLite database, never the real one.
 - Times are stored as UTC; the client formats them for display.
