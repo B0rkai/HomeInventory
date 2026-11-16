@@ -23,8 +23,11 @@ records are out of scope.
 
 ## Status
 
-Greenfield. Sections marked *(planned)* describe the intended setup, not code
-that exists yet. Turn them into real instructions as the code lands.
+Milestone 1 (skeleton) in progress: the server skeleton exists (settings,
+SQLite, Alembic, identity, `/api/v1/health`, `/api/v1/users/me`); the web
+client and deployment don't yet. Sections marked *(planned)* describe the
+intended setup, not code that exists yet. Turn them into real instructions as
+the code lands.
 
 ## Tech stack
 
@@ -89,27 +92,33 @@ development and the live app apart:
   is `borkai-server.tail61796b.ts.net`.
 - Git pushes go out as the **B0rkai-Claude** GitHub account.
 
-## Repository layout *(planned)*
+## Repository layout
 
 ```
 server/      FastAPI app (src/homeinventory/...), alembic/, tests/
-web/         Vite + React + TS PWA
-deploy/      docker-compose.yml, tailscale serve notes, backup script
+web/         (planned) Vite + React + TS PWA
+deploy/      (planned) docker-compose.yml, tailscale serve notes, backup script
 docs/        features.md and other design notes
 ```
 
-## Commands *(planned)*
+The app is built by `create_app(settings)` in `server/src/homeinventory/main.py`;
+the engine, sessionmaker and settings live on `app.state`. Tests build their
+own app on a temporary database (`server/tests/conftest.py`).
+
+## Commands
+
+Run server commands from `server/`; the dev database is `server/data/`.
 
 ```bash
 # server
 cd server && uv sync
-uv run uvicorn homeinventory.main:app --reload   # dev server
+uv run alembic upgrade head
+uv run uvicorn --factory homeinventory.main:create_app --host 127.0.0.1 --port 8000 --reload
 uv run pytest
 uv run ruff check . && uv run ruff format .
 uv run alembic revision --autogenerate -m "..."  # review the output before committing
-uv run alembic upgrade head
 
-# web
+# web (planned)
 cd web && npm install
 npm run dev
 npm run build
