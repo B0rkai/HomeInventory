@@ -44,7 +44,11 @@ export function groupByName<T>(rows: T[], itemOf: (row: T) => ItemOut): Group<T>
   return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name, 'hu'))
 }
 
-/** Whether a group shows as a header with variant rows under it, not as one plain row. */
+/**
+ * Whether a group shows its variants apart, not as one plain item: it has more than one
+ * item, or its only one has a variant. Rows of one item in several places don't count.
+ */
 export function hasVariants<T>(group: Group<T>, itemOf: (row: T) => ItemOut): boolean {
-  return group.rows.length > 1 || itemOf(group.rows[0]).variant !== null
+  const items = new Set(group.rows.map((row) => itemOf(row).id))
+  return items.size > 1 || itemOf(group.rows[0]).variant !== null
 }
