@@ -4,5 +4,9 @@ import { defineConfig } from '@hey-api/openapi-ts'
 export default defineConfig({
   input: 'openapi.json',
   output: 'src/api',
-  plugins: ['@hey-api/client-fetch'],
+  plugins: [
+    // Requests go to the page's own origin (/api/v1/...). Without this the generator
+    // takes the input file's name as the base URL: /openapi.json/api/v1/...
+    { name: '@hey-api/client-fetch', baseUrl: false },
+  ],
 })

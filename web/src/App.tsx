@@ -7,8 +7,10 @@ type State =
   | { kind: 'error'; message: string }
 
 function errorMessage(status: number | undefined): string {
-  if (status === 401) return 'Open the app through its Tailscale address.'
   if (status === undefined) return "Can't reach the server."
+  if (status === 401) return 'Open the app through its Tailscale address.'
+  // A success status without data: the answer wasn't JSON (e.g. an HTML page).
+  if (status < 400) return 'Unexpected answer from the server.'
   return `The server answered ${status}.`
 }
 
