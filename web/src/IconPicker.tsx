@@ -1,4 +1,5 @@
 import { guessIcon, iconChoices, type IconKind } from './icons'
+import { IconTile } from './Named'
 import { t } from './strings'
 
 /** Pick an icon: automatic (null, guessed from the name), none ('') or one from the list. */
@@ -14,33 +15,35 @@ export function IconPicker({
   onChange: (icon: string | null) => void
 }) {
   const guess = guessIcon(name, kind)
-  const option = (icon: string | null, label: string, title: string) => (
+  const current = value ?? guess
+  const option = (icon: string | null, label: string) => (
     <button
       key={icon ?? 'auto'}
       type="button"
       role="radio"
       aria-checked={value === icon}
-      aria-label={title}
+      aria-label={label}
+      title={label}
       className="icon-option"
       onClick={() => onChange(icon)}
     >
-      {label}
+      {/* A dash on the 'none' tile, not the name's first letter. */}
+      <IconTile icon={icon ?? guess} name={icon === '' ? '–' : name} kind={kind} />
+      {icon === null && <span>{t.icons.auto}</span>}
+      {icon === '' && <span>{t.icons.none}</span>}
     </button>
   )
-  const current = value === null ? guess : value
   return (
-    // Folded by default: 40-odd emoji would push the rest of the form off the screen.
+    // Folded by default: some 50 icons would push the rest of the form off the screen.
     <details className="icon-picker">
       <summary>
-        {t.icons.label}:{' '}
-        <span className="icon-current">
-          {current || '—'} {value === null && <span className="muted">({t.icons.auto})</span>}
-        </span>
+        {t.icons.label}: <IconTile icon={current} name={name} kind={kind} />
+        {value === null && <span className="muted">({t.icons.auto})</span>}
       </summary>
       <div role="radiogroup" aria-label={t.icons.label}>
-        {option(null, guess ? `${guess} ${t.icons.auto}` : t.icons.auto, t.icons.autoHint)}
-        {option('', t.icons.none, t.icons.none)}
-        {iconChoices(kind).map((icon) => option(icon, icon, icon))}
+        {option(null, t.icons.autoHint)}
+        {option('', t.icons.none)}
+        {iconChoices(kind).map((icon) => option(icon, icon))}
       </div>
     </details>
   )

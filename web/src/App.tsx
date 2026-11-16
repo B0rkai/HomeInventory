@@ -3,6 +3,7 @@ import { getCurrentUser, type UserOut } from './api'
 import { Home } from './Home'
 import { useHouse } from './house'
 import { HouseProvider } from './HouseProvider'
+import { IconArt } from './IconArt'
 import { ItemsPage } from './ItemsPage'
 import { MissingPage } from './MissingPage'
 import { NicknameForm } from './NicknameForm'
@@ -12,9 +13,7 @@ import { t } from './strings'
 import { isShort } from './tree'
 
 type State =
-  | { kind: 'loading' }
-  | { kind: 'ready'; user: UserOut }
-  | { kind: 'error'; message: string }
+  { kind: 'loading' } | { kind: 'ready'; user: UserOut } | { kind: 'error'; message: string }
 
 function errorMessage(status: number | undefined): string {
   if (status === undefined) return t.errors.unreachable
@@ -124,9 +123,9 @@ function Pages() {
 }
 
 const TABS: { page: Route['page']; href: string; icon: string; label: string }[] = [
-  { page: 'home', href: href.home, icon: '🏠', label: t.nav.places },
-  { page: 'missing', href: href.missing(), icon: '🛒', label: t.nav.missing },
-  { page: 'items', href: href.items, icon: '📋', label: t.nav.items },
+  { page: 'home', href: href.home, icon: 'home', label: t.nav.places },
+  { page: 'missing', href: href.missing(), icon: 'shopping-cart', label: t.nav.missing },
+  { page: 'items', href: href.items, icon: 'clipboard-list', label: t.nav.items },
 ]
 
 function NavBar() {
@@ -141,7 +140,7 @@ function NavBar() {
       {TABS.map((tab) => (
         <a key={tab.page} href={tab.href} aria-current={tab.page === current ? 'page' : undefined}>
           <span className="tab-icon" aria-hidden="true">
-            {tab.icon}
+            <IconArt name={tab.icon} />
             {tab.page === 'missing' && missing > 0 && <span className="tab-count">{missing}</span>}
           </span>
           {tab.label}

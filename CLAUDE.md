@@ -54,7 +54,9 @@ setup, not code that exists yet.
   don't hand-write DTOs. A server test fails until `web/openapi.json` is
   regenerated after an API change. TypeScript stays on 6.x: the generator
   needs its JavaScript API, which TypeScript 7 dropped.
-  `vite-plugin-pwa` with our own service worker (`web/src/sw.ts`).
+  `vite-plugin-pwa` with our own service worker (`web/src/sw.ts`). Icons:
+  Tabler (MIT, copied into `src/tablerIcons.gen.ts`) plus our own drawn in
+  its style (`src/drawnIcons.ts`: 24px grid, 2px round strokes).
 - **Notifications**: Web Push (VAPID, `pywebpush` on the server, a service
   worker in the client). **Live updates**: Server-Sent Events, so an open
   list refreshes itself.
@@ -143,6 +145,7 @@ cd web && npm install
 npm run dev             # 127.0.0.1:5173, proxies /api to the dev API
 npm run build && npm run lint
 npm run generate-api    # after any API change: re-exports openapi.json, regenerates src/api
+npm run generate-icons  # after adding a Tabler icon to src/icons.ts
 
 # phone access to the dev build (once; persists across reboots)
 tailscale serve --bg --https=8443 http://127.0.0.1:5173

@@ -15,8 +15,8 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 NICKNAME_MAX_LENGTH = 40
 NAME_MAX_LENGTH = 60
 CATEGORY_MAX_LENGTH = 40
-# An emoji, which can be several code points (e.g. a flag or a skin tone).
-ICON_MAX_LENGTH = 16
+# An icon's name in the web client's set (e.g. "toilet-paper").
+ICON_MAX_LENGTH = 32
 # Floor -> room -> spot.
 LOCATION_MAX_DEPTH = 3
 

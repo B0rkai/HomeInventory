@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useHouse } from './house'
 import { IconPicker } from './IconPicker'
-import { COMMON_ITEMS, guessIcon, iconOf } from './icons'
+import { COMMON_ITEMS } from './icons'
 import { LevelName, LevelPicker } from './LevelPicker'
 import { Named } from './Named'
 import { href } from './route'
@@ -48,11 +48,8 @@ export function PlacePage({ id }: { id: number }) {
     ...items
       .filter((item) => !keptHere.has(item.id))
       .sort(byName)
-      .map((item) => ({ value: item.name, label: iconOf(item, 'item') })),
-    ...COMMON_ITEMS.filter((name) => !known.has(name.toLocaleLowerCase('hu'))).map((name) => ({
-      value: name,
-      label: guessIcon(name, 'item'),
-    })),
+      .map((item) => item.name),
+    ...COMMON_ITEMS.filter((name) => !known.has(name.toLocaleLowerCase('hu'))),
   ]
 
   async function addItem(name: string) {

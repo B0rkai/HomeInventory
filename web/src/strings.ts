@@ -35,6 +35,13 @@ export const t = {
     none: 'Minden megvan. 🎉',
     lotsAt: 'Sok van itt:',
   },
+  time: {
+    now: 'most',
+    minutes: (n: number) => `${n} perce`,
+    hours: (n: number) => `${n} órája`,
+    yesterday: 'tegnap',
+    days: (n: number) => `${n} napja`,
+  },
   icons: {
     label: 'Ikon',
     auto: 'Automatikus',

@@ -1,28 +1,23 @@
-import { iconOf, type IconKind } from './icons'
+import { IconArt } from './IconArt'
+import { iconOf } from './iconLookup'
+import { hueOf, type IconKind } from './icons'
 
-/**
- * An item's or place's icon and name. Without an icon the first letter stands in, so
- * names in a list always start in line.
- */
-export function Named({
-  thing,
-  kind,
-}: {
-  thing: { name: string; icon: string | null }
-  kind: IconKind
-}) {
-  const icon = iconOf(thing, kind)
+type Thing = { name: string; icon: string | null }
+
+/** A two-tone tile: the icon in its group's colour, or the name's first letter. */
+export function IconTile({ icon, name, kind }: { icon: string; name: string; kind: IconKind }) {
+  return (
+    <span className={`tile hue-${hueOf(icon, kind)}`} aria-hidden="true">
+      {icon ? <IconArt name={icon} /> : name.charAt(0).toLocaleUpperCase('hu')}
+    </span>
+  )
+}
+
+/** An item's or place's tile and name; tiles keep names in a list lined up. */
+export function Named({ thing, kind }: { thing: Thing; kind: IconKind }) {
   return (
     <span className="named">
-      {icon ? (
-        <span className="icon-glyph" aria-hidden="true">
-          {icon}
-        </span>
-      ) : (
-        <span className="icon-glyph monogram" aria-hidden="true">
-          {thing.name.charAt(0).toLocaleUpperCase('hu')}
-        </span>
-      )}
+      <IconTile icon={iconOf(thing, kind)} name={thing.name} kind={kind} />
       <span>{thing.name}</span>
     </span>
   )

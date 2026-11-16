@@ -85,7 +85,8 @@ def test_migrations_keep_data_across_table_rebuilds(settings: Settings) -> None:
         ]:
             connection.execute(text(statement))
 
-    command.downgrade(config, "-1")  # drops the icon columns and the lots level
+    # To before icons and the lots level: rebuilds stock, items and locations.
+    command.downgrade(config, "5005493e58f0")
     with engine.connect() as connection:
         assert connection.execute(text("SELECT level FROM stock")).scalars().all() == ["plenty"]
     command.upgrade(config, "head")

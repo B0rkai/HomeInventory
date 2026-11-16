@@ -1,19 +1,22 @@
-const relative = new Intl.RelativeTimeFormat('hu', { numeric: 'auto' })
+import { t } from './strings'
 
-const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
-  ['year', 365 * 24 * 3600],
-  ['month', 30 * 24 * 3600],
-  ['week', 7 * 24 * 3600],
-  ['day', 24 * 3600],
-  ['hour', 3600],
-  ['minute', 60],
-]
+const date = new Intl.DateTimeFormat('hu', { month: 'short', day: 'numeric' })
 
-/** "5 perccel ezelőtt", "tegnap": the server sends UTC, shown relative to now. */
-export function ago(iso: string, now = Date.now()): string {
-  const seconds = (Date.parse(iso) - now) / 1000
-  for (const [unit, size] of UNITS) {
-    if (Math.abs(seconds) >= size) return relative.format(Math.round(seconds / size), unit)
-  }
-  return relative.format(0, 'second')
+/** Whole calendar days between two times, in the phone's time zone. */
+function daysBetween(then: Date, now: Date): number {
+  const midnight = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+  return Math.round((midnight(now) - midnight(then)) / 86_400_000)
+}
+
+/** "most", "5 perce", "2 órája", "tegnap", "3 napja", then a date: short, for list rows. */
+export function ago(iso: string, now = new Date()): string {
+  const then = new Date(iso) // the server sends UTC; Date shows it in local time
+  const minutes = Math.floor((now.getTime() - then.getTime()) / 60_000)
+  if (minutes < 1) return t.time.now
+  if (minutes < 60) return t.time.minutes(minutes)
+  const days = daysBetween(then, now)
+  if (days === 0) return t.time.hours(Math.floor(minutes / 60))
+  if (days === 1) return t.time.yesterday
+  if (days < 7) return t.time.days(days)
+  return date.format(then)
 }

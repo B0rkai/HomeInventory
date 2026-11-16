@@ -250,20 +250,25 @@ def test_icons_default_to_unset(api) -> None:
 
 def test_set_and_clear_icons(api) -> None:
     kitchen = add_location(api, "Konyha")
-    milk = api("POST", "/items", {"name": "Tej", "icon": "🥛"}).json()
-    assert milk["icon"] == "🥛"
+    milk = api("POST", "/items", {"name": "Tej", "icon": "milk"}).json()
+    assert milk["icon"] == "milk"
     # Empty means "no icon", unlike null, which lets the client guess.
     assert api("PATCH", f"/items/{milk['id']}", {"icon": ""}).json()["icon"] == ""
     assert api("PATCH", f"/items/{milk['id']}", {"name": "Zabtej"}).json()["icon"] == ""
     assert api("PATCH", f"/items/{milk['id']}", {"icon": None}).json()["icon"] is None
-    assert api("PATCH", f"/locations/{kitchen}", {"icon": "🍳"}).json()["icon"] == "🍳"
-    assert api("PATCH", f"/locations/{kitchen}", {"name": "Főző"}).json()["icon"] == "🍳"
+    assert (
+        api("PATCH", f"/locations/{kitchen}", {"icon": "tools-kitchen-2"}).json()["icon"]
+        == "tools-kitchen-2"
+    )
+    assert (
+        api("PATCH", f"/locations/{kitchen}", {"name": "Főző"}).json()["icon"] == "tools-kitchen-2"
+    )
 
 
-def test_icons_allow_multi_code_point_emoji(api) -> None:
-    family = "👨‍👩‍👧"  # five code points
-    assert api("POST", "/items", {"name": "Pelenka", "icon": family}).json()["icon"] == family
-    assert api("POST", "/items", {"name": "Hosszú", "icon": "x" * 17}).status_code == 422
+def test_icon_names_are_bounded(api) -> None:
+    name = "bowl-chopsticks-and-more-letters"  # 32 characters
+    assert api("POST", "/items", {"name": "Rizs", "icon": name}).json()["icon"] == name
+    assert api("POST", "/items", {"name": "Tészta", "icon": name + "x"}).status_code == 422
 
 
 def test_lots_level(api) -> None:

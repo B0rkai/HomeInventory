@@ -25,8 +25,9 @@ check stock remotely, and avoid duplicating the job.
    tailnet (e.g. at the shop). The *shortages* view lists everything low or
    out, by item (with the places that have *lots* of it, to fetch from) or
    by place.
-   Items and places show an emoji icon, guessed from the name or chosen;
-   without one, the first letter stands in. Adding an item suggests common
+   Items and places show a two-tone icon (a line icon on a tile coloured
+   by group: food, drinks, cleaning, hygiene, household, places), guessed
+   from the name or chosen; without one, the first letter stands in. Adding an item suggests common
    supplies; only the ones picked become items.
 4. **Requests with claiming.** Every report becomes a request: **open →
    claimed → done** (or cancelled). Claiming shows who is on it, so two
@@ -52,8 +53,9 @@ Built so far: User, Location, Item, Stock (tables `users`, `locations`,
   goes with it.
 - **Item**: a supply in the catalogue: "Sugar", "Toilet paper", "Milk",
   unique ignoring case. Optional category for grouping the shopping list.
-  Items and locations have an optional `icon` (an emoji): null means the
-  client guesses one from the name (`web/src/icons.ts`), empty means none.
+  Items and locations have an optional `icon`, a name from the web client's
+  icon set (`web/src/icons.ts`): null means the client guesses one from the
+  name, empty means none.
   Items are added from a place's page; deleting one removes its stock.
 - **Stock**: one row per (item, location), unique on that pair: level
   (`lots` | `plenty` | `low` | `out`), updated by, updated at. A row means the item

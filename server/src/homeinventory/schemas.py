@@ -51,7 +51,7 @@ Category = Annotated[
     AfterValidator(_blank_to_none),
 ]
 
-# Null: let the client guess from the name; empty: no icon.
+# An icon name from the web client's set. Null: let the client guess from the name; empty: no icon.
 Icon = Annotated[str, StringConstraints(strip_whitespace=True, max_length=ICON_MAX_LENGTH)] | None
 
 
