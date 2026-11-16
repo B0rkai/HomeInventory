@@ -128,12 +128,13 @@ class StockSet(BaseModel):
 
 
 class ChoreOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     id: int
     location_id: int
     name: str
     icon: str | None
+    # When it was last done and by whom; unset if never.
+    last_done_at: datetime | None
+    last_done_by_name: str | None
 
 
 class ChoreCreate(BaseModel):

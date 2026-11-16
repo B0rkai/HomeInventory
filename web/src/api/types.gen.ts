@@ -42,6 +42,14 @@ export type ChoreOut = {
      * Icon
      */
     icon: string | null;
+    /**
+     * Last Done At
+     */
+    last_done_at: string | null;
+    /**
+     * Last Done By Name
+     */
+    last_done_by_name: string | null;
 };
 
 /**
@@ -848,6 +856,36 @@ export type ReportChoreResponses = {
 };
 
 export type ReportChoreResponse = ReportChoreResponses[keyof ReportChoreResponses];
+
+export type CompleteChoreData = {
+    body?: never;
+    path: {
+        /**
+         * Chore Id
+         */
+        chore_id: number;
+    };
+    query?: never;
+    url: '/api/v1/chores/{chore_id}/done';
+};
+
+export type CompleteChoreErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CompleteChoreError = CompleteChoreErrors[keyof CompleteChoreErrors];
+
+export type CompleteChoreResponses = {
+    /**
+     * Successful Response
+     */
+    200: ChoreOut;
+};
+
+export type CompleteChoreResponse = CompleteChoreResponses[keyof CompleteChoreResponses];
 
 export type ListRequestsData = {
     body?: never;

@@ -6,7 +6,7 @@ tap at once exactly one wins and the other gets 409.
 """
 
 from fastapi import APIRouter, Depends, Response, status
-from sqlalchemy import select, update
+from sqlalchemy import and_, func, select, update
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
@@ -82,10 +82,43 @@ def _check_chore_name(
         raise conflict("This location already has a chore with this name")
 
 
+def _last_done(session: Session, chore_ids: list[int]) -> dict[int, Request]:
+    """Each chore's latest done request, by chore id."""
+    latest = (
+        select(Request.chore_id, func.max(Request.closed_at).label("closed_at"))
+        .where(Request.chore_id.in_(chore_ids), Request.status == RequestStatus.DONE)
+        .group_by(Request.chore_id)
+        .subquery()
+    )
+    requests = session.scalars(
+        select(Request).join(
+            latest,
+            and_(Request.chore_id == latest.c.chore_id, Request.closed_at == latest.c.closed_at),
+        )
+    )
+    return {request.chore_id: request for request in requests if request.chore_id}
+
+
+def _chore_out(chore: Chore, last: Request | None) -> ChoreOut:
+    return ChoreOut(
+        id=chore.id,
+        location_id=chore.location_id,
+        name=chore.name,
+        icon=chore.icon,
+        last_done_at=last and last.closed_at,
+        last_done_by_name=last and last.closed_by and last.closed_by.display_name,
+    )
+
+
+def _chore_outs(session: Session, chores: list[Chore]) -> list[ChoreOut]:
+    last = _last_done(session, [chore.id for chore in chores])
+    return [_chore_out(chore, last.get(chore.id)) for chore in chores]
+
+
 @router.get("/chores")
 def list_chores(session: Session = Depends(get_session)) -> list[ChoreOut]:
     chores = session.scalars(select(Chore).order_by(Chore.location_id, Chore.id))
-    return [ChoreOut.model_validate(chore) for chore in chores]
+    return _chore_outs(session, list(chores))
 
 
 @router.post("/chores", status_code=status.HTTP_201_CREATED)
@@ -95,7 +128,7 @@ def create_chore(new: ChoreCreate, session: Session = Depends(get_session)) -> C
     chore = Chore(location_id=new.location_id, name=new.name, icon=new.icon)
     session.add(chore)
     session.commit()
-    return ChoreOut.model_validate(chore)
+    return _chore_out(chore, None)
 
 
 @router.patch("/chores/{chore_id}")
@@ -109,7 +142,7 @@ def update_chore(
     if "icon" in update.model_fields_set:
         chore.icon = update.icon
     session.commit()
-    return ChoreOut.model_validate(chore)
+    return _chore_outs(session, [chore])[0]
 
 
 @router.delete("/chores/{chore_id}", **NO_CONTENT)
@@ -147,6 +180,37 @@ def report_chore(
         select(Request).where(Request.chore_id == chore.id, Request.status.in_(ACTIVE))
     ).one()
     return RequestOut.model_validate(request)
+
+
+@router.post("/chores/{chore_id}/done")
+def complete_chore(
+    chore_id: int,
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+) -> ChoreOut:
+    """Records a chore as done just now: its open or claimed request if it has one, else a
+    request that's done from the start (nobody needs telling about it)."""
+    chore = get_or_404(session, Chore, chore_id)
+    now = utcnow()
+    closed = {"status": RequestStatus.DONE, "closed_by_id": user.id, "closed_at": now}
+    finished = session.execute(
+        update(Request)
+        .where(Request.chore_id == chore.id, Request.status.in_(ACTIVE))
+        .values(**closed)
+    )
+    if not finished.rowcount:
+        session.add(
+            Request(
+                kind=RequestKind.CHORE,
+                chore_id=chore.id,
+                location_id=chore.location_id,
+                created_by_id=user.id,
+                created_at=now,
+                **closed,
+            )
+        )
+    session.commit()
+    return _chore_outs(session, [chore])[0]
 
 
 # Requests

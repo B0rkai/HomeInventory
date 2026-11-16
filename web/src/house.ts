@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import {
   cancelRequest,
   claimRequest,
+  completeChore,
   completeRequest,
   createChore,
   createItem,
@@ -274,6 +275,20 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
           setHouse(
             (h) =>
               h && { ...h, requests: [...h.requests.filter((r) => r.id !== request.id), request] },
+          )
+        }
+      },
+      /** Records a chore as done now, reported or not. */
+      async completeChore(id: number) {
+        const chore = (await change(completeChore({ path: { chore_id: id } })))?.data
+        if (chore) {
+          setHouse(
+            (h) =>
+              h && {
+                ...h,
+                chores: h.chores.map((c) => (c.id === id ? chore : c)),
+                requests: h.requests.filter((r) => r.chore_id !== id),
+              },
           )
         }
       },

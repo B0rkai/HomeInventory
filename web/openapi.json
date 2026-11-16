@@ -657,6 +657,46 @@
         }
       }
     },
+    "/api/v1/chores/{chore_id}/done": {
+      "post": {
+        "summary": "Complete Chore",
+        "description": "Records a chore as done just now: its open or claimed request if it has one, else a\nrequest that's done from the start (nobody needs telling about it).",
+        "operationId": "complete_chore",
+        "parameters": [
+          {
+            "name": "chore_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Chore Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoreOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/requests": {
       "get": {
         "summary": "List Requests",
@@ -899,6 +939,29 @@
               }
             ],
             "title": "Icon"
+          },
+          "last_done_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Done At"
+          },
+          "last_done_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Done By Name"
           }
         },
         "type": "object",
@@ -906,7 +969,9 @@
           "id",
           "location_id",
           "name",
-          "icon"
+          "icon",
+          "last_done_at",
+          "last_done_by_name"
         ],
         "title": "ChoreOut"
       },

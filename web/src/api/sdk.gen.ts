@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CancelRequestData, CancelRequestErrors, CancelRequestResponses, ClaimRequestData, ClaimRequestErrors, ClaimRequestResponses, CompleteRequestData, CompleteRequestErrors, CompleteRequestResponses, CreateChoreData, CreateChoreErrors, CreateChoreResponses, CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, DeleteChoreData, DeleteChoreErrors, DeleteChoreResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, ListChoresData, ListChoresResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListRequestsData, ListRequestsResponses, ListStockData, ListStockResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, ReportChoreData, ReportChoreErrors, ReportChoreResponses, SetStockData, SetStockErrors, SetStockResponses, UnclaimRequestData, UnclaimRequestErrors, UnclaimRequestResponses, UpdateChoreData, UpdateChoreErrors, UpdateChoreResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses } from './types.gen';
+import type { CancelRequestData, CancelRequestErrors, CancelRequestResponses, ClaimRequestData, ClaimRequestErrors, ClaimRequestResponses, CompleteChoreData, CompleteChoreErrors, CompleteChoreResponses, CompleteRequestData, CompleteRequestErrors, CompleteRequestResponses, CreateChoreData, CreateChoreErrors, CreateChoreResponses, CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, DeleteChoreData, DeleteChoreErrors, DeleteChoreResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, ListChoresData, ListChoresResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListRequestsData, ListRequestsResponses, ListStockData, ListStockResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, ReportChoreData, ReportChoreErrors, ReportChoreResponses, SetStockData, SetStockErrors, SetStockResponses, UnclaimRequestData, UnclaimRequestErrors, UnclaimRequestResponses, UpdateChoreData, UpdateChoreErrors, UpdateChoreResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -190,6 +190,14 @@ export const updateChore = <ThrowOnError extends boolean = false>(options: Optio
  * Reports that a chore needs doing; if it's already reported, returns that request (200).
  */
 export const reportChore = <ThrowOnError extends boolean = false>(options: Options<ReportChoreData, ThrowOnError>): RequestResult<ReportChoreResponses, ReportChoreErrors, ThrowOnError> => (options.client ?? client).post<ReportChoreResponses, ReportChoreErrors, ThrowOnError>({ url: '/api/v1/chores/{chore_id}/requests', ...options });
+
+/**
+ * Complete Chore
+ *
+ * Records a chore as done just now: its open or claimed request if it has one, else a
+ * request that's done from the start (nobody needs telling about it).
+ */
+export const completeChore = <ThrowOnError extends boolean = false>(options: Options<CompleteChoreData, ThrowOnError>): RequestResult<CompleteChoreResponses, CompleteChoreErrors, ThrowOnError> => (options.client ?? client).post<CompleteChoreResponses, CompleteChoreErrors, ThrowOnError>({ url: '/api/v1/chores/{chore_id}/done', ...options });
 
 /**
  * List Requests

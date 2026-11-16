@@ -792,7 +792,6 @@ h2 .tile .icon-art {
   font-weight: 500;
 }
 
-
 .variant-form {
   padding-bottom: 0.25rem;
 }
@@ -894,4 +893,13 @@ h2 .tile .icon-art {
 }
 .variant-block .lots-hint {
   margin: 0.25rem 0 0 0.75rem !important;
+}
+.chore-name {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.chore-name > .small {
+  padding-left: 2.25rem;
 }

@@ -196,7 +196,14 @@ def test_unknown_request_is_404(api, action: str) -> None:
 def test_chores_belong_to_a_place(api, house) -> None:
     id = add_chore(api, house["wc"])
     assert api("GET", "/chores").json() == [
-        {"id": id, "location_id": house["wc"], "name": "Kuka ürítése", "icon": None}
+        {
+            "id": id,
+            "location_id": house["wc"],
+            "name": "Kuka ürítése",
+            "icon": None,
+            "last_done_at": None,
+            "last_done_by_name": None,
+        }
     ]
 
 
@@ -277,3 +284,52 @@ def test_deleting_a_place_deletes_its_chores_and_requests(api, house) -> None:
 )
 def test_requests_need_identity(api, method: str, path: str) -> None:
     assert api(method, path, headers={}).status_code == 401
+
+
+def chore_of(api, id: int) -> dict:
+    return next(chore for chore in api("GET", "/chores").json() if chore["id"] == id)
+
+
+def test_new_chore_was_never_done(api, house) -> None:
+    chore = chore_of(api, add_chore(api, house["wc"]))
+    assert (chore["last_done_at"], chore["last_done_by_name"]) == (None, None)
+
+
+def test_chore_done_without_a_report(api, house) -> None:
+    chore = add_chore(api, house["wc"])
+    response = api("POST", f"/chores/{chore}/done", headers=BELA)
+    assert response.status_code == 200
+    assert response.json()["last_done_by_name"] == "Bela Kovacs"
+    assert response.json()["last_done_at"] is not None
+    assert active(api) == []
+    # It can be reported again later.
+    assert api("POST", f"/chores/{chore}/requests").status_code == 201
+
+
+def test_chore_done_closes_its_report(api, house) -> None:
+    chore = add_chore(api, house["wc"])
+    api("POST", f"/chores/{chore}/requests")
+    api("POST", f"/chores/{chore}/done", headers=BELA)
+    assert active(api) == []
+    assert chore_of(api, chore)["last_done_by_name"] == "Bela Kovacs"
+
+
+def test_last_done_is_the_latest(api, house) -> None:
+    chore = add_chore(api, house["wc"])
+    api("POST", f"/chores/{chore}/done")
+    request = api("POST", f"/chores/{chore}/requests").json()
+    api("POST", f"/requests/{request['id']}/done", headers=BELA)
+    other = add_chore(api, house["pantry"], "Felmosás")
+    assert chore_of(api, chore)["last_done_by_name"] == "Bela Kovacs"
+    assert chore_of(api, other)["last_done_at"] is None
+
+
+def test_cancelled_doesnt_count_as_done(api, house) -> None:
+    chore = add_chore(api, house["wc"])
+    request = api("POST", f"/chores/{chore}/requests").json()
+    api("POST", f"/requests/{request['id']}/cancel")
+    assert chore_of(api, chore)["last_done_at"] is None
+
+
+def test_done_unknown_chore_is_404(api) -> None:
+    assert api("POST", "/chores/999/done").status_code == 404

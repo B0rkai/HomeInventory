@@ -228,6 +228,7 @@ class Request(Base):
 
     created_by: Mapped[User] = relationship(foreign_keys=[created_by_id], lazy="joined")
     claimed_by: Mapped[User | None] = relationship(foreign_keys=[claimed_by_id], lazy="joined")
+    closed_by: Mapped[User | None] = relationship(foreign_keys=[closed_by_id], lazy="joined")
 
     @property
     def created_by_name(self) -> str:

@@ -35,7 +35,9 @@ check stock remotely, and avoid duplicating the job.
    people don't buy the same milk. Setting a level to *low* or *out* is the
    report for a supply; a chore is reported with one tap on its place's
    page ("Szólok"). Anyone can mark a request done, claimed or not; only
-   the claimer can give a claim back.
+   the claimer can give a claim back. A chore done on the spot is marked
+   done without a report (a request that's done from the start, so nobody
+   gets notified), and its place shows who did it last and when.
 5. **Shopping list.** The *Teendők* (to-do) tab: reported chores, then the
    open and claimed *buy* requests, one row per item however many places
    want it (its buttons act on all of them), grouped by category, with the

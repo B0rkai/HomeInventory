@@ -295,7 +295,7 @@ export function PlacePage({ id }: { id: number }) {
   )
 }
 
-/** A chore here: report it with one tap, see who's on it, or mark it done. */
+/** A chore here: report it, or say it's done (reported or not); and when it last was. */
 function ChoreRow({
   chore,
   request,
@@ -308,6 +308,15 @@ function ChoreRow({
   editing: boolean
 }) {
   const { actions } = useHouse()
+  const done = (
+    <button
+      type="button"
+      className="secondary small-button"
+      onClick={() => actions.completeChore(chore.id)}
+    >
+      ✓ {t.todo.done}
+    </button>
+  )
   let action: ReactNode
   if (editing) {
     action = (
@@ -325,29 +334,31 @@ function ChoreRow({
       </button>
     )
   } else if (request) {
-    action = (
-      <span className="chore-state">
-        <span className="small muted">{claim(request) ?? t.place.reported}</span>
-        <button
-          type="button"
-          className="secondary small-button"
-          onClick={() => actions.act('done', [request.id])}
-        >
-          ✓ {t.todo.done}
-        </button>
-      </span>
-    )
+    action = done
   } else {
     action = (
-      <button type="button" className="small-button" onClick={() => actions.reportChore(chore.id)}>
-        {t.place.report}
-      </button>
+      <>
+        {done}
+        <button
+          type="button"
+          className="small-button"
+          onClick={() => actions.reportChore(chore.id)}
+        >
+          {t.place.report}
+        </button>
+      </>
     )
   }
+  const status = request
+    ? (claim(request) ?? t.place.reported)
+    : chore.last_done_at && t.place.lastDone(chore.last_done_by_name ?? '', ago(chore.last_done_at))
   return (
-    <li>
-      <Named thing={chore} kind="chore" />
-      {action}
+    <li className="chore">
+      <span className="chore-name">
+        <Named thing={chore} kind="chore" />
+        {status && <span className={`small ${request ? 'claim' : 'muted'}`}>{status}</span>}
+      </span>
+      <span className="chore-state">{action}</span>
     </li>
   )
 }
