@@ -6,6 +6,8 @@ When a decision below changes, update this file in the same change.
 
 - `docs/features.md`: features, data model, milestones and later ideas. Read
   it before designing a feature or touching the schema.
+- `docs/dev-setup.md`: one-time setup of the dev environment on
+  borkai-server (toolchain, GitHub access, Tailscale, Remote Control).
 
 ## What this project is
 
