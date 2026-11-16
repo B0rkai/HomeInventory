@@ -5,7 +5,8 @@ import { LevelName, LevelPicker } from './LevelPicker'
 import { Named } from './Named'
 import { href, type MissingView } from './route'
 import { t } from './strings'
-import { byName, isShort, pathTo, treeOrder } from './tree'
+import { isShort, pathTo, treeOrder } from './tree'
+import { byItem, fullName, groupByName, hasVariants } from './variants'
 
 const key = (row: StockOut) => `${row.location_id}-${row.item_id}`
 
@@ -78,45 +79,69 @@ function placePath(locations: LocationOut[], id: number): string {
 
 function ByItem({ items, locations, stock, listed, onLevel }: Props & { stock: StockOut[] }) {
   const order = new Map(treeOrder(locations).map((location, index) => [location.id, index]))
+  const itemsById = new Map(items.map((item) => [item.id, item]))
   const byPlace = (a: StockOut, b: StockOut) =>
     (order.get(a.location_id) ?? 0) - (order.get(b.location_id) ?? 0)
   const worst = (rows: StockOut[]) => (rows.some((row) => row.level === 'out') ? 0 : 1)
-  const groups = items
-    .map((item) => ({ item, rows: listed.filter((row) => row.item_id === item.id).sort(byPlace) }))
-    .filter((group) => group.rows.length)
-    .sort((a, b) => worst(a.rows) - worst(b.rows) || byName(a.item, b.item))
+  // One card per item name: variants ("Konzerv" kukorica, vörösbab) share it.
+  const groups = groupByName(
+    listed.filter((row) => itemsById.has(row.item_id)),
+    (row) => itemsById.get(row.item_id)!,
+  ).sort((a, b) => worst(a.rows) - worst(b.rows))
 
-  return groups.map(({ item, rows }) => {
-    const lots = stock.filter((row) => row.item_id === item.id && row.level === 'lots')
+  return groups.map((group) => {
+    const rows = group.rows.sort(
+      (a, b) => byItem(itemsById.get(a.item_id)!, itemsById.get(b.item_id)!) || byPlace(a, b),
+    )
+    const variants = hasVariants(group, (row) => itemsById.get(row.item_id)!)
+    // Where there's lots of the very variants that are short.
+    const shortIds = new Set(rows.map((row) => row.item_id))
+    const lots = stock
+      .filter((row) => shortIds.has(row.item_id) && row.level === 'lots')
+      .sort(byPlace)
     return (
-      <section key={item.id} className="card">
+      <section key={group.name} className="card">
         <h3 className="item-title">
-          <Named thing={item} kind="item" />
+          <Named thing={{ name: group.name, icon: group.first.icon }} kind="item" />
         </h3>
         <ul className="stock">
-          {rows.map((row) => (
-            <li key={key(row)}>
-              <div className="stock-name">
-                <a href={href.place(row.location_id)}>{placePath(locations, row.location_id)}</a>
-                <LevelName level={row.level} />
-              </div>
-              <LevelPicker
-                level={row.level}
-                label={`${item.name}: ${placePath(locations, row.location_id)}`}
-                onChange={(level) => onLevel(row, level)}
-              />
-            </li>
-          ))}
+          {rows.map((row) => {
+            const item = itemsById.get(row.item_id)!
+            return (
+              <li key={key(row)}>
+                <div className="stock-name">
+                  <span>
+                    {variants && (
+                      <span className="variant-label">{item.variant ?? t.items.noVariant} · </span>
+                    )}
+                    <a href={href.place(row.location_id)}>
+                      {placePath(locations, row.location_id)}
+                    </a>
+                  </span>
+                  <LevelName level={row.level} />
+                </div>
+                <LevelPicker
+                  level={row.level}
+                  label={`${fullName(item)}: ${placePath(locations, row.location_id)}`}
+                  onChange={(level) => onLevel(row, level)}
+                />
+              </li>
+            )
+          })}
         </ul>
         {lots.length > 0 && (
           <p className="lots-hint">
             {t.missing.lotsAt}{' '}
-            {lots.sort(byPlace).map((row, index) => (
-              <span key={row.location_id}>
-                {index > 0 && ', '}
-                <a href={href.place(row.location_id)}>{placePath(locations, row.location_id)}</a>
-              </span>
-            ))}
+            {lots.map((row, index) => {
+              const variant = variants && itemsById.get(row.item_id)!.variant
+              return (
+                <span key={key(row)}>
+                  {index > 0 && ', '}
+                  <a href={href.place(row.location_id)}>{placePath(locations, row.location_id)}</a>
+                  {variant && ` (${variant})`}
+                </span>
+              )
+            })}
           </p>
         )}
       </section>
@@ -130,7 +155,7 @@ function ByPlace({ items, locations, listed, onLevel }: Props) {
     const rows = listed
       .filter((row) => row.location_id === location.id && itemsById.has(row.item_id))
       .map((row) => ({ row, item: itemsById.get(row.item_id)! }))
-      .sort((a, b) => byName(a.item, b.item))
+      .sort((a, b) => byItem(a.item, b.item))
     if (!rows.length) return null
     return (
       <section key={location.id} className="card">
@@ -146,7 +171,7 @@ function ByPlace({ items, locations, listed, onLevel }: Props) {
               </div>
               <LevelPicker
                 level={row.level}
-                label={item.name}
+                label={fullName(item)}
                 onChange={(level) => onLevel(row, level)}
               />
             </li>

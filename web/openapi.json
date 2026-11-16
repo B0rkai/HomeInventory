@@ -517,6 +517,18 @@
             "minLength": 1,
             "title": "Name"
           },
+          "variant": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variant"
+          },
           "category": {
             "anyOf": [
               {
@@ -558,6 +570,17 @@
             "type": "string",
             "title": "Name"
           },
+          "variant": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variant"
+          },
           "category": {
             "anyOf": [
               {
@@ -585,6 +608,7 @@
         "required": [
           "id",
           "name",
+          "variant",
           "category",
           "icon"
         ],
@@ -604,6 +628,18 @@
               }
             ],
             "title": "Name"
+          },
+          "variant": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variant"
           },
           "category": {
             "anyOf": [

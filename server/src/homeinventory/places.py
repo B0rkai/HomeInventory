@@ -128,13 +128,18 @@ def delete_location(location_id: int, session: Session = Depends(get_session)) -
 # Items
 
 
-def _check_item_name(session: Session, name: str, own_id: int | None = None) -> None:
-    folded = name.casefold()
+def _check_item_name(
+    session: Session, name: str, variant: str | None, own_id: int | None = None
+) -> None:
+    def key(name: str, variant: str | None) -> tuple[str, str | None]:
+        return name.casefold(), variant and variant.casefold()
+
+    wanted = key(name, variant)
     if any(
-        item.name.casefold() == folded and item.id != own_id
+        key(item.name, item.variant) == wanted and item.id != own_id
         for item in session.scalars(select(Item))
     ):
-        raise _conflict("An item with this name already exists")
+        raise _conflict("An item with this name and variant already exists")
 
 
 @router.get("/items")
@@ -144,8 +149,8 @@ def list_items(session: Session = Depends(get_session)) -> list[ItemOut]:
 
 @router.post("/items", status_code=status.HTTP_201_CREATED)
 def create_item(new: ItemCreate, session: Session = Depends(get_session)) -> ItemOut:
-    _check_item_name(session, new.name)
-    item = Item(name=new.name, category=new.category, icon=new.icon)
+    _check_item_name(session, new.name, new.variant)
+    item = Item(name=new.name, variant=new.variant, category=new.category, icon=new.icon)
     session.add(item)
     session.commit()
     return ItemOut.model_validate(item)
@@ -156,9 +161,10 @@ def update_item(
     item_id: int, update: ItemUpdate, session: Session = Depends(get_session)
 ) -> ItemOut:
     item = _get(session, Item, item_id)
-    if update.name is not None:
-        _check_item_name(session, update.name, own_id=item.id)
-        item.name = update.name
+    name = item.name if update.name is None else update.name
+    variant = update.variant if "variant" in update.model_fields_set else item.variant
+    _check_item_name(session, name, variant, own_id=item.id)
+    item.name, item.variant = name, variant
     if "category" in update.model_fields_set:
         item.category = update.category
     if "icon" in update.model_fields_set:

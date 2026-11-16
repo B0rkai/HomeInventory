@@ -8,6 +8,7 @@ from homeinventory.models import (
     ICON_MAX_LENGTH,
     NAME_MAX_LENGTH,
     NICKNAME_MAX_LENGTH,
+    VARIANT_MAX_LENGTH,
     Level,
 )
 
@@ -51,6 +52,11 @@ Category = Annotated[
     AfterValidator(_blank_to_none),
 ]
 
+Variant = Annotated[
+    Annotated[str, StringConstraints(strip_whitespace=True, max_length=VARIANT_MAX_LENGTH)] | None,
+    AfterValidator(_blank_to_none),
+]
+
 # An icon name from the web client's set. Null: let the client guess from the name; empty: no icon.
 Icon = Annotated[str, StringConstraints(strip_whitespace=True, max_length=ICON_MAX_LENGTH)] | None
 
@@ -85,19 +91,22 @@ class ItemOut(BaseModel):
 
     id: int
     name: str
+    variant: str | None
     category: str | None
     icon: str | None
 
 
 class ItemCreate(BaseModel):
     name: Name
+    variant: Variant = None
     category: Category = None
     icon: Icon = None
 
 
 class ItemUpdate(BaseModel):
-    # Only the fields sent change; send a blank or null category to clear it.
+    # Only the fields sent change; send a blank or null category or variant to clear it.
     name: Name | None = None
+    variant: Variant = None
     category: Category = None
     icon: Icon = None
 

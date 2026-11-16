@@ -51,8 +51,11 @@ Built so far: User, Location, Item, Stock (tables `users`, `locations`,
   shallow: add the spot level only where a room really has several places to
   tell apart. Only a location without children can be deleted; its stock
   goes with it.
-- **Item**: a supply in the catalogue: "Sugar", "Toilet paper", "Milk",
-  unique ignoring case. Optional category for grouping the shopping list.
+- **Item**: a supply in the catalogue: "Sugar", "Toilet paper", "Milk".
+  An optional `variant` tells apart kinds kept of the same supply
+  ("Konzerv" kukorica / vörösbab / borsó, "Szemeteszsák" 35 l / 60 l);
+  items sharing a name show as one group, each variant with its own stock.
+  Name and variant together are unique, ignoring case. Optional category for grouping the shopping list.
   Items and locations have an optional `icon`, a name from the web client's
   icon set (`web/src/icons.ts`): null means the client guesses one from the
   name, empty means none.

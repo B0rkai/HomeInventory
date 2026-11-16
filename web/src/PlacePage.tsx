@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
+import type { ItemOut, StockOut } from './api'
 import { useHouse } from './house'
 import { IconPicker } from './IconPicker'
 import { COMMON_ITEMS } from './icons'
@@ -9,12 +10,15 @@ import { ShortageBadge } from './ShortageBadge'
 import { t } from './strings'
 import { ago } from './time'
 import { AddForm } from './AddForm'
-import { MAX_DEPTH, byName, childrenOf, pathTo, shortageIn } from './tree'
+import { MAX_DEPTH, childrenOf, pathTo, shortageIn } from './tree'
+import { byItem, findItem, fullName, groupByName, hasVariants, parseFullName } from './variants'
 
 /** One place: the places inside it, and the level of everything kept here. */
 export function PlacePage({ id }: { id: number }) {
   const { house, actions } = useHouse()
   const [editing, setEditing] = useState(false)
+  // The item name whose "new variant" field is open.
+  const [addingVariantTo, setAddingVariantTo] = useState<string>()
   if (!house) return null
   const { locations, items, stock } = house
 
@@ -40,24 +44,76 @@ export function PlacePage({ id }: { id: number }) {
   const rows = stock
     .filter((row) => row.location_id === id && itemsById.has(row.item_id))
     .map((row) => ({ ...row, item: itemsById.get(row.item_id)! }))
-    .sort((a, b) => byName(a.item, b.item))
+    .sort((a, b) => byItem(a.item, b.item))
+  const groups = groupByName(rows, (row) => row.item)
   const keptHere = new Set(rows.map((row) => row.item_id))
   // Items not kept here yet, then common supplies not in the catalogue yet.
   const known = new Set(items.map((item) => item.name.toLocaleLowerCase('hu')))
   const suggestions = [
     ...items
       .filter((item) => !keptHere.has(item.id))
-      .sort(byName)
-      .map((item) => item.name),
+      .sort(byItem)
+      .map(fullName),
     ...COMMON_ITEMS.filter((name) => !known.has(name.toLocaleLowerCase('hu'))),
   ]
 
-  async function addItem(name: string) {
-    const folded = name.toLocaleLowerCase('hu')
+  /** Keeps an item here, from the catalogue or new; a new variant takes its group's look. */
+  async function addItem(name: string, variant: string | null) {
+    const sibling = items.find(
+      (i) => i.name.toLocaleLowerCase('hu') === name.toLocaleLowerCase('hu'),
+    )
     const item =
-      items.find((i) => i.name.toLocaleLowerCase('hu') === folded) ?? (await actions.addItem(name))
+      findItem(items, name, variant) ??
+      (await actions.addItem({
+        name: sibling?.name ?? name,
+        variant,
+        category: sibling?.category,
+        icon: sibling?.icon,
+      }))
     return Boolean(item && (await actions.setLevel(id, item.id, 'plenty')))
   }
+
+  const row = (r: (typeof rows)[number], title: ReactNode) => (
+    <StockRow
+      key={r.item_id}
+      row={r}
+      item={r.item}
+      title={title}
+      editing={editing}
+      onLevel={(level) => actions.setLevel(id, r.item_id, level)}
+      onRemove={() => actions.removeStock(id, r.item_id)}
+    />
+  )
+
+  const variantForm = (name: string) =>
+    addingVariantTo === name && (
+      <li key={`${name}-variant-form`} className="variant-form">
+        <AddForm
+          label={t.place.addVariantLabel(name)}
+          placeholder={t.place.addVariantPlaceholder}
+          suggestions={items
+            .filter((i) => i.name === name && i.variant && !keptHere.has(i.id))
+            .map((i) => i.variant!)}
+          onSubmit={async (variant) => {
+            const saved = await addItem(name, variant)
+            if (saved) setAddingVariantTo(undefined)
+            return saved
+          }}
+          onCancel={() => setAddingVariantTo(undefined)}
+        />
+      </li>
+    )
+
+  const addVariantButton = (name: string) =>
+    editing && (
+      <button
+        type="button"
+        className="secondary small-button"
+        onClick={() => setAddingVariantTo(name)}
+      >
+        + {t.place.addVariant}
+      </button>
+    )
 
   async function remove() {
     if (!place || !window.confirm(t.place.confirmDelete(place.name))) return
@@ -157,43 +213,87 @@ export function PlacePage({ id }: { id: number }) {
         <h3>{t.place.stockTitle}</h3>
         {rows.length === 0 && <p className="muted">{t.place.noStock}</p>}
         <ul className="stock">
-          {rows.map((row) => (
-            <li key={row.item_id}>
-              <div className="stock-name">
-                <Named thing={row.item} kind="item" />
-                {editing ? (
-                  <button
-                    type="button"
-                    className="icon"
-                    aria-label={t.place.removeItem(row.item.name)}
-                    onClick={() => actions.removeStock(id, row.item_id)}
-                  >
-                    ×
-                  </button>
-                ) : (
-                  <span className="small">
-                    <LevelName level={row.level} />
-                    <span className="muted">
-                      {t.place.updated(row.updated_by_name, ago(row.updated_at))}
-                    </span>
-                  </span>
-                )}
-              </div>
-              <LevelPicker
-                level={row.level}
-                label={row.item.name}
-                onChange={(level) => actions.setLevel(id, row.item_id, level)}
-              />
-            </li>
-          ))}
+          {groups.map((group) =>
+            hasVariants(group, (r) => r.item) ? (
+              <li key={group.name} className="stock-group">
+                <div className="group-head">
+                  <Named thing={{ name: group.name, icon: group.first.icon }} kind="item" />
+                  {addVariantButton(group.name)}
+                </div>
+                <ul>
+                  {group.rows.map((r) =>
+                    row(r, r.item.variant ?? <span className="muted">{t.items.noVariant}</span>),
+                  )}
+                  {variantForm(group.name)}
+                </ul>
+              </li>
+            ) : (
+              [
+                row(
+                  group.rows[0],
+                  <span className="group-head">
+                    <Named thing={group.rows[0].item} kind="item" />
+                    {addVariantButton(group.name)}
+                  </span>,
+                ),
+                variantForm(group.name),
+              ]
+            ),
+          )}
         </ul>
         <AddForm
           label={t.place.addItem}
           placeholder={t.place.addItemPlaceholder}
           suggestions={suggestions}
-          onSubmit={addItem}
+          onSubmit={(text) => {
+            const { name, variant } = parseFullName(text)
+            return addItem(name, variant)
+          }}
         />
       </section>
     </>
+  )
+}
+
+/** One item's level here: its name (or variant), who set it when, and the level buttons. */
+function StockRow({
+  row,
+  item,
+  title,
+  editing,
+  onLevel,
+  onRemove,
+}: {
+  row: StockOut
+  item: ItemOut
+  title: ReactNode
+  editing: boolean
+  onLevel: (level: StockOut['level']) => void
+  onRemove: () => void
+}) {
+  return (
+    <li>
+      <div className="stock-name">
+        {title}
+        {editing ? (
+          <button
+            type="button"
+            className="icon"
+            aria-label={t.place.removeItem(fullName(item))}
+            onClick={onRemove}
+          >
+            ×
+          </button>
+        ) : (
+          <span className="small">
+            <LevelName level={row.level} />
+            <span className="muted">
+              {t.place.updated(row.updated_by_name, ago(row.updated_at))}
+            </span>
+          </span>
+        )}
+      </div>
+      <LevelPicker level={row.level} label={fullName(item)} onChange={onLevel} />
+    </li>
   )
 }

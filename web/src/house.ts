@@ -11,6 +11,7 @@ import {
   setStock,
   updateItem,
   updateLocation,
+  type ItemCreate,
   type ItemOut,
   type ItemUpdate,
   type Level,
@@ -108,9 +109,9 @@ export function useHouseState(onError: (message: string) => void) {
         }
         return Boolean(ok)
       },
-      async addItem(name: string) {
+      async addItem(body: ItemCreate) {
         const item = (
-          await change(createItem({ body: { name } }), {
+          await change(createItem({ body }), {
             409: t.errors.duplicateItem,
           })
         )?.data

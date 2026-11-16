@@ -4,7 +4,7 @@ import { useHouse } from './house'
 import { IconPicker } from './IconPicker'
 import { Named } from './Named'
 import { t } from './strings'
-import { byName } from './tree'
+import { byItem, fullName } from './variants'
 
 /** The catalogue: rename, group or delete items. Adding happens on a place's page. */
 export function ItemsPage() {
@@ -15,7 +15,7 @@ export function ItemsPage() {
 
   const categories = [...new Set(items.map((item) => item.category).filter((c) => c !== null))]
   const groups = new Map<string, ItemOut[]>()
-  for (const item of [...items].sort(byName)) {
+  for (const item of [...items].sort(byItem)) {
     const category = item.category ?? t.items.noCategory
     groups.set(category, [...(groups.get(category) ?? []), item])
   }
@@ -75,6 +75,7 @@ function ItemForm({
 }) {
   const { actions } = useHouse()
   const [name, setName] = useState(item.name)
+  const [variant, setVariant] = useState(item.variant ?? '')
   const [category, setCategory] = useState(item.category ?? '')
   const [icon, setIcon] = useState(item.icon)
   const [saving, setSaving] = useState(false)
@@ -82,13 +83,13 @@ function ItemForm({
   async function save(event: FormEvent) {
     event.preventDefault()
     setSaving(true)
-    const saved = await actions.updateItem(item.id, { name, category, icon })
+    const saved = await actions.updateItem(item.id, { name, variant, category, icon })
     setSaving(false)
     if (saved) onDone()
   }
 
   async function remove() {
-    if (window.confirm(t.items.confirmDelete(item.name))) await actions.deleteItem(item.id)
+    if (window.confirm(t.items.confirmDelete(fullName(item)))) await actions.deleteItem(item.id)
   }
 
   return (
@@ -96,6 +97,16 @@ function ItemForm({
       <label>
         {t.items.name}
         <input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} required />
+      </label>
+      <label>
+        {t.items.variant}
+        <input
+          value={variant}
+          onChange={(e) => setVariant(e.target.value)}
+          placeholder={t.items.variantPlaceholder}
+          maxLength={40}
+          autoComplete="off"
+        />
       </label>
       <label>
         {t.items.category}

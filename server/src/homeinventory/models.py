@@ -15,6 +15,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 NICKNAME_MAX_LENGTH = 40
 NAME_MAX_LENGTH = 60
 CATEGORY_MAX_LENGTH = 40
+VARIANT_MAX_LENGTH = 40
 # An icon's name in the web client's set (e.g. "toilet-paper").
 ICON_MAX_LENGTH = 32
 # Floor -> room -> spot.
@@ -89,13 +90,17 @@ class Location(Base):
 
 
 class Item(Base):
-    """A supply in the catalogue: "Cukor", "WC-papír"."""
+    """A supply in the catalogue: "Cukor", "WC-papír", or a variant: "Konzerv" + "kukorica"."""
 
     __tablename__ = "items"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    # Unique ignoring case; the API checks it, since SQLite's NOCASE only folds ASCII.
+    # Unique with the variant, ignoring case; the API checks it, since SQLite's NOCASE
+    # only folds ASCII.
     name: Mapped[str] = mapped_column(String(NAME_MAX_LENGTH))
+    # Tells apart kinds kept of the same item ("35 l", "60 l"); items sharing a name
+    # are shown as one group. Unset for an item with no variants.
+    variant: Mapped[str | None] = mapped_column(String(VARIANT_MAX_LENGTH))
     # Groups the shopping list ("Tejtermék", "Tisztítószer"); optional.
     category: Mapped[str | None] = mapped_column(String(CATEGORY_MAX_LENGTH))
     # Unset: the client guesses one from the name. Empty: no icon.

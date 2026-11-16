@@ -144,9 +144,21 @@ def test_item_names_are_unique_ignoring_case(api) -> None:
 def test_update_item_only_changes_what_is_sent(api) -> None:
     milk = add_item(api, "Tej", "Tejtermék")
     response = api("PATCH", f"/items/{milk}", {"name": "Zabtej"})
-    assert response.json() == {"id": milk, "name": "Zabtej", "category": "Tejtermék", "icon": None}
+    assert response.json() == {
+        "id": milk,
+        "name": "Zabtej",
+        "variant": None,
+        "category": "Tejtermék",
+        "icon": None,
+    }
     response = api("PATCH", f"/items/{milk}", {"category": "  "})
-    assert response.json() == {"id": milk, "name": "Zabtej", "category": None, "icon": None}
+    assert response.json() == {
+        "id": milk,
+        "name": "Zabtej",
+        "variant": None,
+        "category": None,
+        "icon": None,
+    }
 
 
 def test_rename_item_to_existing_name_is_409(api) -> None:
@@ -276,3 +288,59 @@ def test_lots_level(api) -> None:
     paper = add_item(api, "WC-papír")
     stock = api("PUT", f"/locations/{basement}/stock/{paper}", {"level": "lots"}).json()
     assert stock["level"] == "lots"
+
+
+# Variants
+
+
+def add_variant(api, name: str, variant: str):
+    return api("POST", "/items", {"name": name, "variant": variant})
+
+
+def test_variants_share_a_name(api) -> None:
+    add_item(api, "Konzerv")
+    for variant in ["kukorica", "vörösbab", "borsó"]:
+        assert add_variant(api, "Konzerv", variant).status_code == 201
+    variants = sorted(
+        (item["variant"] or "") for item in api("GET", "/items").json() if item["name"] == "Konzerv"
+    )
+    assert variants == ["", "borsó", "kukorica", "vörösbab"]
+
+
+def test_variant_is_unique_per_name_ignoring_case(api) -> None:
+    add_variant(api, "Szemeteszsák", "35 l")
+    assert add_variant(api, "SZEMETESZSÁK", "35 L").status_code == 409
+    assert add_variant(api, "Szemeteszsák", "60 l").status_code == 201
+    # The same variant under another name is fine.
+    assert add_variant(api, "Mosószer", "35 l").status_code == 201
+
+
+def test_blank_variant_means_none(api) -> None:
+    add_item(api, "Konzerv")
+    assert add_variant(api, "Konzerv", "  ").status_code == 409
+
+
+def test_set_and_clear_a_variant(api) -> None:
+    bags = add_item(api, "Szemeteszsák")
+    add_variant(api, "Szemeteszsák", "60 l")
+    response = api("PATCH", f"/items/{bags}", {"variant": "35 l"})
+    assert response.json()["variant"] == "35 l"
+    # Renaming keeps the variant; clearing it is a separate, explicit change.
+    assert api("PATCH", f"/items/{bags}", {"name": "Kukazsák"}).json()["variant"] == "35 l"
+    assert api("PATCH", f"/items/{bags}", {"variant": None}).json()["variant"] is None
+
+
+def test_variant_change_that_clashes_is_409(api) -> None:
+    bags = add_item(api, "Szemeteszsák")
+    add_variant(api, "Szemeteszsák", "60 l")
+    assert api("PATCH", f"/items/{bags}", {"variant": "60 L"}).status_code == 409
+
+
+def test_variants_have_their_own_stock(api) -> None:
+    pantry = add_location(api, "Spájz")
+    corn = add_variant(api, "Konzerv", "kukorica").json()["id"]
+    beans = add_variant(api, "Konzerv", "vörösbab").json()["id"]
+    api("PUT", f"/locations/{pantry}/stock/{corn}", {"level": "out"})
+    api("PUT", f"/locations/{pantry}/stock/{beans}", {"level": "lots"})
+    levels = {s["item_id"]: s["level"] for s in api("GET", "/stock").json()}
+    assert levels == {corn: "out", beans: "lots"}

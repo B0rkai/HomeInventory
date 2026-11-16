@@ -33,6 +33,10 @@ export type ItemCreate = {
      */
     name: string;
     /**
+     * Variant
+     */
+    variant?: string | null;
+    /**
      * Category
      */
     category?: string | null;
@@ -55,6 +59,10 @@ export type ItemOut = {
      */
     name: string;
     /**
+     * Variant
+     */
+    variant: string | null;
+    /**
      * Category
      */
     category: string | null;
@@ -72,6 +80,10 @@ export type ItemUpdate = {
      * Name
      */
     name?: string | null;
+    /**
+     * Variant
+     */
+    variant?: string | null;
     /**
      * Category
      */
