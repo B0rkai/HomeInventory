@@ -27,6 +27,10 @@ export type ChoreCreate = {
      * Icon
      */
     icon?: string | null;
+    /**
+     * One Off
+     */
+    one_off?: boolean;
 };
 
 /**
@@ -69,6 +73,10 @@ export type ChoreOut = {
      * Next Due At
      */
     next_due_at: string | null;
+    /**
+     * One Off
+     */
+    one_off: boolean;
 };
 
 /**

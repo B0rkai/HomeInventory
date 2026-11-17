@@ -21,7 +21,8 @@ export function ChoreList({
 }) {
   const { house, actions } = useHouse()
   if (!house) return null
-  const chores = house.chores.filter((chore) => chore.location_id === locationId)
+  // One-off to-dos live on the to-do list only.
+  const chores = house.chores.filter((chore) => chore.location_id === locationId && !chore.one_off)
   const wholeHouse = locationId === null
   // The house's list only shows up once it has something, or to add the first one.
   if (wholeHouse && !chores.length && !editing) return null

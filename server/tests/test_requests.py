@@ -210,6 +210,7 @@ def test_chores_belong_to_a_place(api, house) -> None:
             "repeat_days": None,
             "repeat_weekdays": [],
             "next_due_at": None,
+            "one_off": False,
         }
     ]
 
@@ -573,3 +574,72 @@ def test_put_on_the_list_by_hand(api, house) -> None:
 def test_put_on_the_list_needs_the_item_kept_there(api, house) -> None:
     path = f"/locations/{house['pantry']}/stock/{house['sugar']}/request"
     assert api("POST", path).status_code == 404
+
+
+# One-off to-dos
+
+
+def add_one_off(api, name: str = "Szerelő hívása", location: int | None = None) -> dict:
+    response = api("POST", "/chores", {"name": name, "location_id": location, "one_off": True})
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+def test_one_off_is_reported_at_once(api, house) -> None:
+    chore = add_one_off(api)
+    assert chore["one_off"] is True
+    [request] = active(api)
+    assert (request["chore_id"], request["status"], request["location_id"]) == (
+        chore["id"],
+        "open",
+        None,
+    )
+    assert request["created_by_name"] == "Anna Kovacs"
+
+
+@pytest.mark.parametrize("action", ["done", "cancel"])
+def test_one_off_goes_when_closed(api, house, action: str) -> None:
+    chore = add_one_off(api, location=house["wc"])
+    request = active(api)[0]
+    api("POST", f"/requests/{request['id']}/claim", headers=BELA)
+    response = api("POST", f"/requests/{request['id']}/{action}", headers=BELA)
+    assert response.status_code == 200
+    assert active(api) == []
+    assert all(c["id"] != chore["id"] for c in api("GET", "/chores").json())
+
+
+def test_one_off_done_on_the_spot_goes(api, house) -> None:
+    chore = add_one_off(api)
+    assert api("POST", f"/chores/{chore['id']}/done").status_code == 200
+    assert api("GET", "/chores").json() == []
+    assert active(api) == []
+
+
+def test_one_offs_may_share_a_name(api, house) -> None:
+    add_one_off(api, "Bevásárlás")
+    add_one_off(api, "Bevásárlás")
+    assert len(active(api)) == 2
+
+
+def test_one_off_tells_the_other(api, house, pushes) -> None:
+    api(
+        "PUT",
+        "/push/subscriptions",
+        {"endpoint": "https://p/b", "keys": {"p256dh": "k", "auth": "a"}},
+        BELA,
+    )
+    add_one_off(api, "Szerelő hívása")
+    [(to, message)] = pushes
+    assert (to, message["event"], message["kind"], message["name"]) == (
+        "https://p/b",
+        "reported",
+        "chore",
+        "Szerelő hívása",
+    )
+
+
+def test_lasting_chores_stay_when_done(api, house) -> None:
+    id = add_chore(api, house["wc"])
+    request = api("POST", f"/chores/{id}/requests").json()
+    api("POST", f"/requests/{request['id']}/done")
+    assert chore_of(api, id)["one_off"] is False

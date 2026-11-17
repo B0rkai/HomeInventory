@@ -166,6 +166,9 @@ export const listChores = <ThrowOnError extends boolean = false>(options?: Optio
 
 /**
  * Create Chore
+ *
+ * Adds a lasting chore to a place (or the house), or a one-off to-do, which is
+ * reported at once.
  */
 export const createChore = <ThrowOnError extends boolean = false>(options: Options<CreateChoreData, ThrowOnError>): RequestResult<CreateChoreResponses, CreateChoreErrors, ThrowOnError> => (options.client ?? client).post<CreateChoreResponses, CreateChoreErrors, ThrowOnError>({
     url: '/api/v1/chores',

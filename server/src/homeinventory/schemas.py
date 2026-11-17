@@ -151,6 +151,8 @@ class ChoreOut(BaseModel):
     # When it falls due next; if that's past, it has an open request. Unset if it
     # doesn't repeat.
     next_due_at: datetime | None
+    # A to-do for once: it goes when it's done.
+    one_off: bool
 
 
 class ChoreCreate(BaseModel):
@@ -158,6 +160,8 @@ class ChoreCreate(BaseModel):
     location_id: int | None = None
     name: Name
     icon: Icon = None
+    # A to-do for once: reported right away, gone once done or cancelled.
+    one_off: bool = False
 
 
 Weekday = Annotated[int, Field(ge=0, le=6)]

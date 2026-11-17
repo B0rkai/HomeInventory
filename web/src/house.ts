@@ -278,13 +278,17 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
           )
         }
       },
-      async addChore(locationId: number | null, name: string) {
+      /** A place's (or the house's) lasting chore, or a one-off to-do, reported at once. */
+      async addChore(locationId: number | null, name: string, oneOff = false) {
         const chore = (
-          await change(createChore({ body: { location_id: locationId, name } }), {
+          await change(createChore({ body: { location_id: locationId, name, one_off: oneOff } }), {
             409: t.errors.duplicateChore,
           })
         )?.data
-        if (chore) setHouse((h) => h && { ...h, chores: [...h.chores, chore] })
+        if (chore) {
+          setHouse((h) => h && { ...h, chores: [...h.chores, chore] })
+          if (oneOff) await reloadRequests()
+        }
         return chore
       },
       async updateChore(id: number, body: ChoreUpdate) {

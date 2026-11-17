@@ -7,6 +7,7 @@ import { href, type TodoView } from './route'
 import { t } from './strings'
 import { ago, isToday } from './time'
 import { placePath, treeOrder } from './tree'
+import { OneOffForm } from './OneOffForm'
 import { PushSettings } from './PushSettings'
 import { byItem, fullName } from './variants'
 import { categoryName, groupByCategory } from './categories'
@@ -51,6 +52,7 @@ export function TodoPage({ view }: { view: TodoView }) {
       <PushSettings prompt />
       {view === 'open' ? (
         <>
+          <OneOffForm />
           {pool.length === 0 && (
             <div className="card">
               <p>{theirs.length || mine.length ? t.todo.poolEmpty : t.todo.none}</p>

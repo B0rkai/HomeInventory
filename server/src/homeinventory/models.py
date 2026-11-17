@@ -11,6 +11,7 @@ from sqlalchemy import (
     String,
     TypeDecorator,
     UniqueConstraint,
+    false,
     text,
     true,
 )
@@ -187,6 +188,9 @@ class Chore(Base):
     repeat_weekdays: Mapped[int | None]
     # When the schedule was last changed; occurrences before it don't count.
     scheduled_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    # A to-do for once ("Hívd fel a szerelőt"): reported as it's made, and gone, with its
+    # request, once that's done or cancelled. Not listed among a place's chores.
+    one_off: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     @property
     def weekdays(self) -> frozenset[int]:

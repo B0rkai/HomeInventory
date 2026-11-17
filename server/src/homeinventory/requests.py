@@ -220,6 +220,7 @@ def _chore_outs(session: Session, chores: list[Chore], tz: ZoneInfo) -> list[Cho
                 repeat_days=chore.repeat_days,
                 repeat_weekdays=sorted(chore.weekdays),
                 next_due_at=_due_at(chore, history, now, tz),
+                one_off=chore.one_off,
             )
         )
     return outs
@@ -240,16 +241,47 @@ def list_chores(
 @router.post("/chores", status_code=status.HTTP_201_CREATED)
 def create_chore(
     new: ChoreCreate,
+    user: User = Depends(current_user),
     session: Session = Depends(get_session),
     tz: ZoneInfo = Depends(household_timezone),
+    notifier: Notifier = Depends(get_notifier),
 ) -> ChoreOut:
+    """Adds a lasting chore to a place (or the house), or a one-off to-do, which is
+    reported at once."""
     if new.location_id is not None:
         get_or_404(session, Location, new.location_id)
-    _check_chore_name(session, new.location_id, new.name)
-    chore = Chore(location_id=new.location_id, name=new.name, icon=new.icon)
+    # One-off to-dos may share a name: they come and go.
+    if not new.one_off:
+        _check_chore_name(session, new.location_id, new.name)
+    chore = Chore(location_id=new.location_id, name=new.name, icon=new.icon, one_off=new.one_off)
     session.add(chore)
+    session.flush()
+    if chore.one_off:
+        request = Request(
+            kind=RequestKind.CHORE,
+            chore_id=chore.id,
+            location_id=chore.location_id,
+            status=RequestStatus.OPEN,
+            created_by_id=user.id,
+            created_at=utcnow(),
+        )
+        session.add(request)
     session.commit()
+    if chore.one_off:
+        notifier.send(
+            session, user.id, message_for(session, request, "reported", user.display_name)
+        )
     return _chore_outs(session, [chore], tz)[0]
+
+
+def _drop_if_one_off(session: Session, request: Request) -> None:
+    """A one-off to-do goes, with its request, once it's done or cancelled."""
+    if request.chore_id is None:
+        return
+    chore = session.get_one(Chore, request.chore_id)
+    if chore.one_off:
+        session.delete(chore)
+        session.commit()
 
 
 @router.patch("/chores/{chore_id}")
@@ -353,7 +385,11 @@ def complete_chore(
     for id in finished_ids:
         request = session.get_one(Request, id)
         notifier.send(session, user.id, message_for(session, request, "done", user.display_name))
-    return _chore_outs(session, [chore], tz)[0]
+    out = _chore_outs(session, [chore], tz)[0]
+    if chore.one_off:
+        session.delete(chore)
+        session.commit()
+    return out
 
 
 # Requests
@@ -468,7 +504,9 @@ def complete_request(
         )
         session.commit()
     notifier.send(session, user.id, message_for(session, request, event, user.display_name))
-    return RequestOut.model_validate(request)
+    out = RequestOut.model_validate(request)
+    _drop_if_one_off(session, request)
+    return out
 
 
 @router.post("/requests/{request_id}/remind")
@@ -516,4 +554,6 @@ def cancel_request(
         closed_by_id=user.id,
         closed_at=utcnow(),
     )
-    return RequestOut.model_validate(request)
+    out = RequestOut.model_validate(request)
+    _drop_if_one_off(session, request)
+    return out

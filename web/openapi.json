@@ -552,6 +552,7 @@
       },
       "post": {
         "summary": "Create Chore",
+        "description": "Adds a lasting chore to a place (or the house), or a one-off to-do, which is\nreported at once.",
         "operationId": "create_chore",
         "requestBody": {
           "content": {
@@ -1109,6 +1110,11 @@
               }
             ],
             "title": "Icon"
+          },
+          "one_off": {
+            "type": "boolean",
+            "title": "One Off",
+            "default": false
           }
         },
         "type": "object",
@@ -1201,6 +1207,10 @@
               }
             ],
             "title": "Next Due At"
+          },
+          "one_off": {
+            "type": "boolean",
+            "title": "One Off"
           }
         },
         "type": "object",
@@ -1213,7 +1223,8 @@
           "last_done_by_name",
           "repeat_days",
           "repeat_weekdays",
-          "next_due_at"
+          "next_due_at",
+          "one_off"
         ],
         "title": "ChoreOut"
       },
