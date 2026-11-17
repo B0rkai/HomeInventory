@@ -6,6 +6,7 @@ import { HouseProvider } from './HouseProvider'
 import { IconArt } from './IconArt'
 import { ItemPage } from './ItemPage'
 import { ItemsPage } from './ItemsPage'
+import { LogPage } from './LogPage'
 import { MissingPage } from './MissingPage'
 import { NicknameForm } from './NicknameForm'
 import { PlacePage } from './PlacePage'
@@ -135,6 +136,7 @@ function Pages() {
   if (route.page === 'item') return <ItemPage key={route.id} id={route.id} />
   if (route.page === 'missing') return <MissingPage view={route.view} />
   if (route.page === 'todo') return <TodoPage view={route.view} />
+  if (route.page === 'log') return <LogPage />
   return <Home />
 }
 
@@ -143,6 +145,7 @@ const TABS: { page: Route['page']; href: string; icon: string; label: string }[]
   { page: 'todo', href: href.todo(), icon: 'list-check', label: t.nav.todo },
   { page: 'missing', href: href.missing(), icon: 'shopping-cart', label: t.nav.missing },
   { page: 'items', href: href.items, icon: 'clipboard-list', label: t.nav.items },
+  { page: 'log', href: href.log, icon: 'history', label: t.nav.log },
 ]
 
 function NavBar() {

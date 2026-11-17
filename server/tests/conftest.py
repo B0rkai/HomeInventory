@@ -51,3 +51,21 @@ def api(client: TestClient):
         return client.request(method, f"/api/v1{path}", json=json, headers=headers)
 
     return call
+
+
+@pytest.fixture
+def house(api) -> dict[str, int]:
+    """A pantry and a WC, sugar and toilet paper."""
+
+    def post(path: str, json: dict) -> int:
+        response = api("POST", path, json)
+        assert response.status_code == 201, response.text
+        return response.json()["id"]
+
+    ground = post("/locations", {"name": "Földszint"})
+    return {
+        "pantry": post("/locations", {"name": "Spájz", "parent_id": ground}),
+        "wc": post("/locations", {"name": "WC", "parent_id": ground}),
+        "sugar": post("/items", {"name": "Cukor"}),
+        "paper": post("/items", {"name": "WC-papír"}),
+    }

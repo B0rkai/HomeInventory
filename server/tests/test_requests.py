@@ -8,24 +8,6 @@ ANNA = {"Tailscale-User-Login": "anna@example.com", "Tailscale-User-Name": "Anna
 BELA = {"Tailscale-User-Login": "bela@example.com", "Tailscale-User-Name": "Bela Kovacs"}
 
 
-@pytest.fixture
-def house(api) -> dict[str, int]:
-    """A pantry and a WC, sugar and toilet paper."""
-
-    def post(path: str, json: dict) -> int:
-        response = api("POST", path, json)
-        assert response.status_code == 201, response.text
-        return response.json()["id"]
-
-    ground = post("/locations", {"name": "Földszint"})
-    return {
-        "pantry": post("/locations", {"name": "Spájz", "parent_id": ground}),
-        "wc": post("/locations", {"name": "WC", "parent_id": ground}),
-        "sugar": post("/items", {"name": "Cukor"}),
-        "paper": post("/items", {"name": "WC-papír"}),
-    }
-
-
 def set_level(api, location: int, item: int, level: str, headers=ANNA) -> None:
     response = api("PUT", f"/locations/{location}/stock/{item}", {"level": level}, headers)
     assert response.status_code == 200, response.text

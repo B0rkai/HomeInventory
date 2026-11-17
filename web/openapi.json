@@ -1064,10 +1064,177 @@
           }
         }
       }
+    },
+    "/api/v1/activity": {
+      "get": {
+        "summary": "List Activity",
+        "description": "The latest entries, newest first.",
+        "operationId": "list_activity",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActivityOut"
+                  },
+                  "title": "Response List Activity"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "Action": {
+        "type": "string",
+        "enum": [
+          "level",
+          "removed",
+          "listed",
+          "reported",
+          "claimed",
+          "unclaimed",
+          "done",
+          "fetched",
+          "cancelled",
+          "reminded"
+        ],
+        "title": "Action",
+        "description": "What someone did, as the activity log records it."
+      },
+      "ActivityOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          },
+          "user_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Name"
+          },
+          "action": {
+            "$ref": "#/components/schemas/Action"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/RequestKind"
+          },
+          "item_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Id"
+          },
+          "chore_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chore Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "variant": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variant"
+          },
+          "location_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Id"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Level"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "at",
+          "user_name",
+          "action",
+          "kind",
+          "item_id",
+          "chore_id",
+          "name",
+          "variant",
+          "location_id",
+          "level"
+        ],
+        "title": "ActivityOut"
+      },
       "Category": {
         "type": "string",
         "enum": [

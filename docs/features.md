@@ -73,12 +73,29 @@ check stock remotely, and avoid duplicating the job.
    the to-do list offers it, the nickname screen turns it on or off.
 7. **Live updates.** An open page refetches the house when the other user
    changes something (SSE), and whenever the app comes back on screen.
+8. **Undo.** A level, a request action (claim, give back, done, cancel, ask
+   after), a chore done or reported, an item put on the list or taken off a
+   place: each shows as done at once but waits six seconds behind an undo bar
+   before it goes to the server (`house.ts`), so an undone slip notifies
+   nobody and leaves no trace. A new change sends the waiting one; picking a
+   level twice replaces it (picking back the old one is the undo); leaving the
+   app sends it at once (requests use `keepalive`). Hence no "are you sure"
+   on cancelling a request.
+9. **Activity log.** The *Napló* tab: who did what, newest first, by day;
+   the same action on one item in several places within ten minutes is one
+   row. Every route that changes stock or requests records an entry in the
+   same transaction (`activity.py`, `GET /api/v1/activity?limit=`); what
+   happens by itself (a chore falling due) isn't logged.
+10. **Shopping helpers.** The catalogue has a search box (ignoring case and
+   accents). The shopping list has *Mindet elvállalom* per group (off to the
+   grocery: take every open food row at once) and *Megosztás*: the list as
+   text to the share sheet (or the clipboard).
 
 ## Data model
 
-Built: User, Location, Item, Stock, Chore, Request, PushSubscription
-(tables `users`, `locations`, `items`, `stock`, `chores`, `requests`,
-`push_subscriptions`).
+Built: User, Location, Item, Stock, Chore, Request, PushSubscription,
+Activity (tables `users`, `locations`, `items`, `stock`, `chores`,
+`requests`, `push_subscriptions`, `activities`).
 
 - **User**: Tailscale login (unique), display name. Created on first request
   from a new login.
@@ -134,6 +151,12 @@ Built: User, Location, Item, Stock, Chore, Request, PushSubscription
   (item, location) or chore (partial unique indexes), so reporting twice
   finds the first one. Closed requests stay in the table (history, later).
   No note yet: nothing has needed typing.
+- **Activity**: a log entry: when, who, action (`level`, `removed`,
+  `listed`, `reported`, `claimed`, `unclaimed`, `done`, `fetched`,
+  `cancelled`, `reminded`), kind (`buy` | `chore`), item or chore, its name
+  and variant as they were, location, and the level for `level`. The links
+  are set null when the thing goes (a one-off to-do does, once done); the
+  name stays.
 - **PushSubscription**: user, endpoint (unique: a device that signs in as
   the other user moves over), keys. A user can have several devices; ones
   the push service reports gone (404/410) are deleted.
@@ -157,12 +180,20 @@ change is a single conditional update (see `CLAUDE.md`); losing a race is
 
 ## Later ideas (not scheduled)
 
-- Reminders for repeating chores beyond the push when they fall due (e.g. the evening before).
-- QR stickers (or NFC tags) on bins, toilets and shelves that open that
-  place's report page. Scanning isn't faster than two taps on a small tree,
-  so only worth it if the tree grows past one screen.
-- History: how often something runs out, to plan bigger purchases.
-- A general shared to-do list not tied to a supply or a place.
+- **Offline shopping list**: the last loaded house kept by the service
+  worker, so the list shows in a shop with no signal; changes made there
+  queued and sent once back online.
+
+Considered and dropped (2026-11):
+
+- An extra reminder before a repeating chore falls due: schedule it for the
+  day it needs doing instead (the bin goes out the evening before).
+- QR or NFC tags on places: two taps on the tree are as quick.
+- Statistics on how often things run out: the levels are a judgement call,
+  so the numbers would be too.
+- A general shared to-do list: the one-off to-dos are that.
+- A count on the app icon: Chrome on Android has no Badging API; the
+  launcher already shows a dot for an unread notification.
 
 ## Out of scope
 

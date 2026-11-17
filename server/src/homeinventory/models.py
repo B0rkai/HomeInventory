@@ -294,3 +294,54 @@ class PushSubscription(Base):
     p256dh: Mapped[str] = mapped_column(String(200))
     auth: Mapped[str] = mapped_column(String(100))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+
+class Action(StrEnum):
+    """What someone did, as the activity log records it."""
+
+    # Set an item's level in a place; adding the item there included.
+    LEVEL = "level"
+    # Stopped keeping an item in a place.
+    REMOVED = "removed"
+    # Put an item on the shopping list by hand.
+    LISTED = "listed"
+    # Reported a chore, or added a one-off to-do.
+    REPORTED = "reported"
+    CLAIMED = "claimed"
+    UNCLAIMED = "unclaimed"
+    # Bought an item, or did a chore.
+    DONE = "done"
+    # Brought an item over from a place that has lots of it.
+    FETCHED = "fetched"
+    CANCELLED = "cancelled"
+    # Asked whoever claimed a request when it'll be done.
+    REMINDED = "reminded"
+
+
+class Activity(Base):
+    """One entry in the activity log: who did what, to which item or chore, where."""
+
+    __tablename__ = "activities"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    action: Mapped[Action] = mapped_column(str_enum(Action, "action"))
+    # Whether it was about an item or a chore, even once that's deleted.
+    kind: Mapped[RequestKind] = mapped_column(str_enum(RequestKind, "kind"))
+    # One of these two. The links go when the thing is deleted (a one-off to-do is, once
+    # done); the name stays, as it was.
+    item_id: Mapped[int | None] = mapped_column(ForeignKey("items.id", ondelete="SET NULL"))
+    chore_id: Mapped[int | None] = mapped_column(ForeignKey("chores.id", ondelete="SET NULL"))
+    name: Mapped[str] = mapped_column(String(NAME_MAX_LENGTH))
+    variant: Mapped[str | None] = mapped_column(String(VARIANT_MAX_LENGTH))
+    # Unset for a chore of the whole house, or once the place is deleted.
+    location_id: Mapped[int | None] = mapped_column(ForeignKey("locations.id", ondelete="SET NULL"))
+    # The level set, for LEVEL.
+    level: Mapped[Level | None] = mapped_column(str_enum(Level, "level"))
+
+    user: Mapped[User | None] = relationship(lazy="joined")
+
+    @property
+    def user_name(self) -> str | None:
+        return self.user and self.user.display_name

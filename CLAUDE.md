@@ -28,8 +28,9 @@ Milestones 1-4 done: locations, items and stock levels (`places.py`); chores
 requests with claiming (`requests.py`); web push (`notify.py`, keys made on
 first use in the data directory) and live updates over SSE (`live.py`,
 `/api/v1/events`); and the web pages for them (home tree, place page, to-do
-list with the shopping list, shortages view, item catalogue, a bottom tab
-bar; hash routes in `web/src/route.ts`, shared data in `web/src/house.ts`).
+list with the shopping list, shortages view, item catalogue, activity log
+(`activity.py`), a bottom tab bar; hash routes in `web/src/route.ts`, shared
+data in `web/src/house.ts`, where changes also wait a few seconds to be undone).
 Next: the later ideas in `docs/features.md`, as the users ask. Anything marked *(planned)* describes intended
 setup, not code that exists yet.
 

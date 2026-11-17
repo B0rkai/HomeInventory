@@ -15,6 +15,7 @@ from homeinventory.models import (
     NAME_MAX_LENGTH,
     NICKNAME_MAX_LENGTH,
     VARIANT_MAX_LENGTH,
+    Action,
     Category,
     Level,
     RequestKind,
@@ -204,6 +205,24 @@ class RequestOut(BaseModel):
     # The latest nudge to whoever claimed it, and who sent it.
     reminded_by_name: str | None
     reminded_at: datetime | None
+
+
+class ActivityOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    at: datetime
+    # Unset if the user is gone.
+    user_name: str | None
+    action: Action
+    kind: RequestKind
+    # Unset once the item or chore is deleted; the name is as it was.
+    item_id: int | None
+    chore_id: int | None
+    name: str
+    variant: str | None
+    location_id: int | None
+    level: Level | None
 
 
 class PushKey(BaseModel):

@@ -5,6 +5,54 @@ export type ClientOptions = {
 };
 
 /**
+ * Action
+ *
+ * What someone did, as the activity log records it.
+ */
+export type Action = 'level' | 'removed' | 'listed' | 'reported' | 'claimed' | 'unclaimed' | 'done' | 'fetched' | 'cancelled' | 'reminded';
+
+/**
+ * ActivityOut
+ */
+export type ActivityOut = {
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * At
+     */
+    at: string;
+    /**
+     * User Name
+     */
+    user_name: string | null;
+    action: Action;
+    kind: RequestKind;
+    /**
+     * Item Id
+     */
+    item_id: number | null;
+    /**
+     * Chore Id
+     */
+    chore_id: number | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Variant
+     */
+    variant: string | null;
+    /**
+     * Location Id
+     */
+    location_id: number | null;
+    level: Level | null;
+};
+
+/**
  * Category
  *
  * A fixed set of item groups, one per icon colour in the web client.
@@ -1256,3 +1304,35 @@ export type StreamEventsResponses = {
      */
     200: unknown;
 };
+
+export type ListActivityData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/activity';
+};
+
+export type ListActivityErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type ListActivityError = ListActivityErrors[keyof ListActivityErrors];
+
+export type ListActivityResponses = {
+    /**
+     * Response List Activity
+     *
+     * Successful Response
+     */
+    200: Array<ActivityOut>;
+};
+
+export type ListActivityResponse = ListActivityResponses[keyof ListActivityResponses];

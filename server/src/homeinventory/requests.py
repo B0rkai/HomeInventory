@@ -16,6 +16,7 @@ from sqlalchemy import and_, case, func, select, update
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
+from homeinventory.activity import record, record_request
 from homeinventory.common import (
     NO_CONTENT,
     announce_changes,
@@ -30,6 +31,7 @@ from homeinventory.live import LiveUpdates
 from homeinventory.models import (
     ACTIVE,
     ACTIVE_WHERE,
+    Action,
     Chore,
     Level,
     Location,
@@ -266,6 +268,7 @@ def create_chore(
             created_at=utcnow(),
         )
         session.add(request)
+        record(session, user, Action.REPORTED, chore=chore, location_id=chore.location_id)
     session.commit()
     if chore.one_off:
         notifier.send(
@@ -337,6 +340,8 @@ def report_chore(
         )
         .on_conflict_do_nothing(index_elements=[Request.chore_id], index_where=ACTIVE_WHERE)
     )
+    if inserted.rowcount:
+        record(session, user, Action.REPORTED, chore=chore, location_id=chore.location_id)
     session.commit()
     request = session.scalars(
         select(Request).where(Request.chore_id == chore.id, Request.status.in_(ACTIVE))
@@ -381,6 +386,7 @@ def complete_chore(
                 **closed,
             )
         )
+    record(session, user, Action.DONE, chore=chore, location_id=chore.location_id)
     session.commit()
     for id in finished_ids:
         request = session.get_one(Request, id)
@@ -410,18 +416,27 @@ def list_requests(
     return [RequestOut.model_validate(request) for request in requests]
 
 
-def _transition(session: Session, request_id: int, *conditions, **values) -> Request:
-    """Changes a request if it's still in the expected state; 409 if someone got there first."""
+def _transition(
+    session: Session,
+    request_id: int,
+    *conditions,
+    logged: tuple[User, Action] | None = None,
+    **values,
+) -> Request:
+    """Changes a request if it's still in the expected state; 409 if someone got there first.
+    Logs it as `logged` (who, what) unless the caller does."""
     changed = session.execute(
         update(Request).where(Request.id == request_id, *conditions).values(**values)
     )
     if not changed.rowcount:
         get_or_404(session, Request, request_id)
         raise conflict("The request has changed in the meantime")
-    session.commit()
     request = session.scalars(
         select(Request).where(Request.id == request_id).execution_options(populate_existing=True)
     ).one()
+    if logged:
+        record_request(session, *logged, request)
+    session.commit()
     return request
 
 
@@ -437,6 +452,7 @@ def claim_request(
         session,
         request_id,
         Request.status == RequestStatus.OPEN,
+        logged=(user, Action.CLAIMED),
         status=RequestStatus.CLAIMED,
         claimed_by_id=user.id,
         claimed_at=utcnow(),
@@ -460,6 +476,7 @@ def unclaim_request(
         request_id,
         Request.status == RequestStatus.CLAIMED,
         Request.claimed_by_id == user.id,
+        logged=(user, Action.UNCLAIMED),
         status=RequestStatus.OPEN,
         claimed_by_id=None,
         claimed_at=None,
@@ -486,6 +503,7 @@ def complete_request(
         closed_at=utcnow(),
     )
     event = "done"
+    action = Action.DONE
     if request.kind == RequestKind.BUY:
         # Another place stocked up on it: it was fetched from there, not bought. That
         # place's level stays; nobody books every roll carried upstairs.
@@ -496,13 +514,14 @@ def complete_request(
                 Stock.level == Level.LOTS,
             )
         ):
-            event = "fetched"
+            event, action = "fetched", Action.FETCHED
         session.execute(
             update(Stock)
             .where(Stock.item_id == request.item_id, Stock.location_id == request.location_id)
             .values(level=Level.PLENTY, updated_by_id=user.id, updated_at=utcnow())
         )
-        session.commit()
+    record_request(session, user, action, request)
+    session.commit()
     notifier.send(session, user.id, message_for(session, request, event, user.display_name))
     out = RequestOut.model_validate(request)
     _drop_if_one_off(session, request)
@@ -527,6 +546,7 @@ def remind_request(
         Request.status == RequestStatus.CLAIMED,
         Request.claimed_by_id != user.id,
         (Request.reminded_at.is_(None)) | (Request.reminded_at < today),
+        logged=(user, Action.REMINDED),
         reminded_by_id=user.id,
         reminded_at=now,
     )
@@ -550,6 +570,7 @@ def cancel_request(
         session,
         request_id,
         Request.status.in_(ACTIVE),
+        logged=(user, Action.CANCELLED),
         status=RequestStatus.CANCELLED,
         closed_by_id=user.id,
         closed_at=utcnow(),

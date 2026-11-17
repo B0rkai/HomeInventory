@@ -1134,3 +1134,21 @@ a.item-row {
     transform: scaleX(0);
   }
 }
+.log {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.log li {
+  padding: 0.35rem 0;
+}
+.log li + li {
+  border-top: 1px solid var(--border);
+}
+.log p {
+  margin: 0.1rem 0 0;
+}
+.log-who {
+  color: var(--text);
+  font-weight: 600;
+}

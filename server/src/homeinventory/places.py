@@ -5,12 +5,14 @@ from sqlalchemy import select
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
+from homeinventory.activity import record
 from homeinventory.common import NO_CONTENT, announce_changes, conflict, get_notifier, get_or_404
 from homeinventory.db import get_session
 from homeinventory.identity import current_user
 from homeinventory.models import (
     ACTIVE,
     LOCATION_MAX_DEPTH,
+    Action,
     Item,
     Level,
     Location,
@@ -230,6 +232,7 @@ def set_stock(
         .values(item_id=item_id, location_id=location_id, **values)
         .on_conflict_do_update(index_elements=[Stock.item_id, Stock.location_id], set_=values)
     )
+    record(session, user, Action.LEVEL, item=item, location_id=location_id, level=new.level)
     # Running low is a report: it puts the item on the shopping list. Filling it up again
     # takes it off, whoever did it.
     opened, refilled = False, []
@@ -274,6 +277,14 @@ def request_stock(
     if stock is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Stock not found")
     opened = open_buy_request(session, item_id, location_id, user)
+    if opened:
+        record(
+            session,
+            user,
+            Action.LISTED,
+            item=session.get_one(Item, item_id),
+            location_id=location_id,
+        )
     session.commit()
     if opened:
         _announce_opened(session, notifier, user, item_id, location_id, stock.level)
@@ -320,5 +331,8 @@ def remove_stock(
     if stock is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Stock not found")
     close_buy_requests(session, item_id, location_id, user, RequestStatus.CANCELLED)
+    record(
+        session, user, Action.REMOVED, item=session.get_one(Item, item_id), location_id=location_id
+    )
     session.delete(stock)
     session.commit()
