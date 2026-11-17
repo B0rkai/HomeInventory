@@ -8,6 +8,7 @@ import {
   createItem,
   remindRequest,
   createLocation,
+  createRequest,
   deleteChore,
   deleteItem,
   deleteLocation,
@@ -75,6 +76,49 @@ type Pending = {
   key?: string
   show: (house: House) => House
   send: () => Promise<unknown>
+  // The same change as bare API calls, to keep when the page goes away (see `leave`).
+  calls: Call[]
+}
+
+type Call = { method: 'POST' | 'PUT' | 'DELETE'; path: string; body?: object }
+
+const API = '/api/v1'
+
+// Changes the page left behind when it went away, to send on the next start.
+const LEFTOVERS_KEY = 'unsent-changes'
+// Older than this, a change is stale: the house has moved on.
+const LEFTOVERS_MAX_AGE_MS = 10 * 60_000
+
+type Leftover = { at: number; calls: Call[] }
+
+function readLeftovers(): Leftover[] {
+  try {
+    return JSON.parse(localStorage.getItem(LEFTOVERS_KEY) ?? '[]') as Leftover[]
+  } catch {
+    return []
+  }
+}
+
+/** Sends what the last page left unsent, in order. A failure (someone else got there
+ * first, say) is dropped quietly: it's no news to anyone now. */
+async function sendLeftovers(): Promise<void> {
+  const left = readLeftovers()
+  if (!left.length) return
+  try {
+    localStorage.removeItem(LEFTOVERS_KEY)
+  } catch {
+    return
+  }
+  for (const { at, calls } of left) {
+    if (Date.now() - at > LEFTOVERS_MAX_AGE_MS) continue
+    for (const call of calls) {
+      await fetch(API + call.path, {
+        method: call.method,
+        headers: call.body ? { 'Content-Type': 'application/json' } : undefined,
+        body: call.body && JSON.stringify(call.body),
+      }).catch(() => {})
+    }
+  }
 }
 
 const ACTIVE_STATUSES: RequestOut['status'][] = ['open', 'claimed']
@@ -127,9 +171,10 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
   }, [])
 
   useEffect(() => {
-    // The state is set once the fetch answers, not synchronously.
+    // The state is set once the fetch answers, not synchronously. What the last page left
+    // unsent goes first, so the house loads with it.
     // oxlint-disable-next-line react/set-state-in-effect
-    void reload()
+    void sendLeftovers().finally(() => void reload())
   }, [reload])
 
   // Live updates: the server says when the house changed (and who changed it); the
@@ -200,6 +245,25 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
     void held.entry.send().finally(() => setPending((list) => list.filter((e) => e !== held.entry)))
   }, [])
 
+  /**
+   * The page is going away (reloaded, closed) with a change still waiting: it's kept on
+   * the device and sent when the app next starts (`sendLeftovers`). A fetch started now is
+   * dropped once a service worker controls the page, keepalive or not.
+   */
+  const leave = useCallback(() => {
+    const held = waiting.current
+    if (!held) return
+    clearTimeout(held.timer)
+    waiting.current = undefined
+    try {
+      const left = readLeftovers()
+      left.push({ at: Date.now(), calls: held.entry.calls })
+      localStorage.setItem(LEFTOVERS_KEY, JSON.stringify(left))
+    } catch {
+      // No storage: it's lost, as if undone.
+    }
+  }, [])
+
   const undo = useCallback(() => {
     const held = waiting.current
     if (!held) return
@@ -228,24 +292,26 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
     [flush],
   )
 
-  // Leaving the app (or this page) sends what's waiting rather than losing it.
+  // Switching away from the app sends what's waiting (the page lives on to take the
+  // answer); the page going away keeps it for the next start.
   useEffect(() => {
     const onHide = () => {
       if (document.visibilityState === 'hidden') flush()
     }
     document.addEventListener('visibilitychange', onHide)
-    window.addEventListener('pagehide', flush)
+    window.addEventListener('pagehide', leave)
     return () => {
       document.removeEventListener('visibilitychange', onHide)
-      window.removeEventListener('pagehide', flush)
+      window.removeEventListener('pagehide', leave)
       flush()
     }
-  }, [flush])
+  }, [flush, leave])
 
   /** A request as it will be once the server has it; stands in until then. */
   const draftRequest = useCallback(
     (fields: Pick<RequestOut, 'kind' | 'item_id' | 'chore_id' | 'location_id'>): RequestOut => ({
       ...fields,
+      name: null,
       id: --draftIds,
       status: 'open',
       created_by_id: me.id,
@@ -379,6 +445,12 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
               h && { ...h, requests: [...h.requests.filter((r) => r.id !== request.id), request] },
           )
         }
+      },
+      /** Writes something on the shopping list that isn't kept track of. */
+      async addToList(name: string) {
+        const request = (await change(createRequest({ body: { name } })))?.data
+        if (request) setHouse((h) => h && { ...h, requests: [...h.requests, request] })
+        return request
       },
       /** A place's (or the house's) lasting chore, or a one-off to-do, reported at once. */
       async addChore(locationId: number | null, name: string, oneOff = false) {
@@ -542,6 +614,9 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
             }
           },
           send: () => send.setLevel(locationId, itemId, level),
+          calls: [
+            { method: 'PUT', path: `/locations/${locationId}/stock/${itemId}`, body: { level } },
+          ],
         })
       },
       removeStock(locationId: number, itemId: number) {
@@ -555,6 +630,7 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
             ),
           }),
           send: () => send.removeStock(locationId, itemId),
+          calls: [{ method: 'DELETE', path: `/locations/${locationId}/stock/${itemId}` }],
         })
       },
       requestStock(locationId: number, itemId: number) {
@@ -576,6 +652,7 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
                   ],
                 },
           send: () => send.requestStock(locationId, itemId),
+          calls: [{ method: 'POST', path: `/locations/${locationId}/stock/${itemId}/request` }],
         })
       },
       reportChore(id: number) {
@@ -598,6 +675,7 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
                   ],
                 },
           send: () => send.reportChore(id),
+          calls: [{ method: 'POST', path: `/chores/${id}/requests` }],
         })
       },
       completeChore(id: number) {
@@ -617,6 +695,7 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
             requests: h.requests.filter((r) => r.chore_id !== id),
           }),
           send: () => send.completeChore(id),
+          calls: [{ method: 'POST', path: `/chores/${id}/done` }],
         })
       },
       /** Claims, unclaims, completes, cancels or asks after requests, undoable for a moment. */
@@ -627,7 +706,9 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
         const targets = known.current?.requests.filter((r) => ids.includes(r.id)) ?? []
         const names = [
           ...new Set(
-            targets.map((r) => (r.item_id !== null ? itemName(r.item_id) : choreName(r.chore_id))),
+            targets.map(
+              (r) => r.name ?? (r.item_id !== null ? itemName(r.item_id) : choreName(r.chore_id)),
+            ),
           ),
         ]
         const what = names.length <= 2 ? names.join(', ') : t.undo.things(names.length)
@@ -659,6 +740,7 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
             }),
           }),
           send: () => send.act(action, ids),
+          calls: ids.map((id) => ({ method: 'POST', path: `/requests/${id}/${action}` })),
         })
       },
     }

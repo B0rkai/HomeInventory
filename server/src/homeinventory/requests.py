@@ -45,7 +45,7 @@ from homeinventory.models import (
 )
 from homeinventory.notify import Notifier, message_for
 from homeinventory.schedule import History, due_at
-from homeinventory.schemas import ChoreCreate, ChoreOut, ChoreUpdate, RequestOut
+from homeinventory.schemas import ChoreCreate, ChoreOut, ChoreUpdate, RequestCreate, RequestOut
 
 router = APIRouter(dependencies=[Depends(current_user), Depends(announce_changes)])
 
@@ -416,6 +416,29 @@ def list_requests(
     return [RequestOut.model_validate(request) for request in requests]
 
 
+@router.post("/requests", status_code=status.HTTP_201_CREATED)
+def create_request(
+    new: RequestCreate,
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+    notifier: Notifier = Depends(get_notifier),
+) -> RequestOut:
+    """Writes something on the shopping list that isn't kept track of: no item, no place.
+    Done or cancelled, it's gone like any request; the same name may be on it twice."""
+    request = Request(
+        kind=RequestKind.BUY,
+        name=new.name,
+        status=RequestStatus.OPEN,
+        created_by_id=user.id,
+        created_at=utcnow(),
+    )
+    session.add(request)
+    record(session, user, Action.LISTED, name=new.name)
+    session.commit()
+    notifier.send(session, user.id, message_for(session, request, "reported", user.display_name))
+    return RequestOut.model_validate(request)
+
+
 def _transition(
     session: Session,
     request_id: int,
@@ -493,7 +516,8 @@ def complete_request(
     session: Session = Depends(get_session),
     notifier: Notifier = Depends(get_notifier),
 ) -> RequestOut:
-    """Marks a request done, whoever claimed it; a bought item's level goes back to plenty."""
+    """Marks a request done, whoever claimed it; a bought item's level goes back to plenty
+    (one written in by hand has none)."""
     request = _transition(
         session,
         request_id,
@@ -504,7 +528,7 @@ def complete_request(
     )
     event = "done"
     action = Action.DONE
-    if request.kind == RequestKind.BUY:
+    if request.item_id is not None:
         # Another place stocked up on it: it was fetched from there, not bought. That
         # place's level stays; nobody books every roll carried upstairs.
         if session.scalar(

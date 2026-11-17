@@ -78,16 +78,23 @@ check stock remotely, and avoid duplicating the job.
    place: each shows as done at once but waits six seconds behind an undo bar
    before it goes to the server (`house.ts`), so an undone slip notifies
    nobody and leaves no trace. A new change sends the waiting one; picking a
-   level twice replaces it (picking back the old one is the undo); leaving the
-   app sends it at once (requests use `keepalive`). Hence no "are you sure"
-   on cancelling a request.
+   level twice replaces it (picking back the old one is the undo). Switching
+   away from the app sends it at once; a page going away (reload, close)
+   keeps it in `localStorage` and the next start sends it (within ten
+   minutes): once a service worker controls the page, Chrome drops a fetch
+   started while it unloads, `keepalive` or not. Hence no "are you sure" on
+   cancelling a request.
 9. **Activity log.** The *Napló* tab: who did what, newest first, by day;
    the same action on one item in several places within ten minutes is one
    row. Every route that changes stock or requests records an entry in the
    same transaction (`activity.py`, `GET /api/v1/activity?limit=`); what
    happens by itself (a chore falling due) isn't logged.
-10. **Shopping helpers.** The catalogue has a search box (ignoring case and
-   accents). The shopping list has *Mindet elvállalom* per group (off to the
+10. **Shopping helpers.** Anything can be written on the shopping list as
+   free text (*+ Vásárolnivaló* on the to-do list: "Elem", "Szülinapi
+   gyertya"), for what the inventory doesn't track: no item, no place, no
+   level; claimed, done and notified like any line, and gone once done. Its
+   icon and group are guessed from the name. The catalogue has a search box
+   (ignoring case and accents). The shopping list has *Mindet elvállalom* per group (off to the
    grocery: take every open food row at once) and *Megosztás*: the list as
    text to the share sheet (or the clipboard).
 
@@ -144,8 +151,9 @@ Activity (tables `users`, `locations`, `items`, `stock`, `chores`,
   Optional schedule: `repeat_days` or `repeat_weekdays` (a bitmask, Monday
   = 1; the API speaks lists, Monday = 0), and `scheduled_at`, when it was
   last changed (earlier occurrences don't count). Logic in `schedule.py`.
-- **Request**: kind (`buy` | `chore`), item (buy) or chore (chore),
-  location (unset for a chore of the whole house), status (`open` | `claimed` | `done` | `cancelled`), created by
+- **Request**: kind (`buy` | `chore`), item (buy) or chore (chore), or
+  for a buy request written on the list by hand only a `name` (no item, no
+  location), location (unset for a chore of the whole house), status (`open` | `claimed` | `done` | `cancelled`), created by
   (unset when a scheduled chore fell due by itself),
   claimed by, closed by, timestamps. At most one open/claimed request per
   (item, location) or chore (partial unique indexes), so reporting twice

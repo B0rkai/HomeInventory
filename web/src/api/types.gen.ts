@@ -347,6 +347,18 @@ export type PushSubscriptionIn = {
 };
 
 /**
+ * RequestCreate
+ *
+ * Something to buy that isn't kept track of, written on the shopping list.
+ */
+export type RequestCreate = {
+    /**
+     * Name
+     */
+    name: string;
+};
+
+/**
  * RequestKind
  */
 export type RequestKind = 'buy' | 'chore';
@@ -364,6 +376,10 @@ export type RequestOut = {
      * Item Id
      */
     item_id: number | null;
+    /**
+     * Name
+     */
+    name: string | null;
     /**
      * Chore Id
      */
@@ -1069,6 +1085,31 @@ export type ListRequestsResponses = {
 };
 
 export type ListRequestsResponse = ListRequestsResponses[keyof ListRequestsResponses];
+
+export type CreateRequestData = {
+    body: RequestCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/requests';
+};
+
+export type CreateRequestErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateRequestError = CreateRequestErrors[keyof CreateRequestErrors];
+
+export type CreateRequestResponses = {
+    /**
+     * Successful Response
+     */
+    201: RequestOut;
+};
+
+export type CreateRequestResponse = CreateRequestResponses[keyof CreateRequestResponses];
 
 export type ClaimRequestData = {
     body?: never;

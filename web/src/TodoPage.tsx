@@ -98,9 +98,22 @@ function Sections({ requests }: { requests: RequestOut[] }) {
   const byPlace = (a: { location_id: number | null }, b: { location_id: number | null }) =>
     rank(a.location_id) - rank(b.location_id)
 
-  // Buy requests by item.
+  // Buy requests by item. One written on the list by hand has no item: it stands in as one
+  // of its own, under its request's id made negative (it has no stock and no page).
   const buying = new Map<number, RequestOut[]>()
   for (const request of requests) {
+    if (request.name !== null) {
+      itemsById.set(-request.id, {
+        id: -request.id,
+        name: request.name,
+        variant: null,
+        category: null,
+        icon: null,
+        restock: false,
+      })
+      buying.set(-request.id, [request])
+      continue
+    }
     if (request.item_id === null || !itemsById.has(request.item_id)) continue
     buying.set(request.item_id, [...(buying.get(request.item_id) ?? []), request])
   }
@@ -179,32 +192,43 @@ function Sections({ requests }: { requests: RequestOut[] }) {
       <RequestRow
         key={item.id}
         title={
-          <a className="item-link" href={href.item(item.id)}>
+          item.id > 0 ? (
+            <a className="item-link" href={href.item(item.id)}>
+              <Named thing={item} kind="item" />
+            </a>
+          ) : (
             <Named thing={item} kind="item" />
-          </a>
+          )
         }
         name={fullName(item)}
         requests={wanted}
         doneLabel={lots.length ? t.todo.refilled : t.todo.bought}
       >
-        <p className="small">
-          {wanted.map((request, index) => {
-            // A buy request always has a place.
-            const level = levels.get(request.location_id!)
-            return (
-              <span key={request.id}>
-                {index > 0 && ', '}
-                {placeLink(request.location_id)}
-                {level && (
-                  <>
-                    {' '}
-                    <LevelName level={level} />
-                  </>
-                )}
-              </span>
-            )
-          })}
-        </p>
+        {item.id > 0 && (
+          <p className="small">
+            {wanted.map((request, index) => {
+              // A buy request always has a place.
+              const level = levels.get(request.location_id!)
+              return (
+                <span key={request.id}>
+                  {index > 0 && ', '}
+                  {placeLink(request.location_id)}
+                  {level && (
+                    <>
+                      {' '}
+                      <LevelName level={level} />
+                    </>
+                  )}
+                </span>
+              )
+            })}
+          </p>
+        )}
+        {item.id < 0 && wanted[0].created_by_name && (
+          <p className="small muted">
+            {t.todo.written(wanted[0].created_by_name, ago(wanted[0].created_at))}
+          </p>
+        )}
         {lots.length > 0 && (
           <p className="small lots-note">
             {t.todo.fetchFrom}{' '}

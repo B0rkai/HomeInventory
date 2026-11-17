@@ -16,10 +16,13 @@ export type PushMessage = {
 /** The notification's title and body, in Hungarian. */
 export function notificationText(message: PushMessage): { title: string; body: string } {
   const name = message.variant ? `${message.name} · ${message.variant}` : message.name
-  const place = message.place ?? t.notify.wholeHouse
+  // Written on the shopping list by hand: it has no place.
+  const written = message.kind === 'buy' && message.place === null
+  const place = message.place ?? (written ? t.notify.shoppingList : t.notify.wholeHouse)
   const actor = message.actor ?? ''
   switch (message.event) {
     case 'reported':
+      if (written) return { title: t.notify.listed(name), body: t.notify.listedBy(actor) }
       return message.kind === 'buy'
         ? {
             title: t.notify.reportedBuy(t.levels[message.level ?? 'low'], name),

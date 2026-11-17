@@ -769,6 +769,43 @@
             }
           }
         }
+      },
+      "post": {
+        "summary": "Create Request",
+        "description": "Writes something on the shopping list that isn't kept track of: no item, no place.\nDone or cancelled, it's gone like any request; the same name may be on it twice.",
+        "operationId": "create_request",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/requests/{request_id}/claim": {
@@ -854,7 +891,7 @@
     "/api/v1/requests/{request_id}/done": {
       "post": {
         "summary": "Complete Request",
-        "description": "Marks a request done, whoever claimed it; a bought item's level goes back to plenty.",
+        "description": "Marks a request done, whoever claimed it; a bought item's level goes back to plenty\n(one written in by hand has none).",
         "operationId": "complete_request",
         "parameters": [
           {
@@ -1853,6 +1890,22 @@
         "title": "PushSubscriptionIn",
         "description": "A browser's PushSubscription, as its toJSON() gives it."
       },
+      "RequestCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "RequestCreate",
+        "description": "Something to buy that isn't kept track of, written on the shopping list."
+      },
       "RequestKind": {
         "type": "string",
         "enum": [
@@ -1880,6 +1933,17 @@
               }
             ],
             "title": "Item Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
           },
           "chore_id": {
             "anyOf": [
@@ -1996,6 +2060,7 @@
           "id",
           "kind",
           "item_id",
+          "name",
           "chore_id",
           "location_id",
           "status",

@@ -115,7 +115,11 @@ export function LogPage() {
                 const thing = item ??
                   chore ?? { name: first.name, variant: first.variant, icon: null }
                 const name = <Named thing={thing} kind={first.kind === 'buy' ? 'item' : 'chore'} />
-                const where = places.map(place).filter((p) => p !== null)
+                // Something written on the shopping list has no place.
+                const where =
+                  first.kind === 'buy' && first.location_id === null
+                    ? []
+                    : places.map(place).filter((p) => p !== null)
                 return (
                   <li key={first.id}>
                     {item ? (

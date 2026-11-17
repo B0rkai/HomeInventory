@@ -188,8 +188,10 @@ class RequestOut(BaseModel):
 
     id: int
     kind: RequestKind
-    # Set for a buy request.
+    # Set for a buy request of an item.
     item_id: int | None
+    # Set for a buy request written in by hand, with no item behind it.
+    name: str | None
     # Set for a chore request.
     chore_id: int | None
     # Unset for a chore of the whole house.
@@ -223,6 +225,12 @@ class ActivityOut(BaseModel):
     variant: str | None
     location_id: int | None
     level: Level | None
+
+
+class RequestCreate(BaseModel):
+    """Something to buy that isn't kept track of, written on the shopping list."""
+
+    name: Name
 
 
 class PushKey(BaseModel):

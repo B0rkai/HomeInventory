@@ -321,3 +321,25 @@ def test_a_new_claim_starts_without_a_reminder(api, claimed_by_bela) -> None:
     claimed = api("POST", f"/requests/{claimed_by_bela}/claim", headers=BELA).json()
     assert (claimed["reminded_at"], claimed["reminded_by_name"]) == (None, None)
     assert api("POST", f"/requests/{claimed_by_bela}/remind").status_code == 200
+
+
+def test_writing_on_the_list_tells_the_other(api, phones, pushes) -> None:
+    request = api("POST", "/requests", {"name": "Elem"}).json()
+    api("POST", f"/requests/{request['id']}/done", headers=BELA)
+    assert pushes == [
+        (
+            BELAS_PHONE,
+            {
+                "event": "reported",
+                "kind": "buy",
+                "name": "Elem",
+                "variant": None,
+                "place": None,
+                "level": None,
+                "actor": "Anna Kovacs",
+                "tag": f"list-{request['id']}",
+                "url": "/#/todo",
+            },
+        ),
+        (ANNAS_PHONE, pushes[1][1] | {"event": "done", "actor": "Bela Kovacs"}),
+    ]

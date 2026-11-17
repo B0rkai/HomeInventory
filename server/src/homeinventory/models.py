@@ -219,14 +219,16 @@ ACTIVE_WHERE = text("status IN ('open', 'claimed')")
 
 
 class Request(Base):
-    """Something to buy (an item running low somewhere) or a chore to do, until it's done."""
+    """Something to buy (an item running low somewhere, or anything written on the shopping
+    list) or a chore to do, until it's done."""
 
     __tablename__ = "requests"
     __table_args__ = (
         CheckConstraint(
-            "(kind = 'buy' AND item_id IS NOT NULL AND chore_id IS NULL"
-            " AND location_id IS NOT NULL)"
-            " OR (kind = 'chore' AND chore_id IS NOT NULL AND item_id IS NULL)",
+            "(kind = 'buy' AND chore_id IS NULL AND ("
+            "(item_id IS NOT NULL AND location_id IS NOT NULL AND name IS NULL)"
+            " OR (item_id IS NULL AND location_id IS NULL AND name IS NOT NULL)))"
+            " OR (kind = 'chore' AND chore_id IS NOT NULL AND item_id IS NULL AND name IS NULL)",
             name="target",
         ),
         # At most one active request per item and place, or per chore: reporting twice
@@ -245,6 +247,9 @@ class Request(Base):
     kind: Mapped[RequestKind] = mapped_column(str_enum(RequestKind, "kind"))
     item_id: Mapped[int | None] = mapped_column(ForeignKey("items.id", ondelete="CASCADE"))
     chore_id: Mapped[int | None] = mapped_column(ForeignKey("chores.id", ondelete="CASCADE"))
+    # Something to buy that isn't kept track of ("Elem", "Szülinapi gyertya"), written on the
+    # shopping list as it is: no item, no place.
+    name: Mapped[str | None] = mapped_column(String(NAME_MAX_LENGTH))
     # Where it's needed; a chore's own location, unset for a chore of the whole house.
     location_id: Mapped[int | None] = mapped_column(
         ForeignKey("locations.id", ondelete="CASCADE"), index=True

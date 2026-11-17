@@ -59,6 +59,18 @@ def message_for(
 ) -> Message:
     """What to tell about a request."""
     place = request.location_id and session.get_one(Location, request.location_id).name
+    if request.name is not None:
+        # Written on the shopping list: just a name.
+        return Message(
+            event=event,
+            kind="buy",
+            name=request.name,
+            variant=None,
+            place=None,
+            level=None,
+            actor=actor,
+            tag=f"list-{request.id}",
+        )
     if request.kind == RequestKind.BUY:
         item = session.get_one(Item, request.item_id)
         return Message(

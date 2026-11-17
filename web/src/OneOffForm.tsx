@@ -6,13 +6,14 @@ import { placePath, treeOrder } from './tree'
 const MAX_LENGTH = 60 // the server's limit for names
 
 /**
- * Adds a one-off to-do ("Szerelő hívása"), for the whole house or a place. Folded into a
- * button until it's needed, so it doesn't take up the list's room.
+ * Adds a one-off to-do ("Szerelő hívása"), for the whole house or a place, or writes
+ * something on the shopping list that isn't kept track of ("Elem"). Folded into two
+ * buttons until one is needed, so it doesn't take up the list's room.
  */
 export function OneOffForm() {
   const id = useId()
   const { house, actions } = useHouse()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState<'chore' | 'buy'>()
   const [name, setName] = useState('')
   const [place, setPlace] = useState('')
   const [saving, setSaving] = useState(false)
@@ -20,7 +21,10 @@ export function OneOffForm() {
   if (!open) {
     return (
       <div className="actions one-off-toggle">
-        <button type="button" className="secondary small-button" onClick={() => setOpen(true)}>
+        <button type="button" className="secondary small-button" onClick={() => setOpen('buy')}>
+          + {t.todo.addToList}
+        </button>
+        <button type="button" className="secondary small-button" onClick={() => setOpen('chore')}>
           + {t.todo.addOneOff}
         </button>
       </div>
@@ -30,22 +34,25 @@ export function OneOffForm() {
   async function submit(event: FormEvent) {
     event.preventDefault()
     setSaving(true)
-    const saved = await actions.addChore(place ? Number(place) : null, name.trim(), true)
+    const saved =
+      open === 'buy'
+        ? await actions.addToList(name.trim())
+        : await actions.addChore(place ? Number(place) : null, name.trim(), true)
     setSaving(false)
     if (saved) {
       setName('')
-      setOpen(false)
+      setOpen(undefined)
     }
   }
 
   return (
     <form className="card add-form one-off" onSubmit={submit}>
-      <label htmlFor={id}>{t.todo.addOneOff}</label>
+      <label htmlFor={id}>{open === 'buy' ? t.todo.addToList : t.todo.addOneOff}</label>
       <input
         id={id}
         value={name}
         onChange={(event) => setName(event.target.value)}
-        placeholder={t.todo.addOneOffPlaceholder}
+        placeholder={open === 'buy' ? t.todo.addToListPlaceholder : t.todo.addOneOffPlaceholder}
         maxLength={MAX_LENGTH}
         autoComplete="off"
         enterKeyHint="done"
@@ -53,23 +60,26 @@ export function OneOffForm() {
         required
       />
       <div className="row">
-        <select
-          aria-label={t.todo.oneOffPlace}
-          value={place}
-          onChange={(event) => setPlace(event.target.value)}
-        >
-          <option value="">{t.home.wholeHouse}</option>
-          {treeOrder(house.locations).map((location) => (
-            <option key={location.id} value={location.id}>
-              {placePath(house.locations, location.id)}
-            </option>
-          ))}
-        </select>
+        {/* What's bought goes on the list, not to a place. */}
+        {open === 'chore' && (
+          <select
+            aria-label={t.todo.oneOffPlace}
+            value={place}
+            onChange={(event) => setPlace(event.target.value)}
+          >
+            <option value="">{t.home.wholeHouse}</option>
+            {treeOrder(house.locations).map((location) => (
+              <option key={location.id} value={location.id}>
+                {placePath(house.locations, location.id)}
+              </option>
+            ))}
+          </select>
+        )}
         <button type="submit" disabled={saving || !name.trim()}>
           {t.add}
         </button>
       </div>
-      <button type="button" className="secondary" onClick={() => setOpen(false)}>
+      <button type="button" className="secondary" onClick={() => setOpen(undefined)}>
         {t.cancel}
       </button>
     </form>

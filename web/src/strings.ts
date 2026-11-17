@@ -59,6 +59,8 @@ export const t = {
     pool: 'Szabad',
     addOneOff: 'Új egyszeri teendő',
     addOneOffPlaceholder: 'Például: Szerelő hívása',
+    addToList: 'Vásárolnivaló',
+    addToListPlaceholder: 'Például: Elem, szülinapi gyertya',
     oneOffPlace: 'Hol?',
     mineTab: 'Enyém',
     poolEmpty: 'Nincs szabad teendő: mindent elvállalt valaki.',
@@ -87,6 +89,7 @@ export const t = {
     mine: 'Te intézed',
     theirs: (name: string) => `${name} intézi`,
     reported: (name: string, when: string) => `${name} jelezte, ${when}`,
+    written: (name: string, when: string) => `${name} írta fel, ${when}`,
     due: (when: string) => `Esedékes, ${when}`,
   },
   missing: {
@@ -219,6 +222,10 @@ export const t = {
   notify: {
     wholeHouse: 'Egész ház',
     reportedBuy: (level: string, name: string) => `${level}: ${name}`,
+    // Written on the list by hand: no level, no place.
+    listed: (name: string) => `Listára került: ${name}`,
+    listedBy: (actor: string) => `${actor} írta fel`,
+    shoppingList: 'Bevásárlólista',
     reportedBy: (place: string, actor: string) => `${place} · ${actor} jelezte`,
     reportedChoreBy: (place: string, actor: string) => `${place} · ${actor} szólt`,
     claimed: (actor: string, name: string) => `${actor} elvállalta: ${name}`,

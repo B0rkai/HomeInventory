@@ -25,20 +25,23 @@ def record(
     *,
     item: Item | None = None,
     chore: Chore | None = None,
+    name: str | None = None,
     location_id: int | None = None,
     level: Level | None = None,
 ) -> None:
-    """Adds an entry about an item or a chore; the caller commits."""
+    """Adds an entry about an item, a chore or something to buy by `name`; the caller
+    commits."""
     thing = item or chore
-    assert thing is not None
+    name = thing.name if thing else name
+    assert name is not None
     session.add(
         Activity(
             user_id=user.id,
             action=action,
-            kind=RequestKind.BUY if item else RequestKind.CHORE,
+            kind=RequestKind.CHORE if chore else RequestKind.BUY,
             item_id=item and item.id,
             chore_id=chore and chore.id,
-            name=thing.name,
+            name=name,
             variant=item and item.variant,
             location_id=location_id,
             level=level,
@@ -54,6 +57,7 @@ def record_request(session: Session, user: User, action: Action, request: Reques
         action,
         item=request.item_id and session.get_one(Item, request.item_id),
         chore=request.chore_id and session.get_one(Chore, request.chore_id),
+        name=request.name,
         location_id=request.location_id,
     )
 

@@ -625,3 +625,42 @@ def test_lasting_chores_stay_when_done(api, house) -> None:
     request = api("POST", f"/chores/{id}/requests").json()
     api("POST", f"/requests/{request['id']}/done")
     assert chore_of(api, id)["one_off"] is False
+
+
+# Written on the shopping list by hand
+
+
+def test_writing_on_the_list(api, house) -> None:
+    response = api("POST", "/requests", {"name": "  Elem  "})
+    assert response.status_code == 201, response.text
+    request = response.json()
+    assert request["kind"] == "buy"
+    assert request["name"] == "Elem"
+    assert request["item_id"] is None
+    assert request["location_id"] is None
+    assert request["status"] == "open"
+    assert request["created_by_name"] == "Anna Kovacs"
+    # The same thing twice is two lines: nothing to tell them apart by.
+    assert api("POST", "/requests", {"name": "Elem"}).status_code == 201
+    assert [r["name"] for r in active(api)] == ["Elem", "Elem"]
+
+
+def test_a_written_line_needs_a_name(api) -> None:
+    assert api("POST", "/requests", {"name": "   "}).status_code == 422
+
+
+def test_a_written_line_is_claimed_and_done_like_any(api, house) -> None:
+    set_level(api, house["pantry"], house["sugar"], "plenty")
+    request = api("POST", "/requests", {"name": "Elem"}).json()
+    path = f"/requests/{request['id']}"
+    assert api("POST", f"{path}/claim", headers=BELA).json()["claimed_by_name"] == "Bela Kovacs"
+    assert api("POST", f"{path}/done", headers=BELA).json()["status"] == "done"
+    assert active(api) == []
+    # No stock behind it.
+    assert level_of(api, house["pantry"], house["sugar"]) == "plenty"
+    entries = api("GET", "/activity").json()
+    assert [(e["action"], e["kind"], e["name"], e["item_id"]) for e in entries[:3]] == [
+        ("done", "buy", "Elem", None),
+        ("claimed", "buy", "Elem", None),
+        ("listed", "buy", "Elem", None),
+    ]
