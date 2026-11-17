@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import type { Category, ItemOut } from './api'
 import { CATEGORIES, categoryName, groupByCategory, iconCategory } from './categories'
 import { useHouse } from './house'
@@ -7,10 +7,17 @@ import { Named } from './Named'
 import { t } from './strings'
 import { byItem, fullName } from './variants'
 
-/** The catalogue: rename, group or delete items. Adding happens on a place's page. */
-export function ItemsPage() {
+/**
+ * The catalogue: rename, group or delete items. Adding happens on a place's page, which
+ * also links here with `edit` set: that item's form opens, and closing it goes back.
+ */
+export function ItemsPage({ edit }: { edit?: number }) {
   const { house } = useHouse()
-  const [editingId, setEditingId] = useState<number>()
+  const [editingId, setEditingId] = useState(edit)
+  const editing = useRef<HTMLLIElement>(null)
+  useEffect(() => {
+    if (edit !== undefined) editing.current?.scrollIntoView({ block: 'center' })
+  }, [edit])
   if (!house) return null
   const { items, stock } = house
 
@@ -31,8 +38,14 @@ export function ItemsPage() {
           <ul className="item-list">
             {groupItems.map((item) =>
               item.id === editingId ? (
-                <li key={item.id}>
-                  <ItemForm item={item} onDone={() => setEditingId(undefined)} />
+                <li key={item.id} ref={editing}>
+                  <ItemForm
+                    item={item}
+                    onDone={() =>
+                      // Opened from a place: back to it.
+                      item.id === edit ? window.history.back() : setEditingId(undefined)
+                    }
+                  />
                 </li>
               ) : (
                 <li key={item.id}>
@@ -71,7 +84,9 @@ function ItemForm({ item, onDone }: { item: ItemOut; onDone: () => void }) {
   }
 
   async function remove() {
-    if (window.confirm(t.items.confirmDelete(fullName(item)))) await actions.deleteItem(item.id)
+    if (!window.confirm(t.items.confirmDelete(fullName(item)))) return
+    await actions.deleteItem(item.id)
+    onDone()
   }
 
   return (

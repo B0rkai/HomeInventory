@@ -1029,3 +1029,8 @@ h2 .tile .icon-art {
   min-height: 1.9rem;
   padding: 0.1rem 0.5rem;
 }
+/* An item's name on a place's page opens its editor; it reads as a name, not a link. */
+.item-link {
+  color: inherit;
+  text-decoration: none;
+}

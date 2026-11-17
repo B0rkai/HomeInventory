@@ -238,7 +238,12 @@ export function PlacePage({ id }: { id: number }) {
                 </div>
                 <ul>
                   {group.rows.map((r) =>
-                    row(r, r.item.variant ?? <span className="muted">{t.items.noVariant}</span>),
+                    row(
+                      r,
+                      <a className="item-link" href={href.editItem(r.item.id)}>
+                        {r.item.variant ?? <span className="muted">{t.items.noVariant}</span>}
+                      </a>,
+                    ),
                   )}
                   {variantForm(group.name)}
                 </ul>
@@ -248,7 +253,9 @@ export function PlacePage({ id }: { id: number }) {
                 row(
                   group.rows[0],
                   <span className="group-head">
-                    <Named thing={group.rows[0].item} kind="item" />
+                    <a className="item-link" href={href.editItem(group.rows[0].item.id)}>
+                      <Named thing={group.rows[0].item} kind="item" />
+                    </a>
                     {addVariantButton(group.name)}
                   </span>,
                 ),

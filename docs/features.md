@@ -107,7 +107,9 @@ Built: User, Location, Item, Stock, Chore, Request, PushSubscription
   Items and locations have an optional `icon`, a name from the web client's
   icon set (`web/src/icons.ts`): null means the client guesses one from the
   name, empty means none.
-  Items are added from a place's page; deleting one removes its stock.
+  Items are added from a place's page, and tapping one's name there opens
+  its form in the catalogue (`#/items/{id}`; closing it goes back).
+  Deleting one removes its stock.
 - **Stock**: one row per (item, location), unique on that pair: level
   (`lots` | `plenty` | `low` | `out`), updated by, updated at. A row means the item
   is kept there.

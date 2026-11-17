@@ -128,7 +128,7 @@ function Pages() {
     )
   }
   if (route.page === 'place') return <PlacePage key={route.id} id={route.id} />
-  if (route.page === 'items') return <ItemsPage />
+  if (route.page === 'items') return <ItemsPage key={route.edit} edit={route.edit} />
   if (route.page === 'missing') return <MissingPage view={route.view} />
   if (route.page === 'todo') return <TodoPage view={route.view} />
   return <Home />
