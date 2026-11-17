@@ -66,7 +66,8 @@ export const createLocation = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Delete Location
  *
- * Deletes a location and its stock rows; refuses while it has child locations.
+ * Deletes a location and its stock rows; refuses while it has child locations. An item
+ * kept nowhere else stops being restocked.
  */
 export const deleteLocation = <ThrowOnError extends boolean = false>(options: Options<DeleteLocationData, ThrowOnError>): RequestResult<DeleteLocationResponses, DeleteLocationErrors, ThrowOnError> => (options.client ?? client).delete<DeleteLocationResponses, DeleteLocationErrors, ThrowOnError>({ url: '/api/v1/locations/{location_id}', ...options });
 
@@ -133,7 +134,8 @@ export const listStock = <ThrowOnError extends boolean = false>(options?: Option
 /**
  * Remove Stock
  *
- * Stops keeping an item in a location, cancelling its request to buy it there.
+ * Stops keeping an item in a location, cancelling its request to buy it there. Taken
+ * off its last place, it stops being restocked.
  */
 export const removeStock = <ThrowOnError extends boolean = false>(options: Options<RemoveStockData, ThrowOnError>): RequestResult<RemoveStockResponses, RemoveStockErrors, ThrowOnError> => (options.client ?? client).delete<RemoveStockResponses, RemoveStockErrors, ThrowOnError>({ url: '/api/v1/locations/{location_id}/stock/{item_id}', ...options });
 

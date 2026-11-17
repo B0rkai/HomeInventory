@@ -709,3 +709,33 @@ def test_keeping_is_all_or_nothing(api, house) -> None:
     assert keep(api, 999, {"location_id": house["pantry"], "name": "X"}).status_code == 404
     other = api("POST", "/requests", {"name": "Elem"}).json()
     assert keep(api, other["id"], {"location_id": 999, "name": "Elem"}).status_code == 404
+
+
+# An item kept nowhere
+
+
+def restocked(api, item: int) -> bool:
+    return next(i for i in api("GET", "/items").json() if i["id"] == item)["restock"]
+
+
+def test_taken_off_its_last_place_an_item_stops_being_restocked(api, house) -> None:
+    pantry, wc, paper = house["pantry"], house["wc"], house["paper"]
+    set_level(api, pantry, paper, "plenty")
+    set_level(api, wc, paper, "plenty")
+    api("DELETE", f"/locations/{wc}/stock/{paper}")
+    assert restocked(api, paper)
+    api("DELETE", f"/locations/{pantry}/stock/{paper}")
+    assert not restocked(api, paper)
+    # Kept somewhere again, it stays as it was set: running out lists nothing.
+    set_level(api, pantry, paper, "out")
+    assert active(api) == []
+
+
+def test_deleting_its_last_place_stops_restocking_an_item(api, house) -> None:
+    pantry, wc = house["pantry"], house["wc"]
+    set_level(api, pantry, house["sugar"], "plenty")
+    set_level(api, wc, house["paper"], "plenty")
+    set_level(api, pantry, house["paper"], "plenty")
+    assert api("DELETE", f"/locations/{pantry}").status_code == 204
+    assert not restocked(api, house["sugar"])
+    assert restocked(api, house["paper"])

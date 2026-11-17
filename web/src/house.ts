@@ -352,6 +352,8 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
       },
       async deleteLocation(id: number) {
         const ok = await change(deleteLocation({ path: { location_id: id } }))
+        // An item kept only here stops being restocked.
+        if (ok) void reload()
         if (ok) {
           setHouse(
             (h) =>
@@ -423,18 +425,8 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
       },
       async removeStock(locationId: number, itemId: number) {
         const ok = await change(removeStock({ path: { location_id: locationId, item_id: itemId } }))
-        if (ok) {
-          setHouse(
-            (h) =>
-              h && {
-                ...h,
-                stock: h.stock.filter(
-                  (s) => !(s.location_id === locationId && s.item_id === itemId),
-                ),
-              },
-          )
-          void reloadRequests()
-        }
+        // Its request goes too, and off its last place it stops being restocked.
+        if (ok) await reload()
       },
       /** Puts an item kept somewhere on the shopping list, whatever its level. */
       async requestStock(locationId: number, itemId: number) {

@@ -129,7 +129,10 @@ Activity (tables `users`, `locations`, `items`, `stock`, `chores`,
   whether there's any, but it's no shortage (not in the shortages view or
   the badges) and goes on the list only by hand ("+ Listára" on its
   place's page, `POST .../stock/{item}/request`). Turning it off cancels
-  its requests; turning it on lists what's already low or out.
+  its requests; turning it on lists what's already low or out. An item
+  taken off its last place (or whose last place is deleted) stays in the
+  catalogue, kept nowhere, with `restock` turned off: not keeping it means
+  not restocking it. Kept somewhere again, it stays off until turned on.
   An optional `variant` tells apart kinds kept of the same supply
   ("Konzerv" kukorica / vörösbab / borsó, "Szemeteszsák" 35 l / 60 l);
   items sharing a name show as one group, each variant with its own stock.

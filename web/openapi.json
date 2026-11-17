@@ -189,7 +189,7 @@
       },
       "delete": {
         "summary": "Delete Location",
-        "description": "Deletes a location and its stock rows; refuses while it has child locations.",
+        "description": "Deletes a location and its stock rows; refuses while it has child locations. An item\nkept nowhere else stops being restocked.",
         "operationId": "delete_location",
         "parameters": [
           {
@@ -441,7 +441,7 @@
       },
       "delete": {
         "summary": "Remove Stock",
-        "description": "Stops keeping an item in a location, cancelling its request to buy it there.",
+        "description": "Stops keeping an item in a location, cancelling its request to buy it there. Taken\noff its last place, it stops being restocked.",
         "operationId": "remove_stock",
         "parameters": [
           {

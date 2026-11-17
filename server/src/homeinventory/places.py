@@ -120,11 +120,15 @@ def update_location(
 
 @router.delete("/locations/{location_id}", **NO_CONTENT)
 def delete_location(location_id: int, session: Session = Depends(get_session)) -> None:
-    """Deletes a location and its stock rows; refuses while it has child locations."""
+    """Deletes a location and its stock rows; refuses while it has child locations. An item
+    kept nowhere else stops being restocked."""
     location = get_or_404(session, Location, location_id)
     if session.scalar(select(Location.id).where(Location.parent_id == location.id).limit(1)):
         raise conflict("Delete the locations inside this one first")
+    kept_here = list(session.scalars(select(Stock.item_id).where(Stock.location_id == location.id)))
     session.delete(location)
+    session.flush()
+    _stop_restocking_if_kept_nowhere(session, kept_here)
     session.commit()
 
 
@@ -324,7 +328,8 @@ def remove_stock(
     user: User = Depends(current_user),
     session: Session = Depends(get_session),
 ) -> None:
-    """Stops keeping an item in a location, cancelling its request to buy it there."""
+    """Stops keeping an item in a location, cancelling its request to buy it there. Taken
+    off its last place, it stops being restocked."""
     stock = session.scalar(
         select(Stock).where(Stock.item_id == item_id, Stock.location_id == location_id)
     )
@@ -335,4 +340,14 @@ def remove_stock(
         session, user, Action.REMOVED, item=session.get_one(Item, item_id), location_id=location_id
     )
     session.delete(stock)
+    session.flush()
+    _stop_restocking_if_kept_nowhere(session, [item_id])
     session.commit()
+
+
+def _stop_restocking_if_kept_nowhere(session: Session, item_ids: list[int]) -> None:
+    """An item taken off its last place isn't kept any more: not restocked either, until
+    someone turns it back on."""
+    kept = set(session.scalars(select(Stock.item_id).where(Stock.item_id.in_(item_ids))))
+    for item_id in set(item_ids) - kept:
+        session.get_one(Item, item_id).restock = False
