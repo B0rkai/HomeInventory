@@ -1067,6 +1067,16 @@ a.item-row {
   margin-left: auto;
   white-space: nowrap;
 }
+/* What isn't restocked: a crossed-out repeat before its level */
+.no-restock {
+  margin-right: 0.35rem;
+  color: var(--muted);
+}
+.no-restock .icon-art {
+  width: 1rem;
+  height: 1rem;
+  vertical-align: -0.15rem;
+}
 .item-meta {
   margin: 0.2rem 0 0;
 }

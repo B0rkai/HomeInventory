@@ -114,7 +114,14 @@ const CHORES: Entry[] = [
 ]
 
 /** Icons the app uses outside these tables: the tab bar. */
-export const UI_ICONS = ['home', 'list-check', 'shopping-cart', 'clipboard-list', 'history']
+export const UI_ICONS = [
+  'home',
+  'list-check',
+  'shopping-cart',
+  'clipboard-list',
+  'history',
+  'repeat-off',
+]
 
 export type IconKind = 'item' | 'place' | 'chore'
 

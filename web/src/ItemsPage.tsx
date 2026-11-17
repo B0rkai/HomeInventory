@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Category, ItemOut, Level } from './api'
 import { CATEGORIES, categoryName, categoryOf, groupByCategory } from './categories'
 import { useHouse } from './house'
+import { IconArt } from './IconArt'
 import { LevelName } from './LevelPicker'
 import { Named } from './Named'
 import { href } from './route'
@@ -158,10 +159,14 @@ export function ItemsPage() {
                   <a className="item-row" href={href.item(item.id)}>
                     <Named thing={item} kind="item" />
                     <span className="small">
+                      {!item.restock && (
+                        <span className="no-restock" role="img" aria-label={t.items.noRestock}>
+                          <IconArt name="repeat-off" />
+                        </span>
+                      )}
                       {level && <LevelName level={level} />}
                       <span className="muted">
                         {level && ' · '}
-                        {!item.restock && `${t.items.noRestock} · `}
                         {t.items.places(stock.filter((row) => row.item_id === item.id).length)}
                       </span>
                     </span>
