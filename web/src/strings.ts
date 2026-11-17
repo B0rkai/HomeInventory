@@ -26,6 +26,7 @@ export const t = {
     title: 'Helyek',
     empty: 'Még nincs egy hely sem. Kezdd a szintekkel, például: Pince, Földszint, Emelet.',
     addFloor: 'Új szint',
+    moreShort: (n: number) => `Még ${n} hiányzik`,
     choresTitle: 'Feladatok – egész ház',
     choresHint: 'Ami nem egy helyhez tartozik, például: Porszívózás, Kuka kihúzása az utcára.',
     addChorePlaceholder: 'Például: Porszívózás',

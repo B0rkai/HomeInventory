@@ -19,8 +19,8 @@ check stock remotely, and avoid duplicating the job.
    reaching a place is a tap or two, and reporting one more. Badges in the
    shortage colours count what's out and low: a floor only what's kept on
    it directly (its rooms show their own), a room (or a place's child) what's
-   in it and the places inside; a single item shows as its icon instead of
-   a "1".
+   in it and the places inside. Each missing item shows as its icon in the
+   shortage colour, out before low, up to five; past that a "+".
 2. **Stock levels per place.** Each supply has a level, **lots / plenty /
    low / out**, per place it is kept (pantry, basement, each bathroom). No
    exact counts. *Lots* means stocked up for weeks (20+ rolls of toilet

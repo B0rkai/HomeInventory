@@ -1034,3 +1034,13 @@ h2 .tile .icon-art {
   color: inherit;
   text-decoration: none;
 }
+.badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+}
+.badge.more {
+  padding: 0;
+  width: 1.4rem;
+  font-size: 0.95rem;
+}
