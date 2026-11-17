@@ -123,6 +123,31 @@ async function sendLeftovers(): Promise<void> {
   }
 }
 
+// The last house loaded, per user, to show when the server can't be reached (a shop with
+// no signal): read-only, with when it was fetched.
+const CACHE_KEY = (userId: number) => `house:${userId}`
+// Retried this often while the server is out of reach.
+const OFFLINE_RETRY_MS = 30_000
+
+type Cached = { at: string; house: House }
+
+function readCache(userId: number): Cached | undefined {
+  try {
+    const text = localStorage.getItem(CACHE_KEY(userId))
+    return text ? (JSON.parse(text) as Cached) : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function writeCache(userId: number, cached: Cached): void {
+  try {
+    localStorage.setItem(CACHE_KEY(userId), JSON.stringify(cached))
+  } catch {
+    // Only a convenience: offline, there'd be nothing to show.
+  }
+}
+
 const ACTIVE_STATUSES: RequestOut['status'][] = ['open', 'claimed']
 
 let draftIds = 0
@@ -134,6 +159,9 @@ type Messages = Partial<Record<number, string>>
 export function useHouseState(me: UserOut, onError: (message: string) => void) {
   const [house, setHouse] = useState<House>()
   const [loadError, setLoadError] = useState<string>()
+  // Set while the server is out of reach: when the house shown was fetched.
+  const [offlineSince, setOfflineSince] = useState<string>()
+  const loadedAt = useRef<string>(undefined)
   // Changes not yet answered by the server, shown as done; the last may still be undone.
   const [pending, setPending] = useState<Pending[]>([])
   const [undoable, setUndoable] = useState<Pending>()
@@ -153,18 +181,46 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
       listRequests(),
     ]).catch(() => [])
     if (locations?.data && items?.data && stock?.data && chores?.data && requests?.data) {
-      setHouse({
+      const loaded = {
         locations: locations.data,
         items: items.data,
         stock: stock.data,
         chores: chores.data,
         requests: requests.data,
-      })
+      }
+      setHouse(loaded)
       setLoadError(undefined)
+      setOfflineSince(undefined)
+      loadedAt.current = new Date().toISOString()
+      writeCache(me.id, { at: loadedAt.current, house: loaded })
+      return
+    }
+    // Out of reach: keep showing what's here, or what was saved last time.
+    if (loadedAt.current) {
+      setOfflineSince(loadedAt.current)
+      return
+    }
+    const cached = readCache(me.id)
+    if (cached) {
+      setHouse(cached.house)
+      setOfflineSince(cached.at)
+      loadedAt.current = cached.at
     } else {
       setLoadError(t.errors.unreachable)
     }
-  }, [])
+  }, [me.id])
+
+  // While out of reach, try again now and then, and as soon as the phone says it's online.
+  useEffect(() => {
+    if (!offlineSince) return
+    const timer = setInterval(() => void reload(), OFFLINE_RETRY_MS)
+    const onOnline = () => void reload()
+    window.addEventListener('online', onOnline)
+    return () => {
+      clearInterval(timer)
+      window.removeEventListener('online', onOnline)
+    }
+  }, [offlineSince, reload])
 
   // A stock level opens or closes buy requests on the server; fetch them again after one.
   const reloadRequests = useCallback(async () => {
@@ -755,7 +811,7 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
     [house, pending],
   )
 
-  return { me, house: shown, loadError, reload, actions, undoable }
+  return { me, house: shown, loadError, offlineSince, reload, actions, undoable }
 }
 
 type HouseContext = ReturnType<typeof useHouseState>

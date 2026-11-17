@@ -4,6 +4,8 @@ export const t = {
   appName: 'Spájz',
   loading: 'Betöltés…',
   retry: 'Újra',
+  // Shown while the server is out of reach and the page shows what was saved.
+  offline: (when: string) => `Nincs kapcsolat · az adatok ${when} frissültek`,
   back: 'Vissza',
   save: 'Mentés',
   add: 'Hozzáadás',

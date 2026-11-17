@@ -1188,3 +1188,12 @@ a.item-row {
   flex: none;
   padding: 0.25rem 0.3rem;
 }
+.offline-bar {
+  margin-bottom: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--low-bg);
+  color: var(--low);
+  font-size: 0.85rem;
+  font-weight: 600;
+}

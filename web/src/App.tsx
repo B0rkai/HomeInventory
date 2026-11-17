@@ -14,11 +14,32 @@ import { refreshPush } from './push'
 import { PushSettings } from './PushSettings'
 import { href, useRoute, type Route } from './route'
 import { t } from './strings'
+import { ago } from './time'
 import { TodoPage } from './TodoPage'
 import { UndoBar } from './UndoBar'
 
 type State =
   { kind: 'loading' } | { kind: 'ready'; user: UserOut } | { kind: 'error'; message: string }
+
+// Who used the app on this device last, so it opens offline too (with the saved house).
+const USER_KEY = 'me'
+
+function rememberUser(user: UserOut): void {
+  try {
+    localStorage.setItem(USER_KEY, JSON.stringify(user))
+  } catch {
+    // Only a convenience.
+  }
+}
+
+function lastUser(): UserOut | undefined {
+  try {
+    const text = localStorage.getItem(USER_KEY)
+    return text ? (JSON.parse(text) as UserOut) : undefined
+  } catch {
+    return undefined
+  }
+}
 
 function errorMessage(status: number | undefined): string {
   if (status === undefined) return t.errors.unreachable
@@ -42,13 +63,28 @@ export default function App() {
 
   useEffect(() => {
     getCurrentUser().then(
-      ({ data, response }) =>
+      ({ data, response }) => {
+        if (data) {
+          rememberUser(data)
+          setState({ kind: 'ready', user: data })
+          return
+        }
+        // Out of reach (no answer at all): carry on as who was here last, offline.
+        const known = response ? undefined : lastUser()
         setState(
-          data
-            ? { kind: 'ready', user: data }
+          known
+            ? { kind: 'ready', user: known }
             : { kind: 'error', message: errorMessage(response?.status) },
-        ),
-      () => setState({ kind: 'error', message: errorMessage(undefined) }),
+        )
+      },
+      () => {
+        const known = lastUser()
+        setState(
+          known
+            ? { kind: 'ready', user: known }
+            : { kind: 'error', message: errorMessage(undefined) },
+        )
+      },
     )
   }, [])
 
@@ -59,6 +95,7 @@ export default function App() {
   }, [userId])
 
   function saved(user: UserOut) {
+    rememberUser(user)
     setState({ kind: 'ready', user })
     setEditingNickname(false)
   }
@@ -114,8 +151,7 @@ export default function App() {
 }
 
 function Pages() {
-  const route = useRoute()
-  const { house, loadError, reload } = useHouse()
+  const { house, loadError, offlineSince, reload } = useHouse()
 
   if (!house) {
     return loadError ? (
@@ -131,6 +167,20 @@ function Pages() {
       <p className="muted">{t.loading}</p>
     )
   }
+  return (
+    <>
+      {offlineSince && (
+        <div className="offline-bar" role="status">
+          {t.offline(ago(offlineSince))}
+        </div>
+      )}
+      <Page />
+    </>
+  )
+}
+
+function Page() {
+  const route = useRoute()
   if (route.page === 'place') return <PlacePage key={route.id} id={route.id} />
   if (route.page === 'items') return <ItemsPage />
   if (route.page === 'item') return <ItemPage key={route.id} id={route.id} />

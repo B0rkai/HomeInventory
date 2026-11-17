@@ -109,6 +109,14 @@ check stock remotely, and avoid duplicating the job.
    grocery: take every open food row at once) and *Megosztás*: the list as
    text to the share sheet (or the clipboard).
 
+11. **Offline reading.** The last house loaded is kept on the device
+   (`localStorage`, per user), and so is who used the app last. When the
+   server is out of reach (no signal, Tailscale down) the app opens with
+   them, read-only in effect, under a bar saying when the data is from, and
+   tries again every 30 seconds and when the phone comes back online. The
+   service worker already serves the app shell offline. A change made
+   offline fails with "Nem érem el a szervert", as before.
+
 ## Data model
 
 Built: User, Location, Item, Stock, Chore, Request, PushSubscription,
@@ -202,9 +210,10 @@ change is a single conditional update (see `CLAUDE.md`); losing a race is
 
 ## Later ideas (not scheduled)
 
-- **Offline shopping list**: the last loaded house kept by the service
-  worker, so the list shows in a shop with no signal; changes made there
-  queued and sent once back online.
+- **Offline changes**: ticking items off in a shop with no signal, queued
+  and sent once back online (someone else's claim in the meantime dropped
+  quietly). Reading offline is done (feature 11); build this if the shop
+  shows it's missed.
 
 Considered and dropped (2026-11):
 
