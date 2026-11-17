@@ -101,7 +101,11 @@ check stock remotely, and avoid duplicating the job.
    default; `POST /requests/{id}/keep` makes or finds the item, sets it to
    *plenty* there and closes the line, all or nothing). An item's page has
    *+ Listára* for each place without a request, any level. The catalogue has a search box
-   (ignoring case and accents). The shopping list has *Mindet elvállalom* per group (off to the
+   (ignoring case and accents), a tab per group (only the groups in use),
+   and is sorted by each item's best level: most first by default (what's at
+   home, for cooking), flipped with one button to least first (what to buy);
+   items kept nowhere come last either way. Search and group last for the
+   session, the order for good (browser storage). The shopping list has *Mindet elvállalom* per group (off to the
    grocery: take every open food row at once) and *Megosztás*: the list as
    text to the share sheet (or the clipboard).
 

@@ -1160,3 +1160,31 @@ a.item-row {
 .keep-form p {
   margin: 0;
 }
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+/* One line of group chips, scrolled sideways on a phone. */
+.group-tabs {
+  display: flex;
+  margin-top: 0.5rem;
+  gap: 0.35rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.group-tabs .chip {
+  flex: none;
+  min-height: 2.1rem;
+  padding: 0.2rem 0.7rem;
+  font-weight: 500;
+}
+.group-tabs .chip[aria-selected='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.order-button {
+  flex: none;
+  padding: 0.25rem 0.3rem;
+}
