@@ -600,11 +600,14 @@ h2 .tile .icon-art {
   border-top: 1px solid var(--border);
 }
 
+/* The name keeps its line; the level and places stay together, below it when both don't fit. */
 .item-row {
   display: flex;
+  flex-wrap: wrap;
   width: 100%;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+  gap: 0 0.75rem;
   padding: 0.4rem 0;
   background: transparent;
   color: var(--text);
@@ -1059,6 +1062,10 @@ h2 .tile .icon-art {
 a.item-row {
   color: var(--text);
   text-decoration: none;
+}
+.item-row > .small {
+  margin-left: auto;
+  white-space: nowrap;
 }
 .item-meta {
   margin: 0.2rem 0 0;
