@@ -1069,3 +1069,68 @@ a.item-row {
   align-items: flex-end;
   flex: none;
 }
+.search {
+  margin-top: 0.25rem;
+  background: var(--surface);
+}
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 0.5rem;
+}
+.section-head > :first-child {
+  margin: 0;
+}
+.section-head .head-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+/* The last change, while it can be undone */
+.undo-bar {
+  position: fixed;
+  left: 1rem;
+  right: 1rem;
+  bottom: calc(4.25rem + env(safe-area-inset-bottom));
+  max-width: 30rem;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.4rem 0.4rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--text);
+  color: var(--bg);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+  overflow: hidden;
+}
+.undo-bar > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.undo-button {
+  flex: none;
+  min-height: 2.25rem;
+  background: transparent;
+  color: var(--bg);
+  font-weight: 700;
+  text-decoration: underline;
+}
+.undo-timer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background: var(--accent);
+  transform-origin: left;
+  animation: undo-countdown linear forwards;
+}
+@keyframes undo-countdown {
+  to {
+    transform: scaleX(0);
+  }
+}

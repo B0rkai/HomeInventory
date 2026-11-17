@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import {
   cancelRequest,
   claimRequest,
@@ -37,6 +37,7 @@ import {
   type UserOut,
 } from './api'
 import { t } from './strings'
+import { fullName } from './variants'
 
 export type House = {
   locations: LocationOut[]
@@ -59,12 +60,43 @@ const REQUEST_ACTIONS = {
 
 type Result<T> = Promise<{ data?: T; response?: Response }>
 
+/** How long a change waits to be undone before it goes to the server. */
+export const UNDO_DELAY = 6000
+
+/**
+ * A change held back for a few seconds so it can be undone: until it's sent, `show` makes
+ * it look done, and nothing (no notification either) has reached the server.
+ */
+type Pending = {
+  // Tells two changes with the same text apart.
+  id: number
+  label: string
+  // Another change with the same key replaces it instead of sending it (a level picked twice).
+  key?: string
+  show: (house: House) => House
+  send: () => Promise<unknown>
+}
+
+const ACTIVE_STATUSES: RequestOut['status'][] = ['open', 'claimed']
+
+let draftIds = 0
+let serial = 0
+
 /** What a failed change means to the user, by status; the rest get a generic message. */
 type Messages = Partial<Record<number, string>>
 
 export function useHouseState(me: UserOut, onError: (message: string) => void) {
   const [house, setHouse] = useState<House>()
   const [loadError, setLoadError] = useState<string>()
+  // Changes not yet answered by the server, shown as done; the last may still be undone.
+  const [pending, setPending] = useState<Pending[]>([])
+  const [undoable, setUndoable] = useState<Pending>()
+  const waiting = useRef<{ entry: Pending; timer: ReturnType<typeof setTimeout> }>(undefined)
+  // The server's copy, for the actions to read without re-creating them on every change.
+  const known = useRef<House>(undefined)
+  useEffect(() => {
+    known.current = house
+  }, [house])
 
   const reload = useCallback(async () => {
     const [locations, items, stock, chores, requests] = await Promise.all([
@@ -158,7 +190,77 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
     [onError, reload],
   )
 
-  const actions = useMemo(
+  /** Sends the change waiting to be undone, now; it keeps showing until the answer is in. */
+  const flush = useCallback(() => {
+    const held = waiting.current
+    if (!held) return
+    clearTimeout(held.timer)
+    waiting.current = undefined
+    setUndoable(undefined)
+    void held.entry.send().finally(() => setPending((list) => list.filter((e) => e !== held.entry)))
+  }, [])
+
+  const undo = useCallback(() => {
+    const held = waiting.current
+    if (!held) return
+    clearTimeout(held.timer)
+    waiting.current = undefined
+    setUndoable(undefined)
+    setPending((list) => list.filter((e) => e !== held.entry))
+  }, [])
+
+  /** Holds a change back to be undone; one waiting already goes now, unless this replaces it. */
+  const defer = useCallback(
+    (fields: Omit<Pending, 'id'>) => {
+      const entry = { ...fields, id: ++serial }
+      const held = waiting.current
+      let replaced: Pending | undefined
+      if (held && entry.key !== undefined && held.entry.key === entry.key) {
+        clearTimeout(held.timer)
+        replaced = held.entry
+      } else {
+        flush()
+      }
+      setPending((list) => [...list.filter((e) => e !== replaced), entry])
+      waiting.current = { entry, timer: setTimeout(flush, UNDO_DELAY) }
+      setUndoable(entry)
+    },
+    [flush],
+  )
+
+  // Leaving the app (or this page) sends what's waiting rather than losing it.
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') flush()
+    }
+    document.addEventListener('visibilitychange', onHide)
+    window.addEventListener('pagehide', flush)
+    return () => {
+      document.removeEventListener('visibilitychange', onHide)
+      window.removeEventListener('pagehide', flush)
+      flush()
+    }
+  }, [flush])
+
+  /** A request as it will be once the server has it; stands in until then. */
+  const draftRequest = useCallback(
+    (fields: Pick<RequestOut, 'kind' | 'item_id' | 'chore_id' | 'location_id'>): RequestOut => ({
+      ...fields,
+      id: --draftIds,
+      status: 'open',
+      created_by_id: me.id,
+      created_by_name: me.display_name,
+      created_at: new Date().toISOString(),
+      claimed_by_id: null,
+      claimed_by_name: null,
+      claimed_at: null,
+      reminded_by_name: null,
+      reminded_at: null,
+    }),
+    [me],
+  )
+
+  const send = useMemo(
     () => ({
       async addLocation(name: string, parentId: number | null) {
         const location = (
@@ -367,7 +469,208 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
     [change, reload, reloadRequests],
   )
 
-  return { me, house, loadError, reload, actions }
+  const actions = useMemo(() => {
+    const itemName = (id: number | null) => {
+      const item = known.current?.items.find((i) => i.id === id)
+      return item ? fullName(item) : ''
+    }
+    const choreName = (id: number | null) =>
+      known.current?.chores.find((c) => c.id === id)?.name ?? ''
+    const stockKey = (locationId: number, itemId: number) => `stock:${locationId}:${itemId}`
+    const withoutStock = (h: House, locationId: number, itemId: number) =>
+      h.stock.filter((s) => !(s.location_id === locationId && s.item_id === itemId))
+    const activeAt = (h: House, locationId: number, itemId: number) =>
+      h.requests.find(
+        (r) =>
+          r.item_id === itemId &&
+          r.location_id === locationId &&
+          ACTIVE_STATUSES.includes(r.status),
+      )
+
+    return {
+      ...send,
+      /** Shows a message the way a failed change does. */
+      notify: onError,
+      undo,
+      /** Adds an item to a place: sent at once, there is nothing to undo yet. */
+      addStock: send.setLevel,
+      /** Sets a level, undoable for a moment; picking another first replaces it. */
+      setLevel(locationId: number, itemId: number, level: Level) {
+        const key = stockKey(locationId, itemId)
+        const current = known.current?.stock.find(
+          (s) => s.location_id === locationId && s.item_id === itemId,
+        )
+        // Picking back the level the server has is undoing it.
+        if (waiting.current?.entry.key === key && current?.level === level) {
+          undo()
+          return
+        }
+        const item = known.current?.items.find((i) => i.id === itemId)
+        defer({
+          key,
+          label: t.undo.level(t.levels[level], itemName(itemId)),
+          show: (h) => {
+            const short = level === 'low' || level === 'out'
+            const active = activeAt(h, locationId, itemId)
+            let requests = h.requests
+            if (short && item?.restock && !active) {
+              requests = [
+                ...requests,
+                draftRequest({
+                  kind: 'buy',
+                  item_id: itemId,
+                  chore_id: null,
+                  location_id: locationId,
+                }),
+              ]
+            } else if (!short && active) {
+              requests = requests.filter((r) => r !== active)
+            }
+            return {
+              ...h,
+              requests,
+              stock: [
+                ...withoutStock(h, locationId, itemId),
+                {
+                  item_id: itemId,
+                  location_id: locationId,
+                  level,
+                  updated_by_name: me.display_name,
+                  updated_at: new Date().toISOString(),
+                },
+              ],
+            }
+          },
+          send: () => send.setLevel(locationId, itemId, level),
+        })
+      },
+      removeStock(locationId: number, itemId: number) {
+        defer({
+          label: t.undo.removed(itemName(itemId)),
+          show: (h) => ({
+            ...h,
+            stock: withoutStock(h, locationId, itemId),
+            requests: h.requests.filter(
+              (r) => !(r.item_id === itemId && r.location_id === locationId),
+            ),
+          }),
+          send: () => send.removeStock(locationId, itemId),
+        })
+      },
+      requestStock(locationId: number, itemId: number) {
+        defer({
+          label: t.undo.listed(itemName(itemId)),
+          show: (h) =>
+            activeAt(h, locationId, itemId)
+              ? h
+              : {
+                  ...h,
+                  requests: [
+                    ...h.requests,
+                    draftRequest({
+                      kind: 'buy',
+                      item_id: itemId,
+                      chore_id: null,
+                      location_id: locationId,
+                    }),
+                  ],
+                },
+          send: () => send.requestStock(locationId, itemId),
+        })
+      },
+      reportChore(id: number) {
+        const chore = known.current?.chores.find((c) => c.id === id)
+        defer({
+          label: t.undo.reported(choreName(id)),
+          show: (h) =>
+            h.requests.some((r) => r.chore_id === id && ACTIVE_STATUSES.includes(r.status))
+              ? h
+              : {
+                  ...h,
+                  requests: [
+                    ...h.requests,
+                    draftRequest({
+                      kind: 'chore',
+                      item_id: null,
+                      chore_id: id,
+                      location_id: chore?.location_id ?? null,
+                    }),
+                  ],
+                },
+          send: () => send.reportChore(id),
+        })
+      },
+      completeChore(id: number) {
+        defer({
+          label: t.undo.choreDone(choreName(id)),
+          show: (h) => ({
+            ...h,
+            chores: h.chores.map((c) =>
+              c.id === id
+                ? {
+                    ...c,
+                    last_done_at: new Date().toISOString(),
+                    last_done_by_name: me.display_name,
+                  }
+                : c,
+            ),
+            requests: h.requests.filter((r) => r.chore_id !== id),
+          }),
+          send: () => send.completeChore(id),
+        })
+      },
+      /** Claims, unclaims, completes, cancels or asks after requests, undoable for a moment. */
+      act(action: RequestAction, all: number[]) {
+        // A request still on its way has no id yet to act on.
+        const ids = all.filter((id) => id > 0)
+        if (!ids.length) return
+        const targets = known.current?.requests.filter((r) => ids.includes(r.id)) ?? []
+        const names = [
+          ...new Set(
+            targets.map((r) => (r.item_id !== null ? itemName(r.item_id) : choreName(r.chore_id))),
+          ),
+        ]
+        const what = names.length <= 2 ? names.join(', ') : t.undo.things(names.length)
+        const now = new Date().toISOString()
+        defer({
+          label: t.undo[action](what),
+          show: (h) => ({
+            ...h,
+            requests: h.requests.flatMap((r) => {
+              if (!ids.includes(r.id)) return [r]
+              if (action === 'done' || action === 'cancel') return []
+              if (action === 'claim') {
+                return [
+                  {
+                    ...r,
+                    status: 'claimed' as const,
+                    claimed_by_id: me.id,
+                    claimed_by_name: me.display_name,
+                    claimed_at: now,
+                  },
+                ]
+              }
+              if (action === 'unclaim') {
+                return [
+                  { ...r, status: 'open' as const, claimed_by_id: null, claimed_by_name: null },
+                ]
+              }
+              return [{ ...r, reminded_by_name: me.display_name, reminded_at: now }]
+            }),
+          }),
+          send: () => send.act(action, ids),
+        })
+      },
+    }
+  }, [send, onError, undo, defer, draftRequest, me])
+
+  // What the pages see: the server's copy with the changes still on their way.
+  const shown = useMemo(
+    () => (house ? pending.reduce((h, entry) => entry.show(h), house) : house),
+    [house, pending],
+  )
+
+  return { me, house: shown, loadError, reload, actions, undoable }
 }
 
 type HouseContext = ReturnType<typeof useHouseState>

@@ -7,7 +7,8 @@ import App from './App.tsx'
 
 registerSW({ immediate: true })
 // Every API answer is JSON; anything else (say, an HTML page) is an error, not data.
-client.setConfig({ parseAs: 'json' })
+// Keepalive lets a change held back for undoing still reach the server when the app closes.
+client.setConfig({ parseAs: 'json', keepalive: true })
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

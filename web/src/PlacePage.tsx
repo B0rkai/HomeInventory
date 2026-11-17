@@ -73,7 +73,7 @@ export function PlacePage({ id }: { id: number }) {
         category: sibling?.category,
         icon: sibling?.icon,
       }))
-    return Boolean(item && (await actions.setLevel(id, item.id, 'plenty')))
+    return Boolean(item && (await actions.addStock(id, item.id, 'plenty')))
   }
 
   const row = (r: (typeof rows)[number], title: ReactNode) => (

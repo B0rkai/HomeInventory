@@ -14,6 +14,7 @@ import { PushSettings } from './PushSettings'
 import { href, useRoute, type Route } from './route'
 import { t } from './strings'
 import { TodoPage } from './TodoPage'
+import { UndoBar } from './UndoBar'
 
 type State =
   { kind: 'loading' } | { kind: 'ready'; user: UserOut } | { kind: 'error'; message: string }
@@ -97,6 +98,7 @@ export default function App() {
         {user?.nickname && !editingNickname && (
           <HouseProvider me={user} onError={showError}>
             <Pages />
+            <UndoBar />
             <NavBar />
           </HouseProvider>
         )}

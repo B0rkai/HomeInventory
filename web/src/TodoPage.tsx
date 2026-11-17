@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { ItemOut, RequestOut } from './api'
+import type { Category, ItemOut, LocationOut, RequestOut } from './api'
 import { useHouse } from './house'
 import { LevelName } from './LevelPicker'
 import { Named } from './Named'
@@ -87,7 +87,7 @@ export function TodoPage({ view }: { view: TodoView }) {
  * shop). An item is one row however many of the places that want it are listed.
  */
 function Sections({ requests }: { requests: RequestOut[] }) {
-  const { house } = useHouse()
+  const { house, actions } = useHouse()
   if (!house) return null
   const { locations, items, stock, chores } = house
   const itemsById = new Map(items.map((item) => [item.id, item]))
@@ -131,10 +131,35 @@ function Sections({ requests }: { requests: RequestOut[] }) {
   }
   refills.sort(byItem)
   const shopping = groupByCategory(toBuy, byItem)
+  // A list of only uncategorised items needs no group headings.
+  const headed = shopping.length > 1 || shopping[0]?.[0] != null
 
   const choreRequests = requests
     .filter((request) => request.chore_id !== null && choresById.has(request.chore_id))
     .sort(byPlace)
+
+  // Whoever's off to the shop takes a whole group at once.
+  const claimAll = (list: ItemOut[]) => {
+    const open = list.flatMap((item) =>
+      buying.get(item.id)!.filter((request) => request.status === 'open'),
+    )
+    // One item has its own button.
+    if (new Set(open.map((request) => request.item_id)).size < 2) return null
+    return (
+      <button
+        type="button"
+        className="secondary small-button"
+        onClick={() =>
+          actions.act(
+            'claim',
+            open.map((request) => request.id),
+          )
+        }
+      >
+        {t.todo.claimAll}
+      </button>
+    )
+  }
 
   const placeLink = (id: number | null) =>
     id === null ? (
@@ -233,12 +258,21 @@ function Sections({ requests }: { requests: RequestOut[] }) {
 
       {shopping.length > 0 && (
         <section className="card">
-          <h3>{t.todo.shopping}</h3>
+          <div className="section-head">
+            <h3>{t.todo.shopping}</h3>
+            <span className="head-actions">
+              {/* A list of only uncategorised items has no group heading to put it on. */}
+              {!headed && claimAll(toBuy)}
+              <ShareButton text={shoppingText(shopping, buying, locations, headed)} />
+            </span>
+          </div>
           {shopping.map(([category, list]) => (
             <div key={category ?? ''}>
-              {/* A list of only uncategorised items needs no heading. */}
-              {(category || shopping.length > 1) && (
-                <h4 className="category-head">{categoryName(category)}</h4>
+              {headed && (
+                <div className="section-head category-head">
+                  <h4>{categoryName(category)}</h4>
+                  {claimAll(list)}
+                </div>
               )}
               <ul className="requests">{list.map(itemRow)}</ul>
             </div>
@@ -246,6 +280,50 @@ function Sections({ requests }: { requests: RequestOut[] }) {
         </section>
       )}
     </>
+  )
+}
+
+/** The shopping list as plain text, by group, each item with the places that want it. */
+function shoppingText(
+  shopping: [Category | null, ItemOut[]][],
+  buying: Map<number, RequestOut[]>,
+  locations: LocationOut[],
+  headed: boolean,
+): string {
+  const lines = [t.todo.shopping]
+  for (const [category, list] of shopping) {
+    lines.push('')
+    if (headed) lines.push(categoryName(category))
+    for (const item of list) {
+      const places = buying
+        .get(item.id)!
+        .map((request) => placePath(locations, request.location_id!))
+      lines.push(`- ${fullName(item)} (${places.join(', ')})`)
+    }
+  }
+  return lines.join('\n')
+}
+
+/** Hands the text to the phone's share sheet, or copies it where there is none. */
+function ShareButton({ text }: { text: string }) {
+  const { actions } = useHouse()
+  async function share() {
+    if (navigator.share) {
+      // Cancelling the share sheet rejects; nothing to tell.
+      await navigator.share({ text }).catch(() => {})
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(text)
+      actions.notify(t.todo.copied)
+    } catch {
+      actions.notify(t.todo.copyFailed)
+    }
+  }
+  return (
+    <button type="button" className="secondary small-button" onClick={() => void share()}>
+      {t.todo.share}
+    </button>
   )
 }
 
@@ -291,10 +369,8 @@ function RequestRow({
             type="button"
             className="icon"
             aria-label={t.todo.cancel(name)}
-            onClick={() => {
-              if (window.confirm(t.todo.confirmCancel(name)))
-                void actions.act('cancel', ids(requests))
-            }}
+            // Undoable, so no need to ask first.
+            onClick={() => actions.act('cancel', ids(requests))}
           >
             ×
           </button>
