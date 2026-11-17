@@ -238,6 +238,9 @@ export function PlacePage({ id }: { id: number }) {
                       }}
                       kind="item"
                     />
+                    {group.first.any_variant && (
+                      <span className="small muted any-kind"> · {t.items.anyKind}</span>
+                    )}
                   </a>
                   {addVariantButton(group.name)}
                 </div>

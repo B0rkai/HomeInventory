@@ -23,7 +23,14 @@ from homeinventory.models import (
     utcnow,
 )
 from homeinventory.notify import Notifier, message_for
-from homeinventory.requests import close_buy_requests, open_buy_request
+from homeinventory.requests import (
+    SHORT,
+    close_buy_requests,
+    merge_variant_requests,
+    open_buy_request,
+    sync_variants_at,
+    variants_of,
+)
 from homeinventory.schemas import (
     ItemCreate,
     ItemOut,
@@ -158,6 +165,8 @@ def list_items(session: Session = Depends(get_session)) -> list[ItemOut]:
 def create_item(new: ItemCreate, session: Session = Depends(get_session)) -> ItemOut:
     _check_item_name(session, new.name, new.variant)
     item = Item(name=new.name, variant=new.variant, category=new.category, icon=new.icon)
+    # A new variant goes along with the others on whether any of them will do.
+    item.any_variant = any(other.any_variant for other in variants_of(session, item))
     session.add(item)
     session.commit()
     return ItemOut.model_validate(item)
@@ -172,33 +181,66 @@ def update_item(
     notifier: Notifier = Depends(get_notifier),
 ) -> ItemOut:
     """Renames or regroups an item. Turning `restock` off takes it off the shopping list;
-    turning it on puts it on wherever it's already low or out."""
+    turning it on puts it on wherever it's already low or out. `any_variant` applies to
+    every item of the same name; renamed into another name's group, an item takes its."""
     item = get_or_404(session, Item, item_id)
     name = item.name if update.name is None else update.name
     variant = update.variant if "variant" in update.model_fields_set else item.variant
     _check_item_name(session, name, variant, own_id=item.id)
+    renamed = name.casefold() != item.name.casefold()
     item.name, item.variant = name, variant
+    if renamed:
+        others = [other for other in variants_of(session, item) if other.id != item.id]
+        if others:
+            item.any_variant = others[0].any_variant
     if "category" in update.model_fields_set:
         item.category = update.category
     if "icon" in update.model_fields_set:
         item.icon = update.icon
-    opened = []
-    if update.restock is not None and update.restock != item.restock:
+    group = variants_of(session, item)
+    regrouped = renamed or (
+        update.any_variant is not None
+        and any(other.any_variant != update.any_variant for other in group)
+    )
+    if update.any_variant is not None:
+        for other in group:
+            other.any_variant = update.any_variant
+    restocked = update.restock is not None and update.restock != item.restock
+    if restocked:
         item.restock = update.restock
-        short = session.scalars(
-            select(Stock).where(Stock.item_id == item.id, Stock.level.in_((Level.LOW, Level.OUT)))
-        )
-        for stock in short:
-            if not item.restock:
-                close_buy_requests(
-                    session, item.id, stock.location_id, user, RequestStatus.CANCELLED
-                )
-            elif open_buy_request(session, item.id, stock.location_id, user):
-                opened.append(stock)
+    opened: list[tuple[int, int, Level]] = []
+    if item.any_variant and (regrouped or restocked):
+        # One line per place where the whole group is short.
+        if not item.restock:
+            for location_id in _places_of(session, [item.id]):
+                close_buy_requests(session, item.id, location_id, user, RequestStatus.CANCELLED)
+        merge_variant_requests(session, group, user)
+        for location_id in _places_of(session, [other.id for other in group]):
+            if sync_variants_at(
+                session, group, location_id, user, prefer=item, closed=RequestStatus.CANCELLED
+            )[0]:
+                opened.append((item.id, location_id, Level.OUT))
+    elif regrouped or restocked:
+        # Each variant on its own again (or restocked or not): as its levels say.
+        for other in group if regrouped else [item]:
+            short = session.scalars(
+                select(Stock).where(Stock.item_id == other.id, Stock.level.in_(SHORT))
+            )
+            for stock in short:
+                if not other.restock:
+                    close_buy_requests(
+                        session, other.id, stock.location_id, user, RequestStatus.CANCELLED
+                    )
+                elif open_buy_request(session, other.id, stock.location_id, user):
+                    opened.append((other.id, stock.location_id, stock.level))
     session.commit()
-    for stock in opened:
-        _announce_opened(session, notifier, user, item.id, stock.location_id, stock.level)
+    for item_id, location_id, level in opened:
+        _announce_opened(session, notifier, user, [item_id], location_id, level)
     return ItemOut.model_validate(item)
+
+
+def _places_of(session: Session, item_ids: list[int]) -> set[int]:
+    return set(session.scalars(select(Stock.location_id).where(Stock.item_id.in_(item_ids))))
 
 
 @router.delete("/items/{item_id}", **NO_CONTENT)
@@ -240,7 +282,11 @@ def set_stock(
     # Running low is a report: it puts the item on the shopping list. Filling it up again
     # takes it off, whoever did it.
     opened, refilled = False, []
-    if new.level in (Level.LOW, Level.OUT):
+    group = variants_of(session, item) if item.any_variant else [item]
+    if item.any_variant:
+        # Short only once every variant kept here is.
+        opened, refilled = sync_variants_at(session, group, location_id, user, prefer=item)
+    elif new.level in SHORT:
         # An item that isn't kept stocked just records that there's none (or little).
         if item.restock:
             opened = open_buy_request(session, item_id, location_id, user)
@@ -248,7 +294,9 @@ def set_stock(
         refilled = close_buy_requests(session, item_id, location_id, user, RequestStatus.DONE)
     session.commit()
     if opened:
-        _announce_opened(session, notifier, user, item_id, location_id, new.level)
+        _announce_opened(
+            session, notifier, user, [other.id for other in group], location_id, new.level
+        )
     for id in refilled:
         request = session.get_one(Request, id)
         notifier.send(
@@ -291,31 +339,34 @@ def request_stock(
         )
     session.commit()
     if opened:
-        _announce_opened(session, notifier, user, item_id, location_id, stock.level)
+        _announce_opened(session, notifier, user, [item_id], location_id, stock.level)
     else:
         response.status_code = status.HTTP_200_OK
-    return RequestOut.model_validate(_active_request(session, item_id, location_id))
+    return RequestOut.model_validate(_active_request(session, [item_id], location_id))
 
 
-def _active_request(session: Session, item_id: int, location_id: int) -> Request:
+def _active_request(session: Session, item_ids: list[int], location_id: int) -> Request:
+    """The newest active request to buy one of these items (variants) for a place."""
     return session.scalars(
-        select(Request).where(
-            Request.item_id == item_id,
+        select(Request)
+        .where(
+            Request.item_id.in_(item_ids),
             Request.location_id == location_id,
             Request.status.in_(ACTIVE),
         )
-    ).one()
+        .order_by(Request.id.desc())
+    ).first()
 
 
 def _announce_opened(
     session: Session,
     notifier: Notifier,
     user: User,
-    item_id: int,
+    item_ids: list[int],
     location_id: int,
     level: Level,
 ) -> None:
-    request = _active_request(session, item_id, location_id)
+    request = _active_request(session, item_ids, location_id)
     notifier.send(
         session, user.id, message_for(session, request, "reported", user.display_name, level)
     )
@@ -327,9 +378,11 @@ def remove_stock(
     item_id: int,
     user: User = Depends(current_user),
     session: Session = Depends(get_session),
+    notifier: Notifier = Depends(get_notifier),
 ) -> None:
     """Stops keeping an item in a location, cancelling its request to buy it there. Taken
-    off its last place, it stops being restocked."""
+    off its last place, it stops being restocked. Where any variant will do, the others
+    kept there may now all be short."""
     stock = session.scalar(
         select(Stock).where(Stock.item_id == item_id, Stock.location_id == location_id)
     )
@@ -342,7 +395,14 @@ def remove_stock(
     session.delete(stock)
     session.flush()
     _stop_restocking_if_kept_nowhere(session, [item_id])
+    item = session.get_one(Item, item_id)
+    group = variants_of(session, item)
+    opened = item.any_variant and sync_variants_at(session, group, location_id, user)[0]
     session.commit()
+    if opened:
+        _announce_opened(
+            session, notifier, user, [other.id for other in group], location_id, Level.OUT
+        )
 
 
 def _stop_restocking_if_kept_nowhere(session: Session, item_ids: list[int]) -> None:

@@ -113,7 +113,8 @@ export const deleteItem = <ThrowOnError extends boolean = false>(options: Option
  * Update Item
  *
  * Renames or regroups an item. Turning `restock` off takes it off the shopping list;
- * turning it on puts it on wherever it's already low or out.
+ * turning it on puts it on wherever it's already low or out. `any_variant` applies to
+ * every item of the same name; renamed into another name's group, an item takes its.
  */
 export const updateItem = <ThrowOnError extends boolean = false>(options: Options<UpdateItemData, ThrowOnError>): RequestResult<UpdateItemResponses, UpdateItemErrors, ThrowOnError> => (options.client ?? client).patch<UpdateItemResponses, UpdateItemErrors, ThrowOnError>({
     url: '/api/v1/items/{item_id}',
@@ -135,7 +136,8 @@ export const listStock = <ThrowOnError extends boolean = false>(options?: Option
  * Remove Stock
  *
  * Stops keeping an item in a location, cancelling its request to buy it there. Taken
- * off its last place, it stops being restocked.
+ * off its last place, it stops being restocked. Where any variant will do, the others
+ * kept there may now all be short.
  */
 export const removeStock = <ThrowOnError extends boolean = false>(options: Options<RemoveStockData, ThrowOnError>): RequestResult<RemoveStockResponses, RemoveStockErrors, ThrowOnError> => (options.client ?? client).delete<RemoveStockResponses, RemoveStockErrors, ThrowOnError>({ url: '/api/v1/locations/{location_id}/stock/{item_id}', ...options });
 
@@ -255,9 +257,17 @@ export const unclaimRequest = <ThrowOnError extends boolean = false>(options: Op
  * Complete Request
  *
  * Marks a request done, whoever claimed it; a bought item's level goes back to plenty
- * (one written in by hand has none).
+ * (one written in by hand has none). Where any variant will do, `item_id` says which was
+ * bought: that one goes to plenty in the place, kept there from now on if it wasn't.
  */
-export const completeRequest = <ThrowOnError extends boolean = false>(options: Options<CompleteRequestData, ThrowOnError>): RequestResult<CompleteRequestResponses, CompleteRequestErrors, ThrowOnError> => (options.client ?? client).post<CompleteRequestResponses, CompleteRequestErrors, ThrowOnError>({ url: '/api/v1/requests/{request_id}/done', ...options });
+export const completeRequest = <ThrowOnError extends boolean = false>(options: Options<CompleteRequestData, ThrowOnError>): RequestResult<CompleteRequestResponses, CompleteRequestErrors, ThrowOnError> => (options.client ?? client).post<CompleteRequestResponses, CompleteRequestErrors, ThrowOnError>({
+    url: '/api/v1/requests/{request_id}/done',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Keep Request

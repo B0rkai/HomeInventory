@@ -10,7 +10,7 @@ gets 409. Reporting, claiming and finishing tell the other user (`notify.py`).
 from datetime import UTC, datetime, time
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi import Request as HTTPRequest
 from sqlalchemy import and_, case, func, select, update
 from sqlalchemy.dialects.sqlite import insert
@@ -51,6 +51,7 @@ from homeinventory.schemas import (
     ChoreOut,
     ChoreUpdate,
     RequestCreate,
+    RequestDone,
     RequestKeep,
     RequestOut,
 )
@@ -103,6 +104,87 @@ def close_buy_requests(
         .returning(Request.id)
     )
     return list(result.scalars())
+
+
+SHORT = (Level.LOW, Level.OUT)
+
+
+def variants_of(session: Session, item: Item) -> list[Item]:
+    """The item and the others sharing its name (ignoring case): kinds of one supply."""
+    folded = item.name.casefold()
+    return [
+        i for i in session.scalars(select(Item).order_by(Item.id)) if i.name.casefold() == folded
+    ]
+
+
+def sync_variants_at(
+    session: Session,
+    group: list[Item],
+    location_id: int,
+    user: User,
+    prefer: Item | None = None,
+    closed: RequestStatus = RequestStatus.DONE,
+) -> tuple[bool, list[int]]:
+    """For a supply where any variant will do: puts it on the list for a place (as one of
+    the restocked variants kept there, `prefer` if it can) once every variant kept there is
+    short, and takes it off (as `closed`) once one isn't. Whether it opened a request, and
+    the ids it closed."""
+    ids = [item.id for item in group]
+    rows = list(
+        session.scalars(
+            select(Stock).where(Stock.item_id.in_(ids), Stock.location_id == location_id)
+        )
+    )
+    if not (rows and all(row.level in SHORT for row in rows)):
+        return False, [
+            id
+            for item_id in ids
+            for id in close_buy_requests(session, item_id, location_id, user, closed)
+        ]
+    active = session.scalar(
+        select(Request.id)
+        .where(
+            Request.item_id.in_(ids),
+            Request.location_id == location_id,
+            Request.status.in_(ACTIVE),
+        )
+        .limit(1)
+    )
+    kept = {row.item_id for row in rows}
+    candidates = [item for item in group if item.id in kept and item.restock]
+    if active or not candidates:
+        return False, []
+    target = prefer if prefer in candidates else candidates[0]
+    return open_buy_request(session, target.id, location_id, user), []
+
+
+def merge_variant_requests(session: Session, group: list[Item], user: User) -> None:
+    """Any variant now will do: wherever the group isn't short any more its requests go,
+    and where it is, one stays."""
+    ids = [item.id for item in group]
+    places = set(session.scalars(select(Stock.location_id).where(Stock.item_id.in_(ids))))
+    for location_id in places:
+        rows = list(
+            session.scalars(
+                select(Stock).where(Stock.item_id.in_(ids), Stock.location_id == location_id)
+            )
+        )
+        short = all(row.level in SHORT for row in rows)
+        active = list(
+            session.scalars(
+                select(Request)
+                .where(
+                    Request.item_id.in_(ids),
+                    Request.location_id == location_id,
+                    Request.status.in_(ACTIVE),
+                )
+                .order_by(Request.id)
+            )
+        )
+        for request in active[1:] if short else active:
+            request.status = RequestStatus.CANCELLED
+            request.closed_by_id = user.id
+            request.closed_at = utcnow()
 
 
 # Chores
@@ -520,12 +602,24 @@ def unclaim_request(
 @router.post("/requests/{request_id}/done")
 def complete_request(
     request_id: int,
+    done: RequestDone | None = None,
     user: User = Depends(current_user),
     session: Session = Depends(get_session),
     notifier: Notifier = Depends(get_notifier),
 ) -> RequestOut:
     """Marks a request done, whoever claimed it; a bought item's level goes back to plenty
-    (one written in by hand has none)."""
+    (one written in by hand has none). Where any variant will do, `item_id` says which was
+    bought: that one goes to plenty in the place, kept there from now on if it wasn't."""
+    bought = None
+    if done and done.item_id is not None:
+        asked = get_or_404(session, Request, request_id)
+        bought = get_or_404(session, Item, done.item_id)
+        if asked.item_id is None or bought not in variants_of(
+            session, session.get_one(Item, asked.item_id)
+        ):
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_CONTENT, "Not a variant of the item asked for"
+            )
     request = _transition(
         session,
         request_id,
@@ -537,24 +631,32 @@ def complete_request(
     event = "done"
     action = Action.DONE
     if request.item_id is not None:
+        item = bought or session.get_one(Item, request.item_id)
+        # Where any variant will do, lots of any of them elsewhere counts.
+        sources = [i.id for i in variants_of(session, item)] if item.any_variant else [item.id]
         # Another place stocked up on it: it was fetched from there, not bought. That
         # place's level stays; nobody books every roll carried upstairs.
         if session.scalar(
             select(Stock.id).where(
-                Stock.item_id == request.item_id,
+                Stock.item_id.in_(sources),
                 Stock.location_id != request.location_id,
                 Stock.level == Level.LOTS,
             )
         ):
             event, action = "fetched", Action.FETCHED
+        values = {"level": Level.PLENTY, "updated_by_id": user.id, "updated_at": utcnow()}
         session.execute(
-            update(Stock)
-            .where(Stock.item_id == request.item_id, Stock.location_id == request.location_id)
-            .values(level=Level.PLENTY, updated_by_id=user.id, updated_at=utcnow())
+            insert(Stock)
+            .values(item_id=item.id, location_id=request.location_id, **values)
+            .on_conflict_do_update(index_elements=[Stock.item_id, Stock.location_id], set_=values)
         )
-    record_request(session, user, action, request)
+        record(session, user, action, item=item, location_id=request.location_id)
+    else:
+        record_request(session, user, action, request)
     session.commit()
-    notifier.send(session, user.id, message_for(session, request, event, user.display_name))
+    notifier.send(
+        session, user.id, message_for(session, request, event, user.display_name, item=bought)
+    )
     out = RequestOut.model_validate(request)
     _drop_if_one_off(session, request)
     return out

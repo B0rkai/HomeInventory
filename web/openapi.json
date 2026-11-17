@@ -280,7 +280,7 @@
     "/api/v1/items/{item_id}": {
       "patch": {
         "summary": "Update Item",
-        "description": "Renames or regroups an item. Turning `restock` off takes it off the shopping list;\nturning it on puts it on wherever it's already low or out.",
+        "description": "Renames or regroups an item. Turning `restock` off takes it off the shopping list;\nturning it on puts it on wherever it's already low or out. `any_variant` applies to\nevery item of the same name; renamed into another name's group, an item takes its.",
         "operationId": "update_item",
         "parameters": [
           {
@@ -441,7 +441,7 @@
       },
       "delete": {
         "summary": "Remove Stock",
-        "description": "Stops keeping an item in a location, cancelling its request to buy it there. Taken\noff its last place, it stops being restocked.",
+        "description": "Stops keeping an item in a location, cancelling its request to buy it there. Taken\noff its last place, it stops being restocked. Where any variant will do, the others\nkept there may now all be short.",
         "operationId": "remove_stock",
         "parameters": [
           {
@@ -891,7 +891,7 @@
     "/api/v1/requests/{request_id}/done": {
       "post": {
         "summary": "Complete Request",
-        "description": "Marks a request done, whoever claimed it; a bought item's level goes back to plenty\n(one written in by hand has none).",
+        "description": "Marks a request done, whoever claimed it; a bought item's level goes back to plenty\n(one written in by hand has none). Where any variant will do, `item_id` says which was\nbought: that one goes to plenty in the place, kept there from now on if it wasn't.",
         "operationId": "complete_request",
         "parameters": [
           {
@@ -904,6 +904,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RequestDone"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Done"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1670,6 +1687,10 @@
           "restock": {
             "type": "boolean",
             "title": "Restock"
+          },
+          "any_variant": {
+            "type": "boolean",
+            "title": "Any Variant"
           }
         },
         "type": "object",
@@ -1679,7 +1700,8 @@
           "variant",
           "category",
           "icon",
-          "restock"
+          "restock",
+          "any_variant"
         ],
         "title": "ItemOut"
       },
@@ -1742,6 +1764,17 @@
               }
             ],
             "title": "Restock"
+          },
+          "any_variant": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Any Variant"
           }
         },
         "type": "object",
@@ -1955,6 +1988,23 @@
         ],
         "title": "RequestCreate",
         "description": "Something to buy that isn't kept track of, written on the shopping list."
+      },
+      "RequestDone": {
+        "properties": {
+          "item_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Id"
+          }
+        },
+        "type": "object",
+        "title": "RequestDone"
       },
       "RequestKeep": {
         "properties": {

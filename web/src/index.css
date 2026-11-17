@@ -1197,3 +1197,17 @@ a.item-row {
   font-size: 0.85rem;
   font-weight: 600;
 }
+.which-bought {
+  margin-top: 0.4rem;
+}
+.which-bought .chips {
+  margin-top: 0.25rem;
+}
+.which-bought .chip {
+  min-height: 2.25rem;
+  padding: 0.2rem 0.8rem;
+  font-weight: 500;
+}
+.any-kind {
+  font-weight: 400;
+}

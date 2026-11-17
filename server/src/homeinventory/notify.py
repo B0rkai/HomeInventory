@@ -56,8 +56,10 @@ def message_for(
     event: Event,
     actor: str | None,
     level: str | None = None,
+    item: Item | None = None,
 ) -> Message:
-    """What to tell about a request."""
+    """What to tell about a request; `item` is the variant bought, if not the one asked
+    for (any variant will do)."""
     place = request.location_id and session.get_one(Location, request.location_id).name
     if request.name is not None:
         # Written on the shopping list: just a name.
@@ -72,16 +74,20 @@ def message_for(
             tag=f"list-{request.id}",
         )
     if request.kind == RequestKind.BUY:
-        item = session.get_one(Item, request.item_id)
+        asked = session.get_one(Item, request.item_id)
+        # Any variant will do: the supply is short, not that kind of it.
+        variant = None if asked.any_variant else asked.variant
+        if item is not None:
+            variant = item.variant
         return Message(
             event=event,
             kind="buy",
-            name=item.name,
-            variant=item.variant,
+            name=asked.name,
+            variant=variant,
             place=place,
             level=level,
             actor=actor,
-            tag=f"buy-{item.id}",
+            tag=f"buy-{asked.id}",
         )
     chore = session.get_one(Chore, request.chore_id)
     return Message(

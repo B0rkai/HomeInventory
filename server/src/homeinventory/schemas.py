@@ -102,6 +102,8 @@ class ItemOut(BaseModel):
     icon: str | None
     # Running low puts it on the shopping list.
     restock: bool
+    # Any variant will do: shared by every item of the same name.
+    any_variant: bool
 
 
 class ItemCreate(BaseModel):
@@ -121,6 +123,8 @@ class ItemUpdate(BaseModel):
     category: Category | None = None
     icon: Icon = None
     restock: bool | None = None
+    # Applies to every item of the same name.
+    any_variant: bool | None = None
 
 
 class StockOut(BaseModel):
@@ -231,6 +235,11 @@ class RequestCreate(BaseModel):
     """Something to buy that isn't kept track of, written on the shopping list."""
 
     name: Name
+
+
+class RequestDone(BaseModel):
+    # For an item where any variant will do: the variant bought, if not the one asked for.
+    item_id: int | None = None
 
 
 class RequestKeep(BaseModel):

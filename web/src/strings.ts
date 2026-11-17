@@ -199,6 +199,12 @@ export const t = {
     restock: 'Pótoljuk',
     restockHint: 'Ha kevés vagy elfogyott, magától felkerül a bevásárlólistára.',
     noRestock: 'nem pótoljuk',
+    anyVariant: 'Bármelyik fajta elég',
+    anyVariantHint:
+      'Egy helyen csak akkor hiány, ha minden ott tartott fajta kevés vagy elfogyott; a listán egy sor. Minden fajtára érvényes.',
+    anyVariantNote: 'bármelyik fajta elég',
+    anyKind: 'bármelyik fajta',
+    whichBought: 'Melyiket vetted?',
     places: (count: number) => (count ? `${count} helyen` : 'sehol'),
     delete: 'Törlés',
     confirmDelete: (name: string) => `Törlöd ezt a terméket: ${name}? Minden helyről eltűnik.`,

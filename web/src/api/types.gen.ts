@@ -217,6 +217,10 @@ export type ItemOut = {
      * Restock
      */
     restock: boolean;
+    /**
+     * Any Variant
+     */
+    any_variant: boolean;
 };
 
 /**
@@ -240,6 +244,10 @@ export type ItemUpdate = {
      * Restock
      */
     restock?: boolean | null;
+    /**
+     * Any Variant
+     */
+    any_variant?: boolean | null;
 };
 
 /**
@@ -356,6 +364,16 @@ export type RequestCreate = {
      * Name
      */
     name: string;
+};
+
+/**
+ * RequestDone
+ */
+export type RequestDone = {
+    /**
+     * Item Id
+     */
+    item_id?: number | null;
 };
 
 /**
@@ -1197,7 +1215,10 @@ export type UnclaimRequestResponses = {
 export type UnclaimRequestResponse = UnclaimRequestResponses[keyof UnclaimRequestResponses];
 
 export type CompleteRequestData = {
-    body?: never;
+    /**
+     * Done
+     */
+    body?: RequestDone | null;
     path: {
         /**
          * Request Id

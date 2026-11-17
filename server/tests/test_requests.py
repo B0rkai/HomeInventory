@@ -739,3 +739,88 @@ def test_deleting_its_last_place_stops_restocking_an_item(api, house) -> None:
     assert api("DELETE", f"/locations/{pantry}").status_code == 204
     assert not restocked(api, house["sugar"])
     assert restocked(api, house["paper"])
+
+
+# Any variant will do
+
+
+@pytest.fixture
+def bread(api, house) -> dict[str, int]:
+    """Bread and rolls ("Pékáru"), either will do, both kept in the pantry."""
+    ids = {}
+    for variant in ("kenyér", "zsemle"):
+        response = api("POST", "/items", {"name": "Pékáru", "variant": variant})
+        ids[variant] = response.json()["id"]
+        set_level(api, house["pantry"], ids[variant], "plenty")
+    response = api("PATCH", f"/items/{ids['kenyér']}", {"any_variant": True})
+    assert response.json()["any_variant"] is True
+    return ids
+
+
+def test_any_variant_applies_to_the_whole_group(api, bread) -> None:
+    items = {i["id"]: i for i in api("GET", "/items").json()}
+    assert items[bread["zsemle"]]["any_variant"] is True
+    # A new variant joins in.
+    roll = api("POST", "/items", {"name": "pékáru", "variant": "kifli"}).json()
+    assert roll["any_variant"] is True
+
+
+def test_any_variant_is_short_only_once_every_variant_is(api, house, bread) -> None:
+    pantry = house["pantry"]
+    set_level(api, pantry, bread["kenyér"], "out")
+    assert active(api) == []
+    set_level(api, pantry, bread["zsemle"], "low", BELA)
+    [request] = active(api)
+    assert request["item_id"] == bread["zsemle"]
+    assert request["location_id"] == pantry
+    # Both short still: one line, however they change.
+    set_level(api, pantry, bread["kenyér"], "low")
+    assert len(active(api)) == 1
+    # One back: off the list.
+    set_level(api, pantry, bread["kenyér"], "plenty")
+    assert active(api) == []
+
+
+def test_buying_any_variant_says_which(api, house, bread, pushes) -> None:
+    pantry = house["pantry"]
+    set_level(api, pantry, bread["kenyér"], "out")
+    set_level(api, pantry, bread["zsemle"], "out")
+    [request] = active(api)
+    path = f"/requests/{request['id']}/done"
+    # Only a variant of what was asked for.
+    assert api("POST", path, {"item_id": house["sugar"]}).status_code == 422
+    response = api("POST", path, {"item_id": bread["zsemle"]}, BELA)
+    assert response.status_code == 200, response.text
+    assert level_of(api, pantry, bread["zsemle"]) == "plenty"
+    assert level_of(api, pantry, bread["kenyér"]) == "out"
+    entry = api("GET", "/activity?limit=1").json()[0]
+    assert (entry["action"], entry["variant"]) == ("done", "zsemle")
+
+
+def test_a_variant_bought_for_a_new_place_is_kept_there(api, house, bread) -> None:
+    wc = house["wc"]
+    set_level(api, wc, bread["kenyér"], "out")
+    [request] = active(api)
+    api("POST", f"/requests/{request['id']}/done", {"item_id": bread["zsemle"]})
+    assert level_of(api, wc, bread["zsemle"]) == "plenty"
+
+
+def test_turning_any_variant_on_merges_the_lines(api, house) -> None:
+    pantry = house["pantry"]
+    ids = [
+        api("POST", "/items", {"name": "Pékáru", "variant": v}).json()["id"]
+        for v in ("kenyér", "zsemle", "kifli")
+    ]
+    set_level(api, pantry, ids[0], "out")
+    set_level(api, pantry, ids[1], "low")
+    set_level(api, pantry, ids[2], "plenty")
+    assert len(active(api)) == 2
+    # Kifli is still there: nothing to buy.
+    api("PATCH", f"/items/{ids[0]}", {"any_variant": True})
+    assert active(api) == []
+    # Without the kifli both are short: one line.
+    api("DELETE", f"/locations/{pantry}/stock/{ids[2]}")
+    assert len(active(api)) == 1
+    # Each on its own again: a line each.
+    api("PATCH", f"/items/{ids[1]}", {"any_variant": False})
+    assert len(active(api)) == 2

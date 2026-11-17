@@ -439,9 +439,8 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
             409: t.errors.duplicateItem,
           })
         )?.data
-        if (item) {
-          setHouse((h) => h && { ...h, items: h.items.map((i) => (i.id === id ? item : i)) })
-        }
+        // Any-variant or restocking changes reach the item's other variants and the list.
+        if (item) await reload()
         return item
       },
       async deleteItem(id: number) {
@@ -572,12 +571,15 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
         }
       },
       /** Claims, unclaims, completes or cancels requests (an item's, in every place). */
-      async act(action: RequestAction, ids: number[]) {
+      async act(action: RequestAction, ids: number[], bought?: number) {
         const results = await Promise.all(
           ids.map((id) =>
-            change(REQUEST_ACTIONS[action]({ path: { request_id: id } }), {
-              409: action === 'remind' ? t.errors.remindedToday : t.errors.requestChanged,
-            }),
+            change(
+              action === 'done' && bought !== undefined
+                ? completeRequest({ path: { request_id: id }, body: { item_id: bought } })
+                : REQUEST_ACTIONS[action]({ path: { request_id: id } }),
+              { 409: action === 'remind' ? t.errors.remindedToday : t.errors.requestChanged },
+            ),
           ),
         )
         if (action === 'done') {
@@ -757,8 +759,11 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
           calls: [{ method: 'POST', path: `/chores/${id}/done` }],
         })
       },
-      /** Claims, unclaims, completes, cancels or asks after requests, undoable for a moment. */
-      act(action: RequestAction, all: number[]) {
+      /**
+       * Claims, unclaims, completes, cancels or asks after requests, undoable for a moment.
+       * `bought`: the variant bought, where any variant will do.
+       */
+      act(action: RequestAction, all: number[], bought?: number) {
         // A request still on its way has no id yet to act on.
         const ids = all.filter((id) => id > 0)
         if (!ids.length) return
@@ -770,7 +775,12 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
             ),
           ),
         ]
-        const what = names.length <= 2 ? names.join(', ') : t.undo.things(names.length)
+        const what =
+          bought !== undefined
+            ? itemName(bought)
+            : names.length <= 2
+              ? names.join(', ')
+              : t.undo.things(names.length)
         const now = new Date().toISOString()
         defer({
           label: t.undo[action](what),
@@ -798,8 +808,12 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
               return [{ ...r, reminded_by_name: me.display_name, reminded_at: now }]
             }),
           }),
-          send: () => send.act(action, ids),
-          calls: ids.map((id) => ({ method: 'POST', path: `/requests/${id}/${action}` })),
+          send: () => send.act(action, ids, bought),
+          calls: ids.map((id) => ({
+            method: 'POST',
+            path: `/requests/${id}/${action}`,
+            body: bought !== undefined ? { item_id: bought } : undefined,
+          })),
         })
       },
     }

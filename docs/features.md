@@ -144,6 +144,17 @@ Activity (tables `users`, `locations`, `items`, `stock`, `chores`,
   An optional `variant` tells apart kinds kept of the same supply
   ("Konzerv" kukorica / vörösbab / borsó, "Szemeteszsák" 35 l / 60 l);
   items sharing a name show as one group, each variant with its own stock.
+  `any_variant` ("Bármelyik fajta elég", shared by every item of the name;
+  a new variant takes it on): any variant will do ("Pékáru": kenyér or
+  zsemle). A place is short of it only once every variant kept there is low
+  or out (`sync_variants_at` in `requests.py`; the client's
+  `restockedStock` agrees, for the badges and the shortages view), and then
+  it's one request, one row on the list ("Pékáru · bármelyik fajta"); one
+  variant back takes it off. Done asks which variant was bought
+  (`POST /requests/{id}/done` with `item_id`): that one goes to *plenty*
+  there, kept there from then on if it wasn't. Turning it on merges a
+  place's lines into one (or none, if a variant is still there); off splits
+  them again.
   A place's add form has an optional variant field next to the name.
   Name and variant together are unique, ignoring case. Category, from a
   fixed set matching the icon colours (`food` Élelmiszer, `drink` Ital,

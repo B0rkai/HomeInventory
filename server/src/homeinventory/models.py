@@ -132,6 +132,10 @@ class Item(Base):
     # Kept stocked: running low puts it on the shopping list. Off for what's only bought
     # now and then (ice cream, salmon): its level still says whether there's any.
     restock: Mapped[bool] = mapped_column(default=True, server_default=true())
+    # Any of its variants will do ("Pékáru": kenyér or zsemle): a place is short of it only
+    # once every variant kept there is low or out, and then it's one line on the list.
+    # Shared by all the items of the same name; the API keeps them alike.
+    any_variant: Mapped[bool] = mapped_column(default=False, server_default=false())
     # Unset: the client guesses one from the name. Empty: no icon.
     icon: Mapped[str | None] = mapped_column(String(ICON_MAX_LENGTH))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)

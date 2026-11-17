@@ -6,7 +6,7 @@ import { Named } from './Named'
 import { href, type TodoView } from './route'
 import { t } from './strings'
 import { ago, isToday } from './time'
-import { placePath, treeOrder } from './tree'
+import { bestLevel, placePath, treeOrder } from './tree'
 import { KeepForm } from './KeepForm'
 import { OneOffForm } from './OneOffForm'
 import { PushSettings } from './PushSettings'
@@ -99,6 +99,20 @@ function Sections({ requests }: { requests: RequestOut[] }) {
   const byPlace = (a: { location_id: number | null }, b: { location_id: number | null }) =>
     rank(a.location_id) - rank(b.location_id)
 
+  // Where any variant will do, the variants are one row, under the first one's id, shown
+  // without a variant.
+  const groupOf = (item: ItemOut) =>
+    items.filter((i) => i.name.toLocaleLowerCase('hu') === item.name.toLocaleLowerCase('hu'))
+  const variantsOf = new Map<number, ItemOut[]>()
+  const rowKey = (itemId: number) => {
+    const item = itemsById.get(itemId)!
+    if (!item.any_variant) return itemId
+    const group = groupOf(item).sort(byItem)
+    variantsOf.set(group[0].id, group)
+    return group[0].id
+  }
+  const idsOf = (key: number) => (variantsOf.get(key) ?? [{ id: key }]).map((i) => i.id)
+
   // Buy requests by item. One written on the list by hand has no item: it stands in as one
   // of its own, under its request's id made negative (it has no stock and no page).
   const buying = new Map<number, RequestOut[]>()
@@ -111,24 +125,28 @@ function Sections({ requests }: { requests: RequestOut[] }) {
         category: null,
         icon: null,
         restock: false,
+        any_variant: false,
       })
       buying.set(-request.id, [request])
       continue
     }
     if (request.item_id === null || !itemsById.has(request.item_id)) continue
-    buying.set(request.item_id, [...(buying.get(request.item_id) ?? []), request])
+    const key = rowKey(request.item_id)
+    buying.set(key, [...(buying.get(key) ?? []), request])
   }
   // Where another place has lots of it: fetch from there instead of buying. Places that
   // want it themselves don't count, whichever list they're on.
-  const lotsFor = (itemId: number) => {
+  const lotsFor = (key: number) => {
+    const ids = idsOf(key)
     const wantedAt = new Set(
       house.requests
-        .filter((request) => request.item_id === itemId)
+        .filter((request) => request.item_id !== null && ids.includes(request.item_id))
         .map((request) => request.location_id),
     )
     return stock
       .filter(
-        (row) => row.item_id === itemId && row.level === 'lots' && !wantedAt.has(row.location_id),
+        (row) =>
+          ids.includes(row.item_id) && row.level === 'lots' && !wantedAt.has(row.location_id),
       )
       .sort(byPlace)
   }
@@ -136,7 +154,9 @@ function Sections({ requests }: { requests: RequestOut[] }) {
   // The rest is the shopping list, by category.
   const toBuy: ItemOut[] = []
   for (const id of buying.keys()) {
-    const item = itemsById.get(id)!
+    const first = itemsById.get(id)!
+    // Shown as the supply, not one kind of it.
+    const item = variantsOf.has(id) ? { ...first, variant: null } : first
     if (lotsFor(id).length) {
       refills.push(item)
       continue
@@ -186,8 +206,17 @@ function Sections({ requests }: { requests: RequestOut[] }) {
   const itemRow = (item: ItemOut) => {
     const wanted = buying.get(item.id)!.sort(byPlace)
     const lots = lotsFor(item.id)
-    const levels = new Map(
-      stock.filter((row) => row.item_id === item.id).map((row) => [row.location_id, row.level]),
+    const ids = idsOf(item.id)
+    const variants = variantsOf.get(item.id)
+    // Per place; where any variant will do, the best of them (all short, or it wouldn't be
+    // listed).
+    const levelAt = (locationId: number) =>
+      bestLevel(stock.filter((row) => ids.includes(row.item_id) && row.location_id === locationId))
+    const named = (
+      <>
+        <Named thing={item} kind="item" />
+        {variants && <span className="small muted any-kind"> · {t.items.anyKind}</span>}
+      </>
     )
     return (
       <RequestRow
@@ -195,10 +224,10 @@ function Sections({ requests }: { requests: RequestOut[] }) {
         title={
           item.id > 0 ? (
             <a className="item-link" href={href.item(item.id)}>
-              <Named thing={item} kind="item" />
+              {named}
             </a>
           ) : (
-            <Named thing={item} kind="item" />
+            named
           )
         }
         name={fullName(item)}
@@ -206,12 +235,14 @@ function Sections({ requests }: { requests: RequestOut[] }) {
         doneLabel={lots.length ? t.todo.refilled : t.todo.bought}
         // Written on the list by hand: once bought, it can go into the inventory.
         keep={item.id < 0 ? wanted[0] : undefined}
+        // Any of several variants will do: done asks which was bought.
+        variants={variants && variants.length > 1 ? variants : undefined}
       >
         {item.id > 0 && (
           <p className="small">
             {wanted.map((request, index) => {
               // A buy request always has a place.
-              const level = levels.get(request.location_id!)
+              const level = levelAt(request.location_id!)
               return (
                 <span key={request.id}>
                   {index > 0 && ', '}
@@ -365,6 +396,7 @@ function RequestRow({
   requests,
   doneLabel,
   keep,
+  variants,
   children,
 }: {
   title: ReactNode
@@ -373,10 +405,13 @@ function RequestRow({
   doneLabel: string
   // A line written on the list, which can be bought into the inventory.
   keep?: RequestOut
+  // Where any of these variants will do: done asks which one was bought.
+  variants?: ItemOut[]
   children: ReactNode
 }) {
   const { me, actions } = useHouse()
   const [keeping, setKeeping] = useState(false)
+  const [choosing, setChoosing] = useState(false)
   const ids = (list: RequestOut[]) => list.map((request) => request.id)
   const open = requests.filter((request) => request.status === 'open')
   const mine = requests.filter((request) => request.claimed_by_id === me.id)
@@ -463,12 +498,32 @@ function RequestRow({
           <button
             type="button"
             className="small-button"
-            onClick={() => actions.act('done', ids(requests))}
+            onClick={() => (variants ? setChoosing(!choosing) : actions.act('done', ids(requests)))}
           >
             ✓ {doneLabel}
           </button>
         </div>
       </div>
+      {variants && choosing && (
+        <div className="which-bought">
+          <span className="small muted">{t.items.whichBought}</span>
+          <div className="chips">
+            {variants.map((variant) => (
+              <button
+                key={variant.id}
+                type="button"
+                className="chip"
+                onClick={() => {
+                  setChoosing(false)
+                  actions.act('done', ids(requests), variant.id)
+                }}
+              >
+                {variant.variant ?? t.items.noVariant}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {keep && keeping && <KeepForm request={keep} onClose={() => setKeeping(false)} />}
     </li>
   )

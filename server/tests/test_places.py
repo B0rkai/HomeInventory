@@ -144,6 +144,7 @@ def test_update_item_only_changes_what_is_sent(api) -> None:
         "category": "food",
         "icon": None,
         "restock": True,
+        "any_variant": False,
     }
     response = api("PATCH", f"/items/{milk}", {"category": None})
     assert response.json() == {
@@ -153,6 +154,7 @@ def test_update_item_only_changes_what_is_sent(api) -> None:
         "category": None,
         "icon": None,
         "restock": True,
+        "any_variant": False,
     }
 
 

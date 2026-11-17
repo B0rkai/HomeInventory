@@ -69,10 +69,24 @@ export function byName(a: { name: string }, b: { name: string }): number {
   return a.name.localeCompare(b.name, 'hu')
 }
 
-/** The stock rows of items kept stocked: only their running low is a shortage. */
+/**
+ * The stock rows whose running low is a shortage: of items kept stocked, and where any
+ * variant will do, only once every variant kept in that place is short.
+ */
 export function restockedStock(stock: StockOut[], items: ItemOut[]): StockOut[] {
-  const restocked = new Set(items.filter((item) => item.restock).map((item) => item.id))
-  return stock.filter((row) => restocked.has(row.item_id))
+  const byId = new Map(items.map((item) => [item.id, item]))
+  const group = (item: ItemOut) => item.name.toLocaleLowerCase('hu')
+  // Where some variant of an any-variant item isn't short: "group|place".
+  const covered = new Set(
+    stock.flatMap((row) => {
+      const item = byId.get(row.item_id)
+      return item?.any_variant && !isShort(row) ? [`${group(item)}|${row.location_id}`] : []
+    }),
+  )
+  return stock.filter((row) => {
+    const item = byId.get(row.item_id)
+    return item?.restock && !(item.any_variant && covered.has(`${group(item)}|${row.location_id}`))
+  })
 }
 
 // Emptiest first, as the level buttons run.
