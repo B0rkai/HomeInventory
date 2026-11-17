@@ -5,7 +5,7 @@ import { Named } from './Named'
 import { href, type MissingView } from './route'
 import { t } from './strings'
 import { isShort, placePath, restockedStock, treeOrder } from './tree'
-import { byItem, groupByName, hasVariants } from './variants'
+import { byItem, firstVariant, groupByName, hasVariants } from './variants'
 
 const key = (row: StockOut) => `${row.location_id}-${row.item_id}`
 
@@ -120,16 +120,23 @@ function ByItem({ items, locations, stock, listed }: Props & { stock: StockOut[]
     return (
       <section key={group.name} className="card">
         <h3 className="item-title">
-          <Named
-            thing={{ name: group.name, icon: group.first.icon, category: group.first.category }}
-            kind="item"
-          />
+          <a
+            className="item-link"
+            href={href.item(firstVariant(items, group.name)?.id ?? group.first.id)}
+          >
+            <Named
+              thing={{ name: group.name, icon: group.first.icon, category: group.first.category }}
+              kind="item"
+            />
+          </a>
         </h3>
         {variants ? (
           [...byVariant].map(([itemId, variantRows]) => (
             <div key={itemId} className="variant-block">
               <h4 className="variant-head">
-                {itemsById.get(itemId)!.variant ?? t.items.noVariant}
+                <a className="item-link" href={href.item(itemId)}>
+                  {itemsById.get(itemId)!.variant ?? t.items.noVariant}
+                </a>
               </h4>
               {placeRows(variantRows)}
               {lotsHint(new Set([itemId]))}
@@ -162,7 +169,9 @@ function ByPlace({ items, locations, listed }: Props) {
         <ul className="missing-rows">
           {rows.map(({ row, item }) => (
             <li key={key(row)}>
-              <Named thing={item} kind="item" />
+              <a className="item-link" href={href.item(item.id)}>
+                <Named thing={item} kind="item" />
+              </a>
               <LevelName level={row.level} />
             </li>
           ))}

@@ -108,7 +108,8 @@ Built: User, Location, Item, Stock, Chore, Request, PushSubscription
   icon set (`web/src/icons.ts`): null means the client guesses one from the
   name, empty means none.
   Items are added from a place's page. The catalogue lists each with its
-  highest level anywhere; tapping one (there or on a place's page) opens
+  highest level anywhere; tapping an item's name anywhere (catalogue,
+  place, shortages, to-do list; a name with variants opens its first) opens
   its page (`#/items/{id}`): every place it's kept with the level (and
   who's buying it), its other variants, and an edit button. Deleting one
   removes its stock.

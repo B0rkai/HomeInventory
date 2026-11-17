@@ -153,7 +153,11 @@ function Sections({ requests }: { requests: RequestOut[] }) {
     return (
       <RequestRow
         key={item.id}
-        title={<Named thing={item} kind="item" />}
+        title={
+          <a className="item-link" href={href.item(item.id)}>
+            <Named thing={item} kind="item" />
+          </a>
+        }
         name={fullName(item)}
         requests={wanted}
         doneLabel={lots.length ? t.todo.refilled : t.todo.bought}

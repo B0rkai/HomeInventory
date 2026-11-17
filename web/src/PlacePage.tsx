@@ -14,7 +14,7 @@ import { AddItemForm } from './AddItemForm'
 import { ChoreList } from './ChoreList'
 import { claimText } from './claims'
 import { MAX_DEPTH, childrenOf, pathTo, restockedStock, shortageIn } from './tree'
-import { byItem, findItem, fullName, groupByName, hasVariants } from './variants'
+import { byItem, findItem, firstVariant, fullName, groupByName, hasVariants } from './variants'
 
 /** One place: the places inside it, and the level of everything kept here. */
 export function PlacePage({ id }: { id: number }) {
@@ -226,14 +226,19 @@ export function PlacePage({ id }: { id: number }) {
             hasVariants(group, (r) => r.item) ? (
               <li key={group.name} className="stock-group">
                 <div className="group-head">
-                  <Named
-                    thing={{
-                      name: group.name,
-                      icon: group.first.icon,
-                      category: group.first.category,
-                    }}
-                    kind="item"
-                  />
+                  <a
+                    className="item-link"
+                    href={href.item(firstVariant(items, group.name)?.id ?? group.first.id)}
+                  >
+                    <Named
+                      thing={{
+                        name: group.name,
+                        icon: group.first.icon,
+                        category: group.first.category,
+                      }}
+                      kind="item"
+                    />
+                  </a>
                   {addVariantButton(group.name)}
                 </div>
                 <ul>

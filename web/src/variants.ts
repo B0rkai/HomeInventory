@@ -23,6 +23,11 @@ export function findItem(items: ItemOut[], name: string, variant: string | null)
   )
 }
 
+/** An item name's first variant in list order: where its name links to. */
+export function firstVariant(items: ItemOut[], name: string): ItemOut | undefined {
+  return items.filter((item) => fold(item.name) === fold(name)).sort(byItem)[0]
+}
+
 /** By name, then variant, the one without a variant first. */
 export function byItem(a: ItemOut, b: ItemOut): number {
   return (
