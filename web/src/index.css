@@ -1152,3 +1152,11 @@ a.item-row {
   color: var(--text);
   font-weight: 600;
 }
+.keep-form {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--border);
+}
+.keep-form p {
+  margin: 0;
+}

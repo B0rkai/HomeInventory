@@ -359,6 +359,31 @@ export type RequestCreate = {
 };
 
 /**
+ * RequestKeep
+ *
+ * Something written on the shopping list, bought and kept from now on: as this item
+ * (an existing one of the same name and variant, or a new one) in this place.
+ */
+export type RequestKeep = {
+    /**
+     * Location Id
+     */
+    location_id: number;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Variant
+     */
+    variant?: string | null;
+    /**
+     * Restock
+     */
+    restock?: boolean;
+};
+
+/**
  * RequestKind
  */
 export type RequestKind = 'buy' | 'chore';
@@ -1200,6 +1225,36 @@ export type CompleteRequestResponses = {
 };
 
 export type CompleteRequestResponse = CompleteRequestResponses[keyof CompleteRequestResponses];
+
+export type KeepRequestData = {
+    body: RequestKeep;
+    path: {
+        /**
+         * Request Id
+         */
+        request_id: number;
+    };
+    query?: never;
+    url: '/api/v1/requests/{request_id}/keep';
+};
+
+export type KeepRequestErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type KeepRequestError = KeepRequestErrors[keyof KeepRequestErrors];
+
+export type KeepRequestResponses = {
+    /**
+     * Successful Response
+     */
+    200: RequestOut;
+};
+
+export type KeepRequestResponse = KeepRequestResponses[keyof KeepRequestResponses];
 
 export type RemindRequestData = {
     body?: never;

@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CancelRequestData, CancelRequestErrors, CancelRequestResponses, ClaimRequestData, ClaimRequestErrors, ClaimRequestResponses, CompleteChoreData, CompleteChoreErrors, CompleteChoreResponses, CompleteRequestData, CompleteRequestErrors, CompleteRequestResponses, CreateChoreData, CreateChoreErrors, CreateChoreResponses, CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, CreateRequestData, CreateRequestErrors, CreateRequestResponses, DeleteChoreData, DeleteChoreErrors, DeleteChoreResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, GetPushKeyData, GetPushKeyResponses, ListActivityData, ListActivityErrors, ListActivityResponses, ListChoresData, ListChoresResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListRequestsData, ListRequestsResponses, ListStockData, ListStockResponses, RemindRequestData, RemindRequestErrors, RemindRequestResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, ReportChoreData, ReportChoreErrors, ReportChoreResponses, RequestStockData, RequestStockErrors, RequestStockResponses, SetStockData, SetStockErrors, SetStockResponses, StreamEventsData, StreamEventsResponses, SubscribeData, SubscribeErrors, SubscribeResponses, UnclaimRequestData, UnclaimRequestErrors, UnclaimRequestResponses, UnsubscribeData, UnsubscribeErrors, UnsubscribeResponses, UpdateChoreData, UpdateChoreErrors, UpdateChoreResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses } from './types.gen';
+import type { CancelRequestData, CancelRequestErrors, CancelRequestResponses, ClaimRequestData, ClaimRequestErrors, ClaimRequestResponses, CompleteChoreData, CompleteChoreErrors, CompleteChoreResponses, CompleteRequestData, CompleteRequestErrors, CompleteRequestResponses, CreateChoreData, CreateChoreErrors, CreateChoreResponses, CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, CreateRequestData, CreateRequestErrors, CreateRequestResponses, DeleteChoreData, DeleteChoreErrors, DeleteChoreResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, GetPushKeyData, GetPushKeyResponses, KeepRequestData, KeepRequestErrors, KeepRequestResponses, ListActivityData, ListActivityErrors, ListActivityResponses, ListChoresData, ListChoresResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListRequestsData, ListRequestsResponses, ListStockData, ListStockResponses, RemindRequestData, RemindRequestErrors, RemindRequestResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, ReportChoreData, ReportChoreErrors, ReportChoreResponses, RequestStockData, RequestStockErrors, RequestStockResponses, SetStockData, SetStockErrors, SetStockResponses, StreamEventsData, StreamEventsResponses, SubscribeData, SubscribeErrors, SubscribeResponses, UnclaimRequestData, UnclaimRequestErrors, UnclaimRequestResponses, UnsubscribeData, UnsubscribeErrors, UnsubscribeResponses, UpdateChoreData, UpdateChoreErrors, UpdateChoreResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -256,6 +256,22 @@ export const unclaimRequest = <ThrowOnError extends boolean = false>(options: Op
  * (one written in by hand has none).
  */
 export const completeRequest = <ThrowOnError extends boolean = false>(options: Options<CompleteRequestData, ThrowOnError>): RequestResult<CompleteRequestResponses, CompleteRequestErrors, ThrowOnError> => (options.client ?? client).post<CompleteRequestResponses, CompleteRequestErrors, ThrowOnError>({ url: '/api/v1/requests/{request_id}/done', ...options });
+
+/**
+ * Keep Request
+ *
+ * Marks something written on the shopping list bought, and keeps it from now on: as
+ * an item (one of the same name and variant, or a new one) at plenty in a place. All or
+ * nothing; 409 if the line was dealt with in the meantime.
+ */
+export const keepRequest = <ThrowOnError extends boolean = false>(options: Options<KeepRequestData, ThrowOnError>): RequestResult<KeepRequestResponses, KeepRequestErrors, ThrowOnError> => (options.client ?? client).post<KeepRequestResponses, KeepRequestErrors, ThrowOnError>({
+    url: '/api/v1/requests/{request_id}/keep',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Remind Request

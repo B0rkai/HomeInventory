@@ -9,6 +9,7 @@ import {
   remindRequest,
   createLocation,
   createRequest,
+  keepRequest,
   deleteChore,
   deleteItem,
   deleteLocation,
@@ -30,6 +31,7 @@ import {
   type ItemCreate,
   type ItemOut,
   type ItemUpdate,
+  type RequestKeep,
   type Level,
   type LocationOut,
   type LocationUpdate,
@@ -445,6 +447,15 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
               h && { ...h, requests: [...h.requests.filter((r) => r.id !== request.id), request] },
           )
         }
+      },
+      /** Marks a written line bought and keeps it from now on, as an item in a place. */
+      async keepRequest(id: number, body: RequestKeep) {
+        const ok = await change(keepRequest({ path: { request_id: id }, body }), {
+          409: t.errors.requestChanged,
+        })
+        // A new item, its stock, the line closed: fetch it all.
+        if (ok) await reload()
+        return Boolean(ok)
       },
       /** Writes something on the shopping list that isn't kept track of. */
       async addToList(name: string) {

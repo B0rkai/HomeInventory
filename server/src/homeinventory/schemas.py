@@ -233,6 +233,18 @@ class RequestCreate(BaseModel):
     name: Name
 
 
+class RequestKeep(BaseModel):
+    """Something written on the shopping list, bought and kept from now on: as this item
+    (an existing one of the same name and variant, or a new one) in this place."""
+
+    location_id: int
+    name: Name
+    variant: Variant = None
+    # Whether running low puts it on the list again; off, since what's written on the
+    # list by hand is mostly bought now and then.
+    restock: bool = False
+
+
 class PushKey(BaseModel):
     # base64url, for PushManager.subscribe's applicationServerKey.
     public_key: str

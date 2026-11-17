@@ -93,7 +93,14 @@ check stock remotely, and avoid duplicating the job.
    free text (*+ Vásárolnivaló* on the to-do list: "Elem", "Szülinapi
    gyertya"), for what the inventory doesn't track: no item, no place, no
    level; claimed, done and notified like any line, and gone once done. Its
-   icon and group are guessed from the name. The catalogue has a search box
+   icon and group are guessed from the name. Typing the name of an item the
+   inventory keeps offers it, and listing it puts *that item* on the list in
+   one of its places (chosen when it has several) whatever its level: more
+   for a party is still the same sugar. A written line can be taken into the
+   inventory as it's bought (*Leltárba*: name, variant, place, restock off by
+   default; `POST /requests/{id}/keep` makes or finds the item, sets it to
+   *plenty* there and closes the line, all or nothing). An item's page has
+   *+ Listára* for each place without a request, any level. The catalogue has a search box
    (ignoring case and accents). The shopping list has *Mindet elvállalom* per group (off to the
    grocery: take every open food row at once) and *Megosztás*: the list as
    text to the share sheet (or the clipboard).

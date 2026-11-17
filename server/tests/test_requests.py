@@ -664,3 +664,48 @@ def test_a_written_line_is_claimed_and_done_like_any(api, house) -> None:
         ("claimed", "buy", "Elem", None),
         ("listed", "buy", "Elem", None),
     ]
+
+
+def keep(api, request_id: int, json: dict, headers=ANNA):
+    return api("POST", f"/requests/{request_id}/keep", json, headers)
+
+
+def test_keeping_a_written_line_makes_an_item_in_the_place(api, house) -> None:
+    request = api("POST", "/requests", {"name": "Elem"}).json()
+    response = keep(
+        api, request["id"], {"location_id": house["pantry"], "name": "Elem", "variant": "AA"}, BELA
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "done"
+    [item] = [i for i in api("GET", "/items").json() if i["name"] == "Elem"]
+    assert item["variant"] == "AA"
+    assert item["restock"] is False
+    assert level_of(api, house["pantry"], item["id"]) == "plenty"
+    assert active(api) == []
+    [entry] = api("GET", "/activity?limit=1").json()
+    assert (entry["user_name"], entry["action"], entry["name"]) == ("Bela Kovacs", "done", "Elem")
+
+
+def test_keeping_finds_the_item_by_name_and_keeps_its_settings(api, house) -> None:
+    request = api("POST", "/requests", {"name": "cukor"}).json()
+    response = keep(api, request["id"], {"location_id": house["wc"], "name": "CUKOR"})
+    assert response.status_code == 200, response.text
+    assert [i["name"] for i in api("GET", "/items").json()].count("Cukor") == 1
+    assert level_of(api, house["wc"], house["sugar"]) == "plenty"
+    # Restocked, as it was.
+    assert next(i for i in api("GET", "/items").json() if i["id"] == house["sugar"])["restock"]
+
+
+def test_keeping_is_all_or_nothing(api, house) -> None:
+    request = api("POST", "/requests", {"name": "Elem"}).json()
+    api("POST", f"/requests/{request['id']}/cancel")
+    response = keep(api, request["id"], {"location_id": house["pantry"], "name": "Elem"})
+    assert response.status_code == 409
+    assert [i for i in api("GET", "/items").json() if i["name"] == "Elem"] == []
+    # Only a written line can be kept this way.
+    set_level(api, house["pantry"], house["sugar"], "low")
+    [bought] = active(api)
+    assert keep(api, bought["id"], {"location_id": house["pantry"], "name": "X"}).status_code == 409
+    assert keep(api, 999, {"location_id": house["pantry"], "name": "X"}).status_code == 404
+    other = api("POST", "/requests", {"name": "Elem"}).json()
+    assert keep(api, other["id"], {"location_id": 999, "name": "Elem"}).status_code == 404

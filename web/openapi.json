@@ -928,6 +928,56 @@
         }
       }
     },
+    "/api/v1/requests/{request_id}/keep": {
+      "post": {
+        "summary": "Keep Request",
+        "description": "Marks something written on the shopping list bought, and keeps it from now on: as\nan item (one of the same name and variant, or a new one) at plenty in a place. All or\nnothing; 409 if the line was dealt with in the meantime.",
+        "operationId": "keep_request",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestKeep"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/requests/{request_id}/remind": {
       "post": {
         "summary": "Remind Request",
@@ -1905,6 +1955,44 @@
         ],
         "title": "RequestCreate",
         "description": "Something to buy that isn't kept track of, written on the shopping list."
+      },
+      "RequestKeep": {
+        "properties": {
+          "location_id": {
+            "type": "integer",
+            "title": "Location Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "variant": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variant"
+          },
+          "restock": {
+            "type": "boolean",
+            "title": "Restock",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "location_id",
+          "name"
+        ],
+        "title": "RequestKeep",
+        "description": "Something written on the shopping list, bought and kept from now on: as this item\n(an existing one of the same name and variant, or a new one) in this place."
       },
       "RequestKind": {
         "type": "string",

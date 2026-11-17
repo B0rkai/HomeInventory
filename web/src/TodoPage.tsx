@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
 import type { Category, ItemOut, LocationOut, RequestOut } from './api'
 import { useHouse } from './house'
 import { LevelName } from './LevelPicker'
@@ -7,6 +7,7 @@ import { href, type TodoView } from './route'
 import { t } from './strings'
 import { ago, isToday } from './time'
 import { placePath, treeOrder } from './tree'
+import { KeepForm } from './KeepForm'
 import { OneOffForm } from './OneOffForm'
 import { PushSettings } from './PushSettings'
 import { byItem, fullName } from './variants'
@@ -203,6 +204,8 @@ function Sections({ requests }: { requests: RequestOut[] }) {
         name={fullName(item)}
         requests={wanted}
         doneLabel={lots.length ? t.todo.refilled : t.todo.bought}
+        // Written on the list by hand: once bought, it can go into the inventory.
+        keep={item.id < 0 ? wanted[0] : undefined}
       >
         {item.id > 0 && (
           <p className="small">
@@ -361,15 +364,19 @@ function RequestRow({
   name,
   requests,
   doneLabel,
+  keep,
   children,
 }: {
   title: ReactNode
   name: string
   requests: RequestOut[]
   doneLabel: string
+  // A line written on the list, which can be bought into the inventory.
+  keep?: RequestOut
   children: ReactNode
 }) {
   const { me, actions } = useHouse()
+  const [keeping, setKeeping] = useState(false)
   const ids = (list: RequestOut[]) => list.map((request) => request.id)
   const open = requests.filter((request) => request.status === 'open')
   const mine = requests.filter((request) => request.claimed_by_id === me.id)
@@ -443,6 +450,16 @@ function RequestRow({
               🔔 {t.todo.remind}
             </button>
           )}
+          {keep && !keeping && (
+            <button
+              type="button"
+              className="secondary small-button"
+              title={t.todo.keepHint}
+              onClick={() => setKeeping(true)}
+            >
+              {t.todo.keep}
+            </button>
+          )}
           <button
             type="button"
             className="small-button"
@@ -452,6 +469,7 @@ function RequestRow({
           </button>
         </div>
       </div>
+      {keep && keeping && <KeepForm request={keep} onClose={() => setKeeping(false)} />}
     </li>
   )
 }

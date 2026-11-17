@@ -33,6 +33,7 @@ from homeinventory.models import (
     ACTIVE_WHERE,
     Action,
     Chore,
+    Item,
     Level,
     Location,
     Request,
@@ -45,7 +46,14 @@ from homeinventory.models import (
 )
 from homeinventory.notify import Notifier, message_for
 from homeinventory.schedule import History, due_at
-from homeinventory.schemas import ChoreCreate, ChoreOut, ChoreUpdate, RequestCreate, RequestOut
+from homeinventory.schemas import (
+    ChoreCreate,
+    ChoreOut,
+    ChoreUpdate,
+    RequestCreate,
+    RequestKeep,
+    RequestOut,
+)
 
 router = APIRouter(dependencies=[Depends(current_user), Depends(announce_changes)])
 
@@ -550,6 +558,51 @@ def complete_request(
     out = RequestOut.model_validate(request)
     _drop_if_one_off(session, request)
     return out
+
+
+@router.post("/requests/{request_id}/keep")
+def keep_request(
+    request_id: int,
+    keep: RequestKeep,
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+    notifier: Notifier = Depends(get_notifier),
+) -> RequestOut:
+    """Marks something written on the shopping list bought, and keeps it from now on: as
+    an item (one of the same name and variant, or a new one) at plenty in a place. All or
+    nothing; 409 if the line was dealt with in the meantime."""
+    get_or_404(session, Location, keep.location_id)
+
+    def key(name: str, variant: str | None) -> tuple[str, str | None]:
+        return name.casefold(), variant and variant.casefold()
+
+    wanted = key(keep.name, keep.variant)
+    item = next(
+        (i for i in session.scalars(select(Item)) if key(i.name, i.variant) == wanted), None
+    )
+    if item is None:
+        item = Item(name=keep.name, variant=keep.variant, restock=keep.restock)
+        session.add(item)
+        session.flush()
+    values = {"level": Level.PLENTY, "updated_by_id": user.id, "updated_at": utcnow()}
+    session.execute(
+        insert(Stock)
+        .values(item_id=item.id, location_id=keep.location_id, **values)
+        .on_conflict_do_update(index_elements=[Stock.item_id, Stock.location_id], set_=values)
+    )
+    # Commits it all, or nothing if the line is gone.
+    request = _transition(
+        session,
+        request_id,
+        Request.name.is_not(None),
+        Request.status.in_(ACTIVE),
+        logged=(user, Action.DONE),
+        status=RequestStatus.DONE,
+        closed_by_id=user.id,
+        closed_at=utcnow(),
+    )
+    notifier.send(session, user.id, message_for(session, request, "done", user.display_name))
+    return RequestOut.model_validate(request)
 
 
 @router.post("/requests/{request_id}/remind")

@@ -12,7 +12,7 @@ import { byItem } from './variants'
 
 /** One item: where it's kept and how much there is, its other variants, and editing it. */
 export function ItemPage({ id }: { id: number }) {
-  const { me, house } = useHouse()
+  const { me, house, actions } = useHouse()
   const [editing, setEditing] = useState(false)
   if (!house) return null
   const { locations, items, stock, requests } = house
@@ -99,6 +99,16 @@ export function ItemPage({ id }: { id: number }) {
                 <span className="where-level">
                   <LevelName level={row.level} />
                   {note && <span className="claim small">{note}</span>}
+                  {/* By hand, whatever the level: more is needed (a party), say. */}
+                  {!request && (
+                    <button
+                      type="button"
+                      className="secondary small-button list-button"
+                      onClick={() => actions.requestStock(row.location_id, id)}
+                    >
+                      + {t.place.toList}
+                    </button>
+                  )}
                 </span>
               </li>
             )
