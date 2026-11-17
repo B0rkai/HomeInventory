@@ -99,7 +99,11 @@ Built: User, Location, Item, Stock, Chore, Request, PushSubscription
   ("Konzerv" kukorica / vörösbab / borsó, "Szemeteszsák" 35 l / 60 l);
   items sharing a name show as one group, each variant with its own stock.
   A place's add form has an optional variant field next to the name.
-  Name and variant together are unique, ignoring case. Optional category for grouping the shopping list.
+  Name and variant together are unique, ignoring case. Category, from a
+  fixed set matching the icon colours (`food` Élelmiszer, `drink` Ital,
+  `clean` Takarítás, `body` Tisztálkodás, `home` Háztartás), groups the
+  catalogue and the shopping list; unset means "from the icon" (a letter
+  tile is "Egyéb"), and a chosen one also colours the tile.
   Items and locations have an optional `icon`, a name from the web client's
   icon set (`web/src/icons.ts`): null means the client guesses one from the
   name, empty means none.

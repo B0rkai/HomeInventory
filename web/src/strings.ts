@@ -82,6 +82,14 @@ export const t = {
     weekdays: ['hétfő', 'kedd', 'szerda', 'csütörtök', 'péntek', 'szombat', 'vasárnap'],
     weekdaysShort: ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'],
   },
+  // The fixed item groups, one per icon colour.
+  categories: {
+    food: 'Élelmiszer',
+    drink: 'Ital',
+    clean: 'Takarítás',
+    body: 'Tisztálkodás',
+    home: 'Háztartás',
+  },
   icons: {
     label: 'Ikon',
     auto: 'Automatikus',
@@ -135,7 +143,7 @@ export const t = {
     empty: 'Még nincs egy termék sem.',
     name: 'Név',
     category: 'Csoport',
-    categoryPlaceholder: 'Például: Tejtermék (nem kötelező)',
+    categoryAuto: (name: string) => `Automatikus (${name})`,
     noCategory: 'Egyéb',
     noVariant: 'Egyéb',
     variant: 'Fajta',

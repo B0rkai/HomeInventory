@@ -119,10 +119,14 @@ def test_delete_location_drops_its_stock(api, app) -> None:
 
 
 def test_create_and_list_items(api) -> None:
-    add_item(api, "Tej", "Tejtermék")
+    add_item(api, "Tej", "food")
     add_item(api, "Cukor")
     items = {item["name"]: item["category"] for item in api("GET", "/items").json()}
-    assert items == {"Tej": "Tejtermék", "Cukor": None}
+    assert items == {"Tej": "food", "Cukor": None}
+
+
+def test_categories_are_a_fixed_set(api) -> None:
+    assert api("POST", "/items", {"name": "Tej", "category": "Tejtermék"}).status_code == 422
 
 
 def test_item_names_are_unique_ignoring_case(api) -> None:
@@ -131,17 +135,17 @@ def test_item_names_are_unique_ignoring_case(api) -> None:
 
 
 def test_update_item_only_changes_what_is_sent(api) -> None:
-    milk = add_item(api, "Tej", "Tejtermék")
+    milk = add_item(api, "Tej", "food")
     response = api("PATCH", f"/items/{milk}", {"name": "Zabtej"})
     assert response.json() == {
         "id": milk,
         "name": "Zabtej",
         "variant": None,
-        "category": "Tejtermék",
+        "category": "food",
         "icon": None,
         "restock": True,
     }
-    response = api("PATCH", f"/items/{milk}", {"category": "  "})
+    response = api("PATCH", f"/items/{milk}", {"category": None})
     assert response.json() == {
         "id": milk,
         "name": "Zabtej",

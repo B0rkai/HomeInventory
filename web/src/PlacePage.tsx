@@ -226,7 +226,14 @@ export function PlacePage({ id }: { id: number }) {
             hasVariants(group, (r) => r.item) ? (
               <li key={group.name} className="stock-group">
                 <div className="group-head">
-                  <Named thing={{ name: group.name, icon: group.first.icon }} kind="item" />
+                  <Named
+                    thing={{
+                      name: group.name,
+                      icon: group.first.icon,
+                      category: group.first.category,
+                    }}
+                    kind="item"
+                  />
                   {addVariantButton(group.name)}
                 </div>
                 <ul>

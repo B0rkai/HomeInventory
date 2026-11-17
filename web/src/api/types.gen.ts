@@ -5,6 +5,13 @@ export type ClientOptions = {
 };
 
 /**
+ * Category
+ *
+ * A fixed set of item groups, one per icon colour in the web client.
+ */
+export type Category = 'food' | 'drink' | 'clean' | 'body' | 'home';
+
+/**
  * ChoreCreate
  */
 export type ChoreCreate = {
@@ -118,10 +125,7 @@ export type ItemCreate = {
      * Variant
      */
     variant?: string | null;
-    /**
-     * Category
-     */
-    category?: string | null;
+    category?: Category | null;
     /**
      * Icon
      */
@@ -148,10 +152,7 @@ export type ItemOut = {
      * Variant
      */
     variant: string | null;
-    /**
-     * Category
-     */
-    category: string | null;
+    category: Category | null;
     /**
      * Icon
      */
@@ -174,10 +175,7 @@ export type ItemUpdate = {
      * Variant
      */
     variant?: string | null;
-    /**
-     * Category
-     */
-    category?: string | null;
+    category?: Category | null;
     /**
      * Icon
      */

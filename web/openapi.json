@@ -1067,6 +1067,18 @@
   },
   "components": {
     "schemas": {
+      "Category": {
+        "type": "string",
+        "enum": [
+          "food",
+          "drink",
+          "clean",
+          "body",
+          "home"
+        ],
+        "title": "Category",
+        "description": "A fixed set of item groups, one per icon colour in the web client."
+      },
       "ChoreCreate": {
         "properties": {
           "location_id": {
@@ -1317,14 +1329,12 @@
           "category": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 40
+                "$ref": "#/components/schemas/Category"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Category"
+            ]
           },
           "icon": {
             "anyOf": [
@@ -1374,13 +1384,12 @@
           "category": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/Category"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Category"
+            ]
           },
           "icon": {
             "anyOf": [
@@ -1439,14 +1448,12 @@
           "category": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 40
+                "$ref": "#/components/schemas/Category"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Category"
+            ]
           },
           "icon": {
             "anyOf": [

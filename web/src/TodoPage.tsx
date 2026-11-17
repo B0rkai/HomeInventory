@@ -9,6 +9,7 @@ import { ago, isToday } from './time'
 import { placePath, treeOrder } from './tree'
 import { PushSettings } from './PushSettings'
 import { byItem, fullName } from './variants'
+import { categoryName, groupByCategory } from './categories'
 
 /**
  * What needs doing, in two lists: the pool (open requests nobody has taken yet, then what
@@ -116,21 +117,18 @@ function Sections({ requests }: { requests: RequestOut[] }) {
       .sort(byPlace)
   }
   const refills: ItemOut[] = []
-  // The rest is the shopping list, by category ("Egyéb" last).
-  const categories = new Map<string, ItemOut[]>()
+  // The rest is the shopping list, by category.
+  const toBuy: ItemOut[] = []
   for (const id of buying.keys()) {
     const item = itemsById.get(id)!
     if (lotsFor(id).length) {
       refills.push(item)
       continue
     }
-    const category = item.category ?? ''
-    categories.set(category, [...(categories.get(category) ?? []), item])
+    toBuy.push(item)
   }
   refills.sort(byItem)
-  const shopping = [...categories]
-    .sort(([a], [b]) => (!a ? 1 : !b ? -1 : a.localeCompare(b, 'hu')))
-    .map(([category, list]) => [category, list.sort(byItem)] as const)
+  const shopping = groupByCategory(toBuy, byItem)
 
   const choreRequests = requests
     .filter((request) => request.chore_id !== null && choresById.has(request.chore_id))
@@ -231,10 +229,10 @@ function Sections({ requests }: { requests: RequestOut[] }) {
         <section className="card">
           <h3>{t.todo.shopping}</h3>
           {shopping.map(([category, list]) => (
-            <div key={category}>
-              {/* Uncategorised items need no heading of their own. */}
+            <div key={category ?? ''}>
+              {/* A list of only uncategorised items needs no heading. */}
               {(category || shopping.length > 1) && (
-                <h4 className="category-head">{category || t.items.noCategory}</h4>
+                <h4 className="category-head">{categoryName(category)}</h4>
               )}
               <ul className="requests">{list.map(itemRow)}</ul>
             </div>

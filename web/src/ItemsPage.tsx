@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from 'react'
-import type { ItemOut } from './api'
+import type { Category, ItemOut } from './api'
+import { CATEGORIES, categoryName, groupByCategory, iconCategory } from './categories'
 import { useHouse } from './house'
 import { IconPicker } from './IconPicker'
 import { Named } from './Named'
@@ -13,16 +14,7 @@ export function ItemsPage() {
   if (!house) return null
   const { items, stock } = house
 
-  const categories = [...new Set(items.map((item) => item.category).filter((c) => c !== null))]
-  const groups = new Map<string, ItemOut[]>()
-  for (const item of [...items].sort(byItem)) {
-    const category = item.category ?? t.items.noCategory
-    groups.set(category, [...(groups.get(category) ?? []), item])
-  }
-  const sortedGroups = [...groups].sort(([a], [b]) =>
-    // Uncategorised last.
-    a === t.items.noCategory ? 1 : b === t.items.noCategory ? -1 : a.localeCompare(b, 'hu'),
-  )
+  const sortedGroups = groupByCategory(items, byItem)
 
   return (
     <>
@@ -34,17 +26,13 @@ export function ItemsPage() {
         </div>
       )}
       {sortedGroups.map(([category, groupItems]) => (
-        <section key={category} className="card">
-          <h3>{category}</h3>
+        <section key={category ?? ''} className="card">
+          <h3>{categoryName(category)}</h3>
           <ul className="item-list">
             {groupItems.map((item) =>
               item.id === editingId ? (
                 <li key={item.id}>
-                  <ItemForm
-                    item={item}
-                    categories={categories}
-                    onDone={() => setEditingId(undefined)}
-                  />
+                  <ItemForm item={item} onDone={() => setEditingId(undefined)} />
                 </li>
               ) : (
                 <li key={item.id}>
@@ -65,19 +53,11 @@ export function ItemsPage() {
   )
 }
 
-function ItemForm({
-  item,
-  categories,
-  onDone,
-}: {
-  item: ItemOut
-  categories: string[]
-  onDone: () => void
-}) {
+function ItemForm({ item, onDone }: { item: ItemOut; onDone: () => void }) {
   const { actions } = useHouse()
   const [name, setName] = useState(item.name)
   const [variant, setVariant] = useState(item.variant ?? '')
-  const [category, setCategory] = useState(item.category ?? '')
+  const [category, setCategory] = useState(item.category)
   const [icon, setIcon] = useState(item.icon)
   const [restock, setRestock] = useState(item.restock)
   const [saving, setSaving] = useState(false)
@@ -112,14 +92,20 @@ function ItemForm({
       </label>
       <label>
         {t.items.category}
-        <input
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          placeholder={t.items.categoryPlaceholder}
-          maxLength={40}
-          list="categories"
-          autoComplete="off"
-        />
+        <select
+          value={category ?? ''}
+          onChange={(e) => setCategory((e.target.value || null) as Category | null)}
+        >
+          {/* Unset follows the icon, as chosen below. */}
+          <option value="">
+            {t.items.categoryAuto(categoryName(iconCategory({ name, icon })))}
+          </option>
+          {CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {t.categories[c]}
+            </option>
+          ))}
+        </select>
       </label>
       <label className="check">
         <input type="checkbox" checked={restock} onChange={(e) => setRestock(e.target.checked)} />
@@ -129,11 +115,6 @@ function ItemForm({
         </span>
       </label>
       <IconPicker kind="item" name={name} value={icon} onChange={setIcon} />
-      <datalist id="categories">
-        {categories.map((c) => (
-          <option key={c} value={c} />
-        ))}
-      </datalist>
       <div className="actions spread">
         <button type="button" className="danger" onClick={remove} disabled={saving}>
           {t.items.delete}

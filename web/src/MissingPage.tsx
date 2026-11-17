@@ -120,7 +120,10 @@ function ByItem({ items, locations, stock, listed }: Props & { stock: StockOut[]
     return (
       <section key={group.name} className="card">
         <h3 className="item-title">
-          <Named thing={{ name: group.name, icon: group.first.icon }} kind="item" />
+          <Named
+            thing={{ name: group.name, icon: group.first.icon, category: group.first.category }}
+            kind="item"
+          />
         </h3>
         {variants ? (
           [...byVariant].map(([itemId, variantRows]) => (

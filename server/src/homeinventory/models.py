@@ -18,7 +18,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 NICKNAME_MAX_LENGTH = 40
 NAME_MAX_LENGTH = 60
-CATEGORY_MAX_LENGTH = 40
 VARIANT_MAX_LENGTH = 40
 # An icon's name in the web client's set (e.g. "toilet-paper").
 ICON_MAX_LENGTH = 32
@@ -93,6 +92,27 @@ class Location(Base):
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
 
+def str_enum(enum: type[StrEnum], name: str) -> Enum:
+    """Stores an enum's values as text, with a CHECK constraint (named ck_<table>_<name>)."""
+    return Enum(
+        enum,
+        name=name,
+        native_enum=False,
+        create_constraint=True,
+        values_callable=lambda members: [member.value for member in members],
+    )
+
+
+class Category(StrEnum):
+    """A fixed set of item groups, one per icon colour in the web client."""
+
+    FOOD = "food"
+    DRINK = "drink"
+    CLEAN = "clean"
+    BODY = "body"
+    HOME = "home"
+
+
 class Item(Base):
     """A supply in the catalogue: "Cukor", "WC-papír", or a variant: "Konzerv" + "kukorica"."""
 
@@ -105,25 +125,15 @@ class Item(Base):
     # Tells apart kinds kept of the same item ("35 l", "60 l"); items sharing a name
     # are shown as one group. Unset for an item with no variants.
     variant: Mapped[str | None] = mapped_column(String(VARIANT_MAX_LENGTH))
-    # Groups the shopping list ("Tejtermék", "Tisztítószer"); optional.
-    category: Mapped[str | None] = mapped_column(String(CATEGORY_MAX_LENGTH))
+    # Groups the catalogue and the shopping list. Unset: the client takes it from the
+    # item's icon, whose colour already says the same.
+    category: Mapped[Category | None] = mapped_column(str_enum(Category, "category"))
     # Kept stocked: running low puts it on the shopping list. Off for what's only bought
     # now and then (ice cream, salmon): its level still says whether there's any.
     restock: Mapped[bool] = mapped_column(default=True, server_default=true())
     # Unset: the client guesses one from the name. Empty: no icon.
     icon: Mapped[str | None] = mapped_column(String(ICON_MAX_LENGTH))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
-
-
-def str_enum(enum: type[StrEnum], name: str) -> Enum:
-    """Stores an enum's values as text, with a CHECK constraint (named ck_<table>_<name>)."""
-    return Enum(
-        enum,
-        name=name,
-        native_enum=False,
-        create_constraint=True,
-        values_callable=lambda members: [member.value for member in members],
-    )
 
 
 class Level(StrEnum):

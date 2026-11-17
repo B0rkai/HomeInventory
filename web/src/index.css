@@ -175,7 +175,8 @@ button.icon {
   font-weight: 400;
 }
 
-input {
+input,
+select {
   font: inherit;
   width: 100%;
   min-height: 2.5rem;
@@ -186,7 +187,8 @@ input {
   color: var(--text);
 }
 
-input:focus {
+input:focus,
+select:focus {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }

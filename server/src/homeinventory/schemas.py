@@ -11,11 +11,11 @@ from pydantic import (
 )
 
 from homeinventory.models import (
-    CATEGORY_MAX_LENGTH,
     ICON_MAX_LENGTH,
     NAME_MAX_LENGTH,
     NICKNAME_MAX_LENGTH,
     VARIANT_MAX_LENGTH,
+    Category,
     Level,
     RequestKind,
     RequestStatus,
@@ -56,10 +56,6 @@ Name = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=NAME_MAX_LENGTH)
 ]
 
-Category = Annotated[
-    Annotated[str, StringConstraints(strip_whitespace=True, max_length=CATEGORY_MAX_LENGTH)] | None,
-    AfterValidator(_blank_to_none),
-]
 
 Variant = Annotated[
     Annotated[str, StringConstraints(strip_whitespace=True, max_length=VARIANT_MAX_LENGTH)] | None,
@@ -101,7 +97,7 @@ class ItemOut(BaseModel):
     id: int
     name: str
     variant: str | None
-    category: str | None
+    category: Category | None
     icon: str | None
     # Running low puts it on the shopping list.
     restock: bool
@@ -110,16 +106,18 @@ class ItemOut(BaseModel):
 class ItemCreate(BaseModel):
     name: Name
     variant: Variant = None
-    category: Category = None
+    # Unset: taken from the icon.
+    category: Category | None = None
     icon: Icon = None
     restock: bool = True
 
 
 class ItemUpdate(BaseModel):
-    # Only the fields sent change; send a blank or null category or variant to clear it.
+    # Only the fields sent change; send a blank or null variant, or a null category, to
+    # clear it.
     name: Name | None = None
     variant: Variant = None
-    category: Category = None
+    category: Category | None = None
     icon: Icon = None
     restock: bool | None = None
 
