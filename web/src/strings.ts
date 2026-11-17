@@ -180,8 +180,7 @@ export const t = {
   },
   items: {
     title: 'Termékek',
-    hint: 'A termékeket a helyeken veheted fel. Koppints egyre: hol van belőle, mennyi, és itt szerkesztheted is.',
-    empty: 'Még nincs egy termék sem.',
+    empty: 'Még nincs egy termék sem. A helyek oldalán veheted fel őket.',
     search: 'Keresés',
     all: 'Mind',
     mostFirst: '↓ Ami van',

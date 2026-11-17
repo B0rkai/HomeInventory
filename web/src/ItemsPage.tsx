@@ -106,7 +106,6 @@ export function ItemsPage() {
   return (
     <>
       <h2>{t.items.title}</h2>
-      <p className="muted">{t.items.hint}</p>
       {house.items.length > 0 && (
         <>
           <div className="filter-row">
