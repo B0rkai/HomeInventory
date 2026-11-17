@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import type { ItemOut, StockOut } from './api'
+import type { ItemOut, RequestOut, StockOut } from './api'
 import { useHouse } from './house'
 import { IconPicker } from './IconPicker'
 import { COMMON_ITEMS } from './icons'
@@ -13,12 +13,12 @@ import { AddForm } from './AddForm'
 import { AddItemForm } from './AddItemForm'
 import { ChoreList } from './ChoreList'
 import { claimText } from './claims'
-import { MAX_DEPTH, childrenOf, pathTo, shortageIn } from './tree'
+import { MAX_DEPTH, childrenOf, pathTo, restockedStock, shortageIn } from './tree'
 import { byItem, findItem, fullName, groupByName, hasVariants } from './variants'
 
 /** One place: the places inside it, and the level of everything kept here. */
 export function PlacePage({ id }: { id: number }) {
-  const { me, house, actions } = useHouse()
+  const { house, actions } = useHouse()
   const [editing, setEditing] = useState(false)
   // The item name whose "new variant" field is open.
   const [addingVariantTo, setAddingVariantTo] = useState<string>()
@@ -82,13 +82,13 @@ export function PlacePage({ id }: { id: number }) {
       row={r}
       item={r.item}
       title={title}
-      claim={claimText(
-        requests.find((request) => request.item_id === r.item_id && request.location_id === id),
-        me,
+      request={requests.find(
+        (request) => request.item_id === r.item_id && request.location_id === id,
       )}
       editing={editing}
       onLevel={(level) => actions.setLevel(id, r.item_id, level)}
       onRemove={() => actions.removeStock(id, r.item_id)}
+      onList={() => actions.requestStock(id, r.item_id)}
     />
   )
 
@@ -209,7 +209,9 @@ export function PlacePage({ id }: { id: number }) {
             {children.map((child) => (
               <a key={child.id} className="chip" href={href.place(child.id)}>
                 <Named thing={child} kind="place" />
-                <ShortageBadge shortage={shortageIn(locations, stock, child.id)} />
+                <ShortageBadge
+                  shortage={shortageIn(locations, restockedStock(stock, items), child.id)}
+                />
               </a>
             ))}
           </div>
@@ -274,20 +276,27 @@ function StockRow({
   row,
   item,
   title,
-  claim,
+  request,
   editing,
   onLevel,
   onRemove,
+  onList,
 }: {
   row: StockOut
   item: ItemOut
   title: ReactNode
-  // Who's buying it, if someone said so.
-  claim: string | undefined
+  // Its open or claimed request to buy it here, if any.
+  request: RequestOut | undefined
   editing: boolean
   onLevel: (level: StockOut['level']) => void
   onRemove: () => void
+  // Puts it on the shopping list by hand (for what isn't kept stocked).
+  onList: () => void
 }) {
+  const { me } = useHouse()
+  const claim = claimText(request, me)
+  // What isn't restocked only goes on the list by hand; say when it is.
+  const listed = !item.restock && request && !claim ? t.place.listed : undefined
   return (
     <li>
       <div className="stock-name">
@@ -307,7 +316,12 @@ function StockRow({
             <span className="muted">
               {t.place.updated(row.updated_by_name, ago(row.updated_at))}
             </span>
-            {claim && <span className="claim"> · {claim}</span>}
+            {(claim ?? listed) && <span className="claim"> · {claim ?? listed}</span>}
+            {!item.restock && !request && (
+              <button type="button" className="secondary small-button list-button" onClick={onList}>
+                + {t.place.toList}
+              </button>
+            )}
           </span>
         )}
       </div>

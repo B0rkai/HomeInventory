@@ -4,7 +4,7 @@ import { LevelName } from './LevelPicker'
 import { Named } from './Named'
 import { href, type MissingView } from './route'
 import { t } from './strings'
-import { isShort, placePath, treeOrder } from './tree'
+import { isShort, placePath, restockedStock, treeOrder } from './tree'
 import { byItem, groupByName, hasVariants } from './variants'
 
 const key = (row: StockOut) => `${row.location_id}-${row.item_id}`
@@ -17,7 +17,8 @@ export function MissingPage({ view }: { view: MissingView }) {
   const { house } = useHouse()
   if (!house) return null
   const { locations, items, stock } = house
-  const listed = stock.filter(isShort)
+  // Only what's kept stocked: no ice cream isn't a shortage.
+  const listed = restockedStock(stock, items).filter(isShort)
 
   return (
     <>

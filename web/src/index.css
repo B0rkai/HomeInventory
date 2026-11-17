@@ -1010,3 +1010,20 @@ h2 .tile .icon-art {
   font-size: 1rem;
   color: var(--muted);
 }
+.item-form label.check {
+  display: flex;
+  flex-direction: row;
+  color: var(--text);
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.item-form label.check input {
+  width: auto;
+  min-height: 0;
+  margin-top: 0.2rem;
+}
+.list-button {
+  margin-left: 0.4rem;
+  min-height: 1.9rem;
+  padding: 0.1rem 0.5rem;
+}

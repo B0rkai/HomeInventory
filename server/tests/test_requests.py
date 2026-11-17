@@ -516,3 +516,60 @@ def test_deleting_places_leaves_house_chores(api, house) -> None:
     id = add_house_chore(api)
     api("DELETE", f"/locations/{house['wc']}")
     assert chore_of(api, id)["name"] == "Porszívózás"
+
+
+# Items not kept stocked
+
+
+def no_restock(api, item: int) -> None:
+    response = api("PATCH", f"/items/{item}", {"restock": False})
+    assert response.status_code == 200 and response.json()["restock"] is False
+
+
+def test_items_are_restocked_by_default(api, house) -> None:
+    assert all(item["restock"] for item in api("GET", "/items").json())
+
+
+@pytest.mark.parametrize("level", ["low", "out"])
+def test_running_out_of_what_isnt_restocked_opens_nothing(api, house, level: str) -> None:
+    no_restock(api, house["sugar"])
+    set_level(api, house["pantry"], house["sugar"], level)
+    assert active(api) == []
+    assert level_of(api, house["pantry"], house["sugar"]) == level
+
+
+def test_turning_restock_off_cancels_its_requests(api, house) -> None:
+    set_level(api, house["pantry"], house["sugar"], "out")
+    set_level(api, house["pantry"], house["paper"], "out")
+    no_restock(api, house["sugar"])
+    assert [r["item_id"] for r in active(api)] == [house["paper"]]
+
+
+def test_turning_restock_on_lists_what_is_short(api, house) -> None:
+    no_restock(api, house["sugar"])
+    set_level(api, house["pantry"], house["sugar"], "low")
+    set_level(api, house["wc"], house["sugar"], "plenty")
+    api("PATCH", f"/items/{house['sugar']}", {"restock": True})
+    assert [(r["item_id"], r["location_id"]) for r in active(api)] == [
+        (house["sugar"], house["pantry"])
+    ]
+
+
+def test_put_on_the_list_by_hand(api, house) -> None:
+    no_restock(api, house["sugar"])
+    set_level(api, house["pantry"], house["sugar"], "plenty")
+    path = f"/locations/{house['pantry']}/stock/{house['sugar']}/request"
+    response = api("POST", path)
+    assert response.status_code == 201
+    assert response.json()["item_id"] == house["sugar"]
+    again = api("POST", path, headers=BELA)
+    assert (again.status_code, again.json()["id"]) == (200, response.json()["id"])
+    # Bought: done, and the level says so.
+    api("POST", f"/requests/{response.json()['id']}/done")
+    assert active(api) == []
+    assert level_of(api, house["pantry"], house["sugar"]) == "plenty"
+
+
+def test_put_on_the_list_needs_the_item_kept_there(api, house) -> None:
+    path = f"/locations/{house['pantry']}/stock/{house['sugar']}/request"
+    assert api("POST", path).status_code == 404

@@ -89,6 +89,12 @@ Built: User, Location, Item, Stock, Chore, Request, PushSubscription
   tell apart. Only a location without children can be deleted; its stock
   goes with it.
 - **Item**: a supply in the catalogue: "Sugar", "Toilet paper", "Milk".
+  `restock` (default on): running low puts it on the shopping list. Off for
+  what's only bought now and then (ice cream, salmon): its level still says
+  whether there's any, but it's no shortage (not in the shortages view or
+  the badges) and goes on the list only by hand ("+ Listára" on its
+  place's page, `POST .../stock/{item}/request`). Turning it off cancels
+  its requests; turning it on lists what's already low or out.
   An optional `variant` tells apart kinds kept of the same supply
   ("Konzerv" kukorica / vörösbab / borsó, "Szemeteszsák" 35 l / 60 l);
   items sharing a name show as one group, each variant with its own stock.

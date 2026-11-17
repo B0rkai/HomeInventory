@@ -103,6 +103,8 @@ class ItemOut(BaseModel):
     variant: str | None
     category: str | None
     icon: str | None
+    # Running low puts it on the shopping list.
+    restock: bool
 
 
 class ItemCreate(BaseModel):
@@ -110,6 +112,7 @@ class ItemCreate(BaseModel):
     variant: Variant = None
     category: Category = None
     icon: Icon = None
+    restock: bool = True
 
 
 class ItemUpdate(BaseModel):
@@ -118,6 +121,7 @@ class ItemUpdate(BaseModel):
     variant: Variant = None
     category: Category = None
     icon: Icon = None
+    restock: bool | None = None
 
 
 class StockOut(BaseModel):

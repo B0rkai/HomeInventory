@@ -1,6 +1,6 @@
 """Locations, the item catalogue and stock levels."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
@@ -29,6 +29,7 @@ from homeinventory.schemas import (
     LocationCreate,
     LocationOut,
     LocationUpdate,
+    RequestOut,
     StockOut,
     StockSet,
 )
@@ -158,8 +159,14 @@ def create_item(new: ItemCreate, session: Session = Depends(get_session)) -> Ite
 
 @router.patch("/items/{item_id}")
 def update_item(
-    item_id: int, update: ItemUpdate, session: Session = Depends(get_session)
+    item_id: int,
+    update: ItemUpdate,
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+    notifier: Notifier = Depends(get_notifier),
 ) -> ItemOut:
+    """Renames or regroups an item. Turning `restock` off takes it off the shopping list;
+    turning it on puts it on wherever it's already low or out."""
     item = get_or_404(session, Item, item_id)
     name = item.name if update.name is None else update.name
     variant = update.variant if "variant" in update.model_fields_set else item.variant
@@ -169,7 +176,22 @@ def update_item(
         item.category = update.category
     if "icon" in update.model_fields_set:
         item.icon = update.icon
+    opened = []
+    if update.restock is not None and update.restock != item.restock:
+        item.restock = update.restock
+        short = session.scalars(
+            select(Stock).where(Stock.item_id == item.id, Stock.level.in_((Level.LOW, Level.OUT)))
+        )
+        for stock in short:
+            if not item.restock:
+                close_buy_requests(
+                    session, item.id, stock.location_id, user, RequestStatus.CANCELLED
+                )
+            elif open_buy_request(session, item.id, stock.location_id, user):
+                opened.append(stock)
     session.commit()
+    for stock in opened:
+        _announce_opened(session, notifier, user, item.id, stock.location_id, stock.level)
     return ItemOut.model_validate(item)
 
 
@@ -200,7 +222,7 @@ def set_stock(
 ) -> StockOut:
     """Sets an item's level in a location, adding the item there if it isn't kept there yet."""
     get_or_404(session, Location, location_id)
-    get_or_404(session, Item, item_id)
+    item = get_or_404(session, Item, item_id)
     values = {"level": new.level, "updated_by_id": user.id, "updated_at": utcnow()}
     # One statement, so two people setting the same level at once can't collide.
     session.execute(
@@ -212,23 +234,14 @@ def set_stock(
     # takes it off, whoever did it.
     opened, refilled = False, []
     if new.level in (Level.LOW, Level.OUT):
-        opened = open_buy_request(session, item_id, location_id, user)
+        # An item that isn't kept stocked just records that there's none (or little).
+        if item.restock:
+            opened = open_buy_request(session, item_id, location_id, user)
     else:
         refilled = close_buy_requests(session, item_id, location_id, user, RequestStatus.DONE)
     session.commit()
     if opened:
-        request = session.scalars(
-            select(Request).where(
-                Request.item_id == item_id,
-                Request.location_id == location_id,
-                Request.status.in_(ACTIVE),
-            )
-        ).one()
-        notifier.send(
-            session,
-            user.id,
-            message_for(session, request, "reported", user.display_name, new.level),
-        )
+        _announce_opened(session, notifier, user, item_id, location_id, new.level)
     for id in refilled:
         request = session.get_one(Request, id)
         notifier.send(
@@ -240,6 +253,57 @@ def set_stock(
         .execution_options(populate_existing=True)
     ).one()
     return StockOut.model_validate(stock)
+
+
+@router.post(
+    "/locations/{location_id}/stock/{item_id}/request", status_code=status.HTTP_201_CREATED
+)
+def request_stock(
+    location_id: int,
+    item_id: int,
+    response: Response,
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+    notifier: Notifier = Depends(get_notifier),
+) -> RequestOut:
+    """Puts an item kept here on the shopping list by hand, whatever its level: for what
+    isn't kept stocked, bought now and then. If it's already on, returns that (200)."""
+    stock = session.scalar(
+        select(Stock).where(Stock.item_id == item_id, Stock.location_id == location_id)
+    )
+    if stock is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Stock not found")
+    opened = open_buy_request(session, item_id, location_id, user)
+    session.commit()
+    if opened:
+        _announce_opened(session, notifier, user, item_id, location_id, stock.level)
+    else:
+        response.status_code = status.HTTP_200_OK
+    return RequestOut.model_validate(_active_request(session, item_id, location_id))
+
+
+def _active_request(session: Session, item_id: int, location_id: int) -> Request:
+    return session.scalars(
+        select(Request).where(
+            Request.item_id == item_id,
+            Request.location_id == location_id,
+            Request.status.in_(ACTIVE),
+        )
+    ).one()
+
+
+def _announce_opened(
+    session: Session,
+    notifier: Notifier,
+    user: User,
+    item_id: int,
+    location_id: int,
+    level: Level,
+) -> None:
+    request = _active_request(session, item_id, location_id)
+    notifier.send(
+        session, user.id, message_for(session, request, "reported", user.display_name, level)
+    )
 
 
 @router.delete("/locations/{location_id}/stock/{item_id}", **NO_CONTENT)

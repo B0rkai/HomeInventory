@@ -1,4 +1,4 @@
-import type { LocationOut, StockOut } from './api'
+import type { ItemOut, LocationOut, StockOut } from './api'
 
 // Floor -> room -> spot; the server's limit too.
 export const MAX_DEPTH = 3
@@ -67,6 +67,12 @@ export function shortageIn(
 
 export function byName(a: { name: string }, b: { name: string }): number {
   return a.name.localeCompare(b.name, 'hu')
+}
+
+/** The stock rows of items kept stocked: only their running low is a shortage. */
+export function restockedStock(stock: StockOut[], items: ItemOut[]): StockOut[] {
+  const restocked = new Set(items.filter((item) => item.restock).map((item) => item.id))
+  return stock.filter((row) => restocked.has(row.item_id))
 }
 
 export function isShort(row: StockOut): boolean {

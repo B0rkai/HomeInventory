@@ -51,6 +51,7 @@ export function ItemsPage() {
                   <button type="button" className="item-row" onClick={() => setEditingId(item.id)}>
                     <Named thing={item} kind="item" />
                     <span className="muted small">
+                      {!item.restock && `${t.items.noRestock} · `}
                       {t.items.places(stock.filter((row) => row.item_id === item.id).length)}
                     </span>
                   </button>
@@ -78,12 +79,13 @@ function ItemForm({
   const [variant, setVariant] = useState(item.variant ?? '')
   const [category, setCategory] = useState(item.category ?? '')
   const [icon, setIcon] = useState(item.icon)
+  const [restock, setRestock] = useState(item.restock)
   const [saving, setSaving] = useState(false)
 
   async function save(event: FormEvent) {
     event.preventDefault()
     setSaving(true)
-    const saved = await actions.updateItem(item.id, { name, variant, category, icon })
+    const saved = await actions.updateItem(item.id, { name, variant, category, icon, restock })
     setSaving(false)
     if (saved) onDone()
   }
@@ -118,6 +120,13 @@ function ItemForm({
           list="categories"
           autoComplete="off"
         />
+      </label>
+      <label className="check">
+        <input type="checkbox" checked={restock} onChange={(e) => setRestock(e.target.checked)} />
+        <span>
+          {t.items.restock}
+          <span className="small muted"> – {t.items.restockHint}</span>
+        </span>
       </label>
       <IconPicker kind="item" name={name} value={icon} onChange={setIcon} />
       <datalist id="categories">

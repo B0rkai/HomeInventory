@@ -126,6 +126,10 @@ export type ItemCreate = {
      * Icon
      */
     icon?: string | null;
+    /**
+     * Restock
+     */
+    restock?: boolean;
 };
 
 /**
@@ -152,6 +156,10 @@ export type ItemOut = {
      * Icon
      */
     icon: string | null;
+    /**
+     * Restock
+     */
+    restock: boolean;
 };
 
 /**
@@ -174,6 +182,10 @@ export type ItemUpdate = {
      * Icon
      */
     icon?: string | null;
+    /**
+     * Restock
+     */
+    restock?: boolean | null;
 };
 
 /**
@@ -788,6 +800,40 @@ export type SetStockResponses = {
 };
 
 export type SetStockResponse = SetStockResponses[keyof SetStockResponses];
+
+export type RequestStockData = {
+    body?: never;
+    path: {
+        /**
+         * Location Id
+         */
+        location_id: number;
+        /**
+         * Item Id
+         */
+        item_id: number;
+    };
+    query?: never;
+    url: '/api/v1/locations/{location_id}/stock/{item_id}/request';
+};
+
+export type RequestStockErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type RequestStockError = RequestStockErrors[keyof RequestStockErrors];
+
+export type RequestStockResponses = {
+    /**
+     * Successful Response
+     */
+    201: RequestOut;
+};
+
+export type RequestStockResponse = RequestStockResponses[keyof RequestStockResponses];
 
 export type ListChoresData = {
     body?: never;

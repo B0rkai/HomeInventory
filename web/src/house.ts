@@ -17,6 +17,7 @@ import {
   listRequests,
   listStock,
   removeStock,
+  requestStock,
   reportChore,
   setStock,
   unclaimRequest,
@@ -263,6 +264,18 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
               },
           )
           void reloadRequests()
+        }
+      },
+      /** Puts an item kept somewhere on the shopping list, whatever its level. */
+      async requestStock(locationId: number, itemId: number) {
+        const request = (
+          await change(requestStock({ path: { location_id: locationId, item_id: itemId } }))
+        )?.data
+        if (request) {
+          setHouse(
+            (h) =>
+              h && { ...h, requests: [...h.requests.filter((r) => r.id !== request.id), request] },
+          )
         }
       },
       async addChore(locationId: number | null, name: string) {

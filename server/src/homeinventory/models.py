@@ -12,6 +12,7 @@ from sqlalchemy import (
     TypeDecorator,
     UniqueConstraint,
     text,
+    true,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -106,6 +107,9 @@ class Item(Base):
     variant: Mapped[str | None] = mapped_column(String(VARIANT_MAX_LENGTH))
     # Groups the shopping list ("Tejtermék", "Tisztítószer"); optional.
     category: Mapped[str | None] = mapped_column(String(CATEGORY_MAX_LENGTH))
+    # Kept stocked: running low puts it on the shopping list. Off for what's only bought
+    # now and then (ice cream, salmon): its level still says whether there's any.
+    restock: Mapped[bool] = mapped_column(default=True, server_default=true())
     # Unset: the client guesses one from the name. Empty: no icon.
     icon: Mapped[str | None] = mapped_column(String(ICON_MAX_LENGTH))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)

@@ -6,7 +6,7 @@ import { Named } from './Named'
 import { href } from './route'
 import { ShortageBadge } from './ShortageBadge'
 import { t } from './strings'
-import { childrenOf, shortageIn } from './tree'
+import { childrenOf, restockedStock, shortageIn } from './tree'
 
 /** Every floor with its rooms, so any place is one tap away. */
 export function Home() {
@@ -14,7 +14,9 @@ export function Home() {
   // Starts in edit mode while the house is empty, so the first floors go in one by one.
   const [editing, setEditing] = useState(() => !house?.locations.length)
   if (!house) return null
-  const { locations, stock } = house
+  const { locations, items } = house
+  // Badges count what's kept stocked only.
+  const stock = restockedStock(house.stock, items)
   const floors = childrenOf(locations, null)
 
   return (

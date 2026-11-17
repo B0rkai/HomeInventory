@@ -280,6 +280,7 @@
     "/api/v1/items/{item_id}": {
       "patch": {
         "summary": "Update Item",
+        "description": "Renames or regroups an item. Turning `restock` off takes it off the shopping list;\nturning it on puts it on wherever it's already low or out.",
         "operationId": "update_item",
         "parameters": [
           {
@@ -465,6 +466,55 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/locations/{location_id}/stock/{item_id}/request": {
+      "post": {
+        "summary": "Request Stock",
+        "description": "Puts an item kept here on the shopping list by hand, whatever its level: for what\nisn't kept stocked, bought now and then. If it's already on, returns that (200).",
+        "operationId": "request_stock",
+        "parameters": [
+          {
+            "name": "location_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Location Id"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOut"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -1287,6 +1337,11 @@
               }
             ],
             "title": "Icon"
+          },
+          "restock": {
+            "type": "boolean",
+            "title": "Restock",
+            "default": true
           }
         },
         "type": "object",
@@ -1337,6 +1392,10 @@
               }
             ],
             "title": "Icon"
+          },
+          "restock": {
+            "type": "boolean",
+            "title": "Restock"
           }
         },
         "type": "object",
@@ -1345,7 +1404,8 @@
           "name",
           "variant",
           "category",
-          "icon"
+          "icon",
+          "restock"
         ],
         "title": "ItemOut"
       },
@@ -1399,6 +1459,17 @@
               }
             ],
             "title": "Icon"
+          },
+          "restock": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restock"
           }
         },
         "type": "object",
