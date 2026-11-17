@@ -52,7 +52,7 @@ check stock remotely, and avoid duplicating the job.
    listed, and every minute, so the push goes out on time.
 5. **Shopping list.** The *Teendők* (to-do) tab has two lists: *Szabad*,
    the pool of open requests nobody has claimed (and below it, what the
-   other has claimed), and *Enyém*, what I've claimed; claiming moves a row
+   other has claimed; a folded form there adds a one-off to-do), and *Enyém*, what I've claimed; claiming moves a row
    from one to the other. Under the other's claims an *Érdeklődöm* button
    pushes them "when will it be done?", once a (local) day per request;
    the claimer sees who asked and when. A new claim starts afresh. Each list shows reported chores, then the *buy*
@@ -118,6 +118,9 @@ Built: User, Location, Item, Stock, Chore, Request, PushSubscription
   the home screen). Not stock, but reported and claimed the same way. Names
   are unique per location (or among the house's) ignoring case; icons work as for items. Added and
   deleted in a place's edit mode; deleting one deletes its requests.
+  `one_off`: a to-do for once ("Szerelő hívása"), added on the to-do list
+  and reported at once, not listed among a place's chores, and deleted
+  with its request once that's done or cancelled; one-offs may share names.
   Optional schedule: `repeat_days` or `repeat_weekdays` (a bitmask, Monday
   = 1; the API speaks lists, Monday = 0), and `scheduled_at`, when it was
   last changed (earlier occurrences don't count). Logic in `schedule.py`.
