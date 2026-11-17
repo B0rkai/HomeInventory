@@ -769,6 +769,11 @@ h2 .tile .icon-art {
   list-style: none;
 }
 
+/* A lone item's levels start under its name too, in line with the variants' */
+.stock > li > .levels {
+  margin-left: 2.3rem;
+}
+
 .stock-group > ul > li {
   border-bottom: 0;
   padding: 0.35rem 0 0;
