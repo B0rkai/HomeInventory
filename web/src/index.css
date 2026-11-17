@@ -1051,3 +1051,21 @@ h2 .tile .icon-art {
 .one-off-toggle {
   margin-top: 0.4rem;
 }
+a.item-row {
+  color: var(--text);
+  text-decoration: none;
+}
+.item-meta {
+  margin: 0.2rem 0 0;
+}
+.chip[aria-current='page'] {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.where-level {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex: none;
+}

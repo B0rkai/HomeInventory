@@ -141,9 +141,15 @@ export const t = {
     notFound: 'Ez a hely már nem létezik.',
     updated: (name: string, when: string) => ` · ${name}, ${when}`,
   },
+  item: {
+    where: 'Hol van belőle',
+    nowhere: 'Még egyik helyen sem tartjuk. A helyek oldalán veheted fel.',
+    best: 'legtöbb:',
+    notFound: 'Ez a termék már nem létezik.',
+  },
   items: {
     title: 'Termékek',
-    hint: 'A termékeket a helyeken veheted fel. Itt átnevezheted, csoportosíthatod vagy törölheted őket.',
+    hint: 'A termékeket a helyeken veheted fel. Koppints egyre: hol van belőle, mennyi, és itt szerkesztheted is.',
     empty: 'Még nincs egy termék sem.',
     name: 'Név',
     category: 'Csoport',

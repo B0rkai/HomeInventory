@@ -1,4 +1,4 @@
-import type { ItemOut, LocationOut, StockOut } from './api'
+import type { ItemOut, Level, LocationOut, StockOut } from './api'
 
 // Floor -> room -> spot; the server's limit too.
 export const MAX_DEPTH = 3
@@ -73,6 +73,18 @@ export function byName(a: { name: string }, b: { name: string }): number {
 export function restockedStock(stock: StockOut[], items: ItemOut[]): StockOut[] {
   const restocked = new Set(items.filter((item) => item.restock).map((item) => item.id))
   return stock.filter((row) => restocked.has(row.item_id))
+}
+
+// Emptiest first, as the level buttons run.
+const LEVEL_ORDER: Level[] = ['out', 'low', 'plenty', 'lots']
+
+/** The highest level among some stock rows (an item's across places); none for none. */
+export function bestLevel(rows: { level: Level }[]): Level | undefined {
+  let best: Level | undefined
+  for (const { level } of rows) {
+    if (!best || LEVEL_ORDER.indexOf(level) > LEVEL_ORDER.indexOf(best)) best = level
+  }
+  return best
 }
 
 export function isShort(row: StockOut): boolean {

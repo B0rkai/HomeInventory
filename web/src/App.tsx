@@ -4,6 +4,7 @@ import { Home } from './Home'
 import { useHouse } from './house'
 import { HouseProvider } from './HouseProvider'
 import { IconArt } from './IconArt'
+import { ItemPage } from './ItemPage'
 import { ItemsPage } from './ItemsPage'
 import { MissingPage } from './MissingPage'
 import { NicknameForm } from './NicknameForm'
@@ -128,7 +129,8 @@ function Pages() {
     )
   }
   if (route.page === 'place') return <PlacePage key={route.id} id={route.id} />
-  if (route.page === 'items') return <ItemsPage key={route.edit} edit={route.edit} />
+  if (route.page === 'items') return <ItemsPage />
+  if (route.page === 'item') return <ItemPage key={route.id} id={route.id} />
   if (route.page === 'missing') return <MissingPage view={route.view} />
   if (route.page === 'todo') return <TodoPage view={route.view} />
   return <Home />
@@ -146,8 +148,8 @@ function NavBar() {
   const { house } = useHouse()
   // Nobody's on these yet.
   const open = house?.requests.filter((r) => r.status === 'open').length ?? 0
-  // A place page belongs to the Places tab.
-  const current = route.page === 'place' ? 'home' : route.page
+  // A place's page belongs to the Places tab, an item's to the Items tab.
+  const current = route.page === 'place' ? 'home' : route.page === 'item' ? 'items' : route.page
 
   return (
     <nav className="tabbar">

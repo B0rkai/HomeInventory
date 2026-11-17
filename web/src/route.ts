@@ -8,8 +8,8 @@ export type TodoView = 'open' | 'mine'
 export type Route =
   | { page: 'home' }
   | { page: 'place'; id: number }
-  // With `edit`, that item's form is open (reached from a place's page).
-  | { page: 'items'; edit?: number }
+  | { page: 'items' }
+  | { page: 'item'; id: number }
   | { page: 'todo'; view: TodoView }
   | { page: 'missing'; view: MissingView }
 
@@ -17,7 +17,7 @@ export const href = {
   home: '#/',
   place: (id: number) => `#/places/${id}`,
   items: '#/items',
-  editItem: (id: number) => `#/items/${id}`,
+  item: (id: number) => `#/items/${id}`,
   todo: (view: TodoView = 'open') => (view === 'open' ? '#/todo' : '#/todo/mine'),
   missing: (view: MissingView = 'items') => (view === 'items' ? '#/missing' : '#/missing/places'),
 }
@@ -27,7 +27,7 @@ function parse(hash: string): Route {
   if (place) return { page: 'place', id: Number(place[1]) }
   if (hash === href.items) return { page: 'items' }
   const item = /^#\/items\/(\d+)$/.exec(hash)
-  if (item) return { page: 'items', edit: Number(item[1]) }
+  if (item) return { page: 'item', id: Number(item[1]) }
   if (hash === href.todo('open')) return { page: 'todo', view: 'open' }
   if (hash === href.todo('mine')) return { page: 'todo', view: 'mine' }
   if (hash === href.missing('items')) return { page: 'missing', view: 'items' }

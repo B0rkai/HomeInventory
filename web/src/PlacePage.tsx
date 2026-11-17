@@ -240,7 +240,7 @@ export function PlacePage({ id }: { id: number }) {
                   {group.rows.map((r) =>
                     row(
                       r,
-                      <a className="item-link" href={href.editItem(r.item.id)}>
+                      <a className="item-link" href={href.item(r.item.id)}>
                         {r.item.variant ?? <span className="muted">{t.items.noVariant}</span>}
                       </a>,
                     ),
@@ -253,7 +253,7 @@ export function PlacePage({ id }: { id: number }) {
                 row(
                   group.rows[0],
                   <span className="group-head">
-                    <a className="item-link" href={href.editItem(group.rows[0].item.id)}>
+                    <a className="item-link" href={href.item(group.rows[0].item.id)}>
                       <Named thing={group.rows[0].item} kind="item" />
                     </a>
                     {addVariantButton(group.name)}
