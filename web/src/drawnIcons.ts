@@ -7,6 +7,8 @@ export const DRAWN_ICONS: Record<string, string> = {
     '<rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/><rect x="8.5" y="4.5" width="7" height="7" rx="1.5"/><path d="M7.5 16.5v.01"/><path d="M16.5 16.5v.01"/><path d="M12 8v.01"/>',
   can: '<path d="M6 6a6 2 0 1 0 12 0a6 2 0 1 0 -12 0"/><path d="M6 6v12a6 2 0 0 0 12 0v-12"/><path d="M6 10a6 2 0 0 0 12 0"/><path d="M6 14a6 2 0 0 0 12 0"/>',
   jar: '<rect x="7" y="3" width="10" height="3" rx="1"/><path d="M8 6v1a3 3 0 0 0 -2 2.8v9.2a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2v-9.2a3 3 0 0 0 -2 -2.8v-1"/><path d="M12 12.5c-1 1.2 -1.5 2 -1.5 2.7a1.5 1.5 0 0 0 3 0c0 -.7 -.5 -1.5 -1.5 -2.7z"/>',
+  // Six long grains, scattered every which way.
+  rice: '<path d="M4.5 8l5.5 -2.5"/><path d="M13 4l5.5 3"/><path d="M8.5 11.5l2.5 5"/><path d="M13.5 11l6 1.5"/><path d="M4 18l4.5 2"/><path d="M13 19.5l5.5 -3"/>',
   potato:
     '<ellipse cx="12" cy="12" rx="8.5" ry="6" transform="rotate(-30 12 12)"/><path d="M9 11v.01"/><path d="M14 9v.01"/><path d="M13 15v.01"/>',
   onion:

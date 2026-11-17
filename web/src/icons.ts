@@ -24,7 +24,7 @@ const ITEMS: Entry[] = [
   ['pepper', 'food', ['bors', 'paprika']],
   ['salt', 'food', ['so', 'fuszer']],
   ['wheat', 'food', ['liszt', 'zabpehely', 'muzli', 'gabona']],
-  ['bowl-chopsticks', 'food', ['rizs']],
+  ['rice', 'food', ['rizs']],
   ['bowl-spoon', 'food', ['teszta', 'spagetti', 'leves']],
   ['bottle', 'food', ['olaj', 'olivaolaj', 'ecet']],
   ['can', 'food', ['konzerv', 'paradicsomszosz', 'passata', 'bab']],
