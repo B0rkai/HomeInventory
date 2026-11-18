@@ -219,6 +219,76 @@ change is a single conditional update (see `CLAUDE.md`); losing a race is
 3. **Requests**: report, claim, done, cancel; the shopping list.
 4. **Notifications and live updates**: web push, the service worker, SSE.
 
+## Planned: meal planner *(planned, agreed 2026-11-18)*
+
+Plan a cooking for a day; what it needs and the house lacks goes on the
+shopping list in time, but not so early that fresh food spoils, and the
+buying is bunched into a few shopping trips instead of a shop every day.
+The UI is designed before any code (the UI plan follows), so the
+pages don't end up crowded.
+
+Decisions:
+
+- **Levels stay.** Recipes name items, not amounts the app counts; an amount
+  ("50 dkg") is a note for the cook. An ingredient counts as at home at
+  *plenty* or *lots*; *low* goes on the list too. Two cookings needing the
+  same item only show both reservations; the app can't tell whether it's
+  enough.
+- **Days, no meals.** A cooking is planned for a day, not lunch or dinner.
+- **One shop, no fixed shopping days.** Shopping trips are planned as
+  needed; the app suggests the days.
+- **No starter recipes**: the users add their own.
+- **Shelf life** by the item's group, changeable per item: raw meat and
+  fish at most 1 day before the cooking, other fresh food (vegetables,
+  fruit, dairy, eggs, bread) at most 7 days, the rest any time. Frozen meat
+  is its own variant, kept any time.
+
+Features:
+
+1. **Recipes**: name, icon, ingredients, an optional note and link. An
+   ingredient is a catalogue item (typing a new name makes an item kept
+   nowhere), a variant or any variant of it, with an optional amount note;
+   optional ingredients (garnish) are never listed or warned about.
+2. **Planning a cooking**: a recipe on a day, optionally claimed by who
+   cooks. Planning shows at once what's at home, what will go on the list
+   and from when, and whether a trip is needed for it.
+   - **Reservations**: the ingredients of a planned cooking show it on the
+     place and catalogue pages ("Lecsó, Thu"). It blocks nothing; it is
+     derived from the planned cooking, not stored. An ingredient set to
+     *low* or *out* goes on the list due before the cooking.
+   - Missing ingredients, the not-restocked ones included, go on the list
+     by themselves, each with a window: buy no earlier than its shelf life
+     allows, no later than the cooking's day.
+   - Cancelling or moving a cooking withdraws or reschedules its unclaimed
+     lines; a claimed line stays, and whoever claimed it is told.
+   - Marking it cooked asks "what's left?": a level picker per ingredient,
+     so the stock stays true without visiting each place.
+3. **Shopping trips**: a day, and who goes (claimable, claiming all its
+   lines). Each line belongs to a trip inside its window: durable ones the
+   earliest, perishable ones the latest (freshest); plain shortages the
+   next trip. Lines with no trip in their window make the app suggest the
+   fewest days covering them all (sort by the window's end, pick that day,
+   repeat). Anyone can still buy anything any time.
+4. **The shopping list by trip**: grouped by trip ("Saturday", "Later");
+   lines whose window hasn't opened show greyed with their first day.
+5. **Notifications**: the other planned a cooking; a trip is today; a
+   fresh line's window opens with no trip in it.
+
+Data model additions: **Recipe** (name, icon, note, link);
+**RecipeIngredient** (recipe, item name and variant or any, amount note,
+optional); **Cooking** (recipe, day, cook, status planned / done /
+cancelled); **ShoppingTrip** (day, claimed by, status); **Item**
+`keeps_days` (null: any time); **Request** `buy_from`, `buy_by`, `cooking`,
+`trip`.
+
+Milestones: (5) recipes; (6) planning, reservations, missing ingredients on
+the list, "what's left?"; (7) shelf life and buying windows; (8) shopping
+trips and the list by trip. 5-6 are useful on their own.
+
+The tab bar has five tabs already: the shortages view merges into the
+catalogue (it sorts by level already; a "missing" filter covers the rest),
+and the freed tab becomes the menu.
+
 ## Later ideas (not scheduled)
 
 - **Offline changes**: ticking items off in a shop with no signal, queued
