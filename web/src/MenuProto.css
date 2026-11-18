@@ -1,0 +1,142 @@
+/* The meal planner prototype (MenuProto.tsx); throwaway. */
+.proto-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.proto-bar button {
+  flex: none;
+  min-height: 1.9rem;
+  color: var(--low);
+}
+
+.agenda-day ul li + li {
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--border);
+}
+.agenda-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+.agenda-status,
+.agenda-who {
+  margin: 0.15rem 0 0 2.3rem !important;
+}
+.agenda-who {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.agenda-who button {
+  min-height: 1.9rem;
+}
+.ok {
+  color: var(--accent);
+  font-weight: 600;
+}
+.low {
+  color: var(--low);
+  font-weight: 600;
+}
+.out {
+  color: var(--out);
+  font-weight: 600;
+}
+.agenda-status.ok,
+.agenda-status.low,
+.agenda-status.out {
+  font-weight: 500;
+}
+
+.suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-color: var(--low);
+  background: var(--low-bg);
+}
+.suggestion button {
+  flex: none;
+}
+.card .suggestion {
+  margin: 0 0 0.5rem;
+}
+
+.preview p + p {
+  margin-top: 0.35rem;
+}
+.preview .actions {
+  margin-top: 0.75rem;
+}
+
+h2 .named .tile {
+  width: 2rem;
+  height: 2rem;
+}
+
+.recipe-note {
+  margin-top: 0.6rem !important;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--border);
+}
+
+.ingredients li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0;
+}
+.ingredients .ing-name {
+  flex: 1;
+  color: var(--text);
+  font-weight: 500;
+}
+.ingredients input:not([type='checkbox']) {
+  width: 6.5rem;
+  min-height: 2.1rem;
+}
+label.ing-optional {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.25rem !important;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+label.ing-optional input {
+  width: auto;
+  min-height: 0;
+}
+
+.trip-tabs .tab-badge {
+  margin-left: 0.15rem;
+}
+.requests li.not-yet {
+  opacity: 0.6;
+}
+.request-info .icon-art,
+.proto-legend .icon-art {
+  width: 0.95rem;
+  height: 0.95rem;
+  vertical-align: -0.15rem;
+}
+.no-restock.reserved {
+  color: var(--accent);
+}
+.order-button.pressed {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.proto-legend {
+  margin: 0.6rem 0 0;
+}

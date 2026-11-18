@@ -13,6 +13,7 @@ export type Route =
   | { page: 'todo'; view: TodoView }
   | { page: 'missing'; view: MissingView }
   | { page: 'log' }
+  | { page: 'proto' }
 
 export const href = {
   home: '#/',
@@ -35,6 +36,7 @@ function parse(hash: string): Route {
   if (hash === href.missing('items')) return { page: 'missing', view: 'items' }
   if (hash === href.missing('places')) return { page: 'missing', view: 'places' }
   if (hash === href.log) return { page: 'log' }
+  if (hash.startsWith('#/proto')) return { page: 'proto' }
   return { page: 'home' }
 }
 

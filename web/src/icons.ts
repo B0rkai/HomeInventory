@@ -121,6 +121,7 @@ export const UI_ICONS = [
   'clipboard-list',
   'history',
   'repeat-off',
+  'chef-hat',
 ]
 
 export type IconKind = 'item' | 'place' | 'chore'

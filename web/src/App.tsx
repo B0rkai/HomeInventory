@@ -6,6 +6,7 @@ import { HouseProvider } from './HouseProvider'
 import { IconArt } from './IconArt'
 import { ItemPage } from './ItemPage'
 import { ItemsPage } from './ItemsPage'
+import { MenuProto } from './MenuProto'
 import { LogPage } from './LogPage'
 import { MissingPage } from './MissingPage'
 import { NicknameForm } from './NicknameForm'
@@ -101,6 +102,7 @@ export default function App() {
   }
 
   const user = state.kind === 'ready' ? state.user : undefined
+  const route = useRoute()
 
   return (
     <div className="app">
@@ -133,7 +135,8 @@ export default function App() {
             <PushSettings />
           </>
         )}
-        {user?.nickname && !editingNickname && (
+        {user?.nickname && !editingNickname && route.page === 'proto' && <MenuProto />}
+        {user?.nickname && !editingNickname && route.page !== 'proto' && (
           <HouseProvider me={user} onError={showError}>
             <Pages />
             <UndoBar />
