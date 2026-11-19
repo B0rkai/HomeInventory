@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  assignRequest,
   cancelRequest,
   claimRequest,
   completeChore,
@@ -401,6 +402,7 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
         const location = (
           await change(updateLocation({ path: { location_id: id }, body }), {
             409: t.errors.duplicateLocation,
+            422: t.errors.tooDeep,
           })
         )?.data
         // Moving renumbers the siblings too, so fetch them all.
@@ -577,6 +579,21 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
               h && { ...h, requests: [...h.requests.filter((r) => r.id !== request.id), request] },
           )
         }
+        return request
+      },
+      /** Gives a request to someone: claimed for them (the admin pages). */
+      async assignRequest(id: number, userId: number) {
+        const request = (
+          await change(assignRequest({ path: { request_id: id }, body: { user_id: userId } }), {
+            409: t.errors.requestChanged,
+          })
+        )?.data
+        if (request) {
+          setHouse(
+            (h) => h && { ...h, requests: h.requests.map((r) => (r.id === id ? request : r)) },
+          )
+        }
+        return request
       },
       /** Records a chore as done now, reported or not. */
       async completeChore(id: number) {
@@ -649,6 +666,8 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
       undo,
       /** Adds an item to a place: sent at once, there is nothing to undo yet. */
       addStock: send.setLevel,
+      /** Makes a chore due now, at once (the admin pages, to give it to someone next). */
+      reportChoreNow: send.reportChore,
       /** Sets a level, undoable for a moment; picking another first replaces it. */
       setLevel(locationId: number, itemId: number, level: Level) {
         const key = stockKey(locationId, itemId)

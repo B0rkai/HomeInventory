@@ -205,20 +205,22 @@ function ItemRow({
         <td className="check-cell">
           <input type="checkbox" aria-label={item.name} checked={selected} onChange={onSelect} />
         </td>
-        <td className="name-cell">
-          <IconTile
-            icon={iconOf(item, 'item')}
-            name={item.name}
-            kind="item"
-            hue={item.category ?? undefined}
-          />
-          <TextCell
-            key={item.name}
-            value={item.name}
-            label={t.admin.name}
-            required
-            onSave={(name) => onSave({ name })}
-          />
+        <td>
+          <div className="name-cell">
+            <IconTile
+              icon={iconOf(item, 'item')}
+              name={item.name}
+              kind="item"
+              hue={item.category ?? undefined}
+            />
+            <TextCell
+              key={item.name}
+              value={item.name}
+              label={t.admin.name}
+              required
+              onSave={(name) => onSave({ name })}
+            />
+          </div>
         </td>
         <td>
           <TextCell
@@ -296,7 +298,7 @@ function ItemRow({
 }
 
 /** A table cell's text, saved when left (Enter too); Escape puts it back. */
-function TextCell({
+export function TextCell({
   value,
   label,
   required = false,

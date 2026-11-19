@@ -96,6 +96,9 @@ class LocationUpdate(BaseModel):
     icon: Icon = None
     # The new index among its siblings; past the end means last.
     position: int | None = Field(default=None, ge=0)
+    # Sent: moves it (and what's inside it) under another location, null to be a floor;
+    # last among its new siblings unless `position` says otherwise.
+    parent_id: int | None = None
 
 
 class ItemOut(BaseModel):
@@ -244,6 +247,8 @@ class ActivityOut(BaseModel):
     location_id: int | None
     # Where it went, for "moved".
     to_location_id: int | None
+    # Who it was given to, for "assigned".
+    assignee_name: str | None
     level: Level | None
 
 
@@ -268,6 +273,26 @@ class RequestKeep(BaseModel):
     # Whether running low puts it on the list again; off, since what's written on the
     # list by hand is mostly bought now and then.
     restock: bool = False
+
+
+class RequestAssign(BaseModel):
+    """Whom to give a request to: claimed for them."""
+
+    user_id: int
+
+
+class PushSubscriptionOut(BaseModel):
+    """A device that gets notifications, for the admin pages."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    user_id: int
+    user_name: str
+    user_agent: str | None
+    created_at: datetime
+    # Unset until the app starts on it again.
+    seen_at: datetime | None
 
 
 class PushKey(BaseModel):

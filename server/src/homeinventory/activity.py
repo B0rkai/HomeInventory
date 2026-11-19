@@ -28,6 +28,7 @@ def record(
     name: str | None = None,
     location_id: int | None = None,
     to_location_id: int | None = None,
+    assignee: User | None = None,
     level: Level | None = None,
 ) -> None:
     """Adds an entry about an item, a chore or something to buy by `name`; the caller
@@ -46,17 +47,21 @@ def record(
             variant=item and item.variant,
             location_id=location_id,
             to_location_id=to_location_id,
+            assignee_id=assignee and assignee.id,
             level=level,
         )
     )
 
 
-def record_request(session: Session, user: User, action: Action, request: Request) -> None:
+def record_request(
+    session: Session, user: User, action: Action, request: Request, assignee: User | None = None
+) -> None:
     """Adds an entry about what was done to a request; the caller commits."""
     record(
         session,
         user,
         action,
+        assignee=assignee,
         item=request.item_id and session.get_one(Item, request.item_id),
         chore=request.chore_id and session.get_one(Chore, request.chore_id),
         name=request.name,
@@ -66,8 +71,13 @@ def record_request(session: Session, user: User, action: Action, request: Reques
 
 @router.get("/activity")
 def list_activity(
-    limit: int = Query(50, ge=1, le=PAGE_MAX), session: Session = Depends(get_session)
+    limit: int = Query(50, ge=1, le=PAGE_MAX),
+    before_id: int | None = None,
+    session: Session = Depends(get_session),
 ) -> list[ActivityOut]:
-    """The latest entries, newest first."""
-    entries = session.scalars(select(Activity).order_by(Activity.id.desc()).limit(limit))
+    """The latest entries, newest first; older than `before_id` for the next page."""
+    query = select(Activity).order_by(Activity.id.desc()).limit(limit)
+    if before_id is not None:
+        query = query.where(Activity.id < before_id)
+    entries = session.scalars(query)
     return [ActivityOut.model_validate(entry) for entry in entries]

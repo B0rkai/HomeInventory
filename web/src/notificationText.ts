@@ -2,7 +2,7 @@ import { t } from './strings'
 
 /** What the server sends for a notification (server/src/homeinventory/notify.py). */
 export type PushMessage = {
-  event: 'reported' | 'claimed' | 'done' | 'fetched' | 'refilled' | 'due' | 'reminder'
+  event: 'reported' | 'claimed' | 'done' | 'fetched' | 'refilled' | 'due' | 'reminder' | 'assigned'
   kind: 'buy' | 'chore'
   name: string
   variant: string | null
@@ -45,5 +45,7 @@ export function notificationText(message: PushMessage): { title: string; body: s
       return { title: t.notify.reminder(actor, name), body: t.notify.reminderBody(place) }
     case 'due':
       return { title: t.notify.due(name), body: place }
+    case 'assigned':
+      return { title: t.notify.assigned(name), body: t.notify.assignedBy(place, actor) }
   }
 }

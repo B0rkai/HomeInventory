@@ -31,9 +31,9 @@ first use in the data directory) and live updates over SSE (`live.py`,
 list with the shopping list, shortages view, item catalogue, activity log
 (`activity.py`), a bottom tab bar; hash routes in `web/src/route.ts`, shared
 data in `web/src/house.ts`, where changes also wait a few seconds to be undone);
-desktop admin pages (`#/admin`, and the LAN port as Admin): the item table and
-moving stock.
-Next: the admin pages' milestone B, then the meal planner (`docs/features.md`). Anything marked *(planned)* describes intended
+desktop admin pages (`#/admin/...`, and the LAN port as Admin): items, places,
+to-dos with assigning, the log, people and their devices; moving stock.
+Next: the meal planner (`docs/features.md`). Anything marked *(planned)* describes intended
 setup, not code that exists yet.
 
 ## Tech stack

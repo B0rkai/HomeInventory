@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CancelRequestData, CancelRequestErrors, CancelRequestResponses, ClaimRequestData, ClaimRequestErrors, ClaimRequestResponses, CompleteChoreData, CompleteChoreErrors, CompleteChoreResponses, CompleteRequestData, CompleteRequestErrors, CompleteRequestResponses, CreateChoreData, CreateChoreErrors, CreateChoreResponses, CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, CreateRequestData, CreateRequestErrors, CreateRequestResponses, DeleteChoreData, DeleteChoreErrors, DeleteChoreResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, GetPushKeyData, GetPushKeyResponses, KeepRequestData, KeepRequestErrors, KeepRequestResponses, ListActivityData, ListActivityErrors, ListActivityResponses, ListChoresData, ListChoresResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListRequestsData, ListRequestsResponses, ListStockData, ListStockResponses, LogInData, LogInErrors, LogInResponses, LogOutData, LogOutResponses, MoveStockData, MoveStockErrors, MoveStockResponses, RemindRequestData, RemindRequestErrors, RemindRequestResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, ReportChoreData, ReportChoreErrors, ReportChoreResponses, RequestStockData, RequestStockErrors, RequestStockResponses, SetStockData, SetStockErrors, SetStockResponses, StreamEventsData, StreamEventsResponses, SubscribeData, SubscribeErrors, SubscribeResponses, UnclaimRequestData, UnclaimRequestErrors, UnclaimRequestResponses, UnsubscribeData, UnsubscribeErrors, UnsubscribeResponses, UpdateChoreData, UpdateChoreErrors, UpdateChoreResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses } from './types.gen';
+import type { AssignRequestData, AssignRequestErrors, AssignRequestResponses, CancelRequestData, CancelRequestErrors, CancelRequestResponses, ClaimRequestData, ClaimRequestErrors, ClaimRequestResponses, CompleteChoreData, CompleteChoreErrors, CompleteChoreResponses, CompleteRequestData, CompleteRequestErrors, CompleteRequestResponses, CreateChoreData, CreateChoreErrors, CreateChoreResponses, CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, CreateRequestData, CreateRequestErrors, CreateRequestResponses, DeleteChoreData, DeleteChoreErrors, DeleteChoreResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, DeleteSubscriptionData, DeleteSubscriptionErrors, DeleteSubscriptionResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, GetPushKeyData, GetPushKeyResponses, KeepRequestData, KeepRequestErrors, KeepRequestResponses, ListActivityData, ListActivityErrors, ListActivityResponses, ListChoresData, ListChoresResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListRequestsData, ListRequestsResponses, ListStockData, ListStockResponses, ListSubscriptionsData, ListSubscriptionsResponses, ListUsersData, ListUsersResponses, LogInData, LogInErrors, LogInResponses, LogOutData, LogOutResponses, MoveStockData, MoveStockErrors, MoveStockResponses, RemindRequestData, RemindRequestErrors, RemindRequestResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, ReportChoreData, ReportChoreErrors, ReportChoreResponses, RequestStockData, RequestStockErrors, RequestStockResponses, SetStockData, SetStockErrors, SetStockResponses, StreamEventsData, StreamEventsResponses, SubscribeData, SubscribeErrors, SubscribeResponses, UnclaimRequestData, UnclaimRequestErrors, UnclaimRequestResponses, UnsubscribeData, UnsubscribeErrors, UnsubscribeResponses, UpdateChoreData, UpdateChoreErrors, UpdateChoreResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -43,6 +43,27 @@ export const updateCurrentUser = <ThrowOnError extends boolean = false>(options:
 });
 
 /**
+ * List Users
+ *
+ * The people (not Admin), for assigning and the admin pages.
+ */
+export const listUsers = <ThrowOnError extends boolean = false>(options?: Options<ListUsersData, ThrowOnError>): RequestResult<ListUsersResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListUsersResponses, unknown, ThrowOnError>({ url: '/api/v1/users', ...options });
+
+/**
+ * Update User
+ *
+ * Sets someone's nickname (admin pages).
+ */
+export const updateUser = <ThrowOnError extends boolean = false>(options: Options<UpdateUserData, ThrowOnError>): RequestResult<UpdateUserResponses, UpdateUserErrors, ThrowOnError> => (options.client ?? client).patch<UpdateUserResponses, UpdateUserErrors, ThrowOnError>({
+    url: '/api/v1/users/{user_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * List Locations
  *
  * Every location, ordered by parent, then position; the client builds the tree.
@@ -74,7 +95,8 @@ export const deleteLocation = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Update Location
  *
- * Renames a location, changes its icon or moves it among its siblings.
+ * Renames a location, changes its icon, moves it among its siblings or under
+ * another location (what's inside it going along).
  */
 export const updateLocation = <ThrowOnError extends boolean = false>(options: Options<UpdateLocationData, ThrowOnError>): RequestResult<UpdateLocationResponses, UpdateLocationErrors, ThrowOnError> => (options.client ?? client).patch<UpdateLocationResponses, UpdateLocationErrors, ThrowOnError>({
     url: '/api/v1/locations/{location_id}',
@@ -264,6 +286,21 @@ export const createRequest = <ThrowOnError extends boolean = false>(options: Opt
 export const claimRequest = <ThrowOnError extends boolean = false>(options: Options<ClaimRequestData, ThrowOnError>): RequestResult<ClaimRequestResponses, ClaimRequestErrors, ThrowOnError> => (options.client ?? client).post<ClaimRequestResponses, ClaimRequestErrors, ThrowOnError>({ url: '/api/v1/requests/{request_id}/claim', ...options });
 
 /**
+ * Assign Request
+ *
+ * Gives a request to someone (the admin pages): claimed for them, whether it was open
+ * or someone's already; they're told. They can hand it back like their own claim.
+ */
+export const assignRequest = <ThrowOnError extends boolean = false>(options: Options<AssignRequestData, ThrowOnError>): RequestResult<AssignRequestResponses, AssignRequestErrors, ThrowOnError> => (options.client ?? client).post<AssignRequestResponses, AssignRequestErrors, ThrowOnError>({
+    url: '/api/v1/requests/{request_id}/assign',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Unclaim Request
  *
  * Takes back one's own claim, opening the request again.
@@ -332,6 +369,13 @@ export const getPushKey = <ThrowOnError extends boolean = false>(options?: Optio
 export const unsubscribe = <ThrowOnError extends boolean = false>(options: Options<UnsubscribeData, ThrowOnError>): RequestResult<UnsubscribeResponses, UnsubscribeErrors, ThrowOnError> => (options.client ?? client).delete<UnsubscribeResponses, UnsubscribeErrors, ThrowOnError>({ url: '/api/v1/push/subscriptions', ...options });
 
 /**
+ * List Subscriptions
+ *
+ * Every device that gets notifications, by user, last seen first (admin pages).
+ */
+export const listSubscriptions = <ThrowOnError extends boolean = false>(options?: Options<ListSubscriptionsData, ThrowOnError>): RequestResult<ListSubscriptionsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListSubscriptionsResponses, unknown, ThrowOnError>({ url: '/api/v1/push/subscriptions', ...options });
+
+/**
  * Subscribe
  *
  * Sends this user's notifications to a device; sending one again refreshes it.
@@ -346,6 +390,13 @@ export const subscribe = <ThrowOnError extends boolean = false>(options: Options
 });
 
 /**
+ * Delete Subscription
+ *
+ * Stops notifications to a device, say an old phone (admin pages).
+ */
+export const deleteSubscription = <ThrowOnError extends boolean = false>(options: Options<DeleteSubscriptionData, ThrowOnError>): RequestResult<DeleteSubscriptionResponses, DeleteSubscriptionErrors, ThrowOnError> => (options.client ?? client).delete<DeleteSubscriptionResponses, DeleteSubscriptionErrors, ThrowOnError>({ url: '/api/v1/push/subscriptions/{subscription_id}', ...options });
+
+/**
  * Stream Events
  *
  * Server-Sent Events: `{"by": <user id or null>}` whenever the house changes.
@@ -355,7 +406,7 @@ export const streamEvents = <ThrowOnError extends boolean = false>(options?: Opt
 /**
  * List Activity
  *
- * The latest entries, newest first.
+ * The latest entries, newest first; older than `before_id` for the next page.
  */
 export const listActivity = <ThrowOnError extends boolean = false>(options?: Options<ListActivityData, ThrowOnError>): RequestResult<ListActivityResponses, ListActivityErrors, ThrowOnError> => (options?.client ?? client).get<ListActivityResponses, ListActivityErrors, ThrowOnError>({ url: '/api/v1/activity', ...options });
 

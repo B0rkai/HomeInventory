@@ -9,7 +9,7 @@ export type ClientOptions = {
  *
  * What someone did, as the activity log records it.
  */
-export type Action = 'level' | 'removed' | 'listed' | 'reported' | 'claimed' | 'unclaimed' | 'done' | 'fetched' | 'cancelled' | 'reminded' | 'moved';
+export type Action = 'level' | 'removed' | 'listed' | 'reported' | 'claimed' | 'unclaimed' | 'done' | 'fetched' | 'cancelled' | 'reminded' | 'moved' | 'assigned';
 
 /**
  * ActivityOut
@@ -53,6 +53,10 @@ export type ActivityOut = {
      * To Location Id
      */
     to_location_id: number | null;
+    /**
+     * Assignee Name
+     */
+    assignee_name: string | null;
     level: Level | null;
 };
 
@@ -329,6 +333,10 @@ export type LocationUpdate = {
      * Position
      */
     position?: number | null;
+    /**
+     * Parent Id
+     */
+    parent_id?: number | null;
 };
 
 /**
@@ -366,6 +374,50 @@ export type PushSubscriptionIn = {
      */
     endpoint: string;
     keys: PushKeys;
+};
+
+/**
+ * PushSubscriptionOut
+ *
+ * A device that gets notifications, for the admin pages.
+ */
+export type PushSubscriptionOut = {
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * User Id
+     */
+    user_id: number;
+    /**
+     * User Name
+     */
+    user_name: string;
+    /**
+     * User Agent
+     */
+    user_agent: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Seen At
+     */
+    seen_at: string | null;
+};
+
+/**
+ * RequestAssign
+ *
+ * Whom to give a request to: claimed for them.
+ */
+export type RequestAssign = {
+    /**
+     * User Id
+     */
+    user_id: number;
 };
 
 /**
@@ -659,6 +711,54 @@ export type UpdateCurrentUserResponses = {
 };
 
 export type UpdateCurrentUserResponse = UpdateCurrentUserResponses[keyof UpdateCurrentUserResponses];
+
+export type ListUsersData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/users';
+};
+
+export type ListUsersResponses = {
+    /**
+     * Response List Users
+     *
+     * Successful Response
+     */
+    200: Array<UserOut>;
+};
+
+export type ListUsersResponse = ListUsersResponses[keyof ListUsersResponses];
+
+export type UpdateUserData = {
+    body: UserUpdate;
+    path: {
+        /**
+         * User Id
+         */
+        user_id: number;
+    };
+    query?: never;
+    url: '/api/v1/users/{user_id}';
+};
+
+export type UpdateUserErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateUserError = UpdateUserErrors[keyof UpdateUserErrors];
+
+export type UpdateUserResponses = {
+    /**
+     * Successful Response
+     */
+    200: UserOut;
+};
+
+export type UpdateUserResponse = UpdateUserResponses[keyof UpdateUserResponses];
 
 export type ListLocationsData = {
     body?: never;
@@ -1249,6 +1349,36 @@ export type ClaimRequestResponses = {
 
 export type ClaimRequestResponse = ClaimRequestResponses[keyof ClaimRequestResponses];
 
+export type AssignRequestData = {
+    body: RequestAssign;
+    path: {
+        /**
+         * Request Id
+         */
+        request_id: number;
+    };
+    query?: never;
+    url: '/api/v1/requests/{request_id}/assign';
+};
+
+export type AssignRequestErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type AssignRequestError = AssignRequestErrors[keyof AssignRequestErrors];
+
+export type AssignRequestResponses = {
+    /**
+     * Successful Response
+     */
+    200: RequestOut;
+};
+
+export type AssignRequestResponse = AssignRequestResponses[keyof AssignRequestResponses];
+
 export type UnclaimRequestData = {
     body?: never;
     path: {
@@ -1448,6 +1578,24 @@ export type UnsubscribeResponses = {
 
 export type UnsubscribeResponse = UnsubscribeResponses[keyof UnsubscribeResponses];
 
+export type ListSubscriptionsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/push/subscriptions';
+};
+
+export type ListSubscriptionsResponses = {
+    /**
+     * Response List Subscriptions
+     *
+     * Successful Response
+     */
+    200: Array<PushSubscriptionOut>;
+};
+
+export type ListSubscriptionsResponse = ListSubscriptionsResponses[keyof ListSubscriptionsResponses];
+
 export type SubscribeData = {
     body: PushSubscriptionIn;
     path?: never;
@@ -1473,6 +1621,36 @@ export type SubscribeResponses = {
 
 export type SubscribeResponse = SubscribeResponses[keyof SubscribeResponses];
 
+export type DeleteSubscriptionData = {
+    body?: never;
+    path: {
+        /**
+         * Subscription Id
+         */
+        subscription_id: number;
+    };
+    query?: never;
+    url: '/api/v1/push/subscriptions/{subscription_id}';
+};
+
+export type DeleteSubscriptionErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteSubscriptionError = DeleteSubscriptionErrors[keyof DeleteSubscriptionErrors];
+
+export type DeleteSubscriptionResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteSubscriptionResponse = DeleteSubscriptionResponses[keyof DeleteSubscriptionResponses];
+
 export type StreamEventsData = {
     body?: never;
     path?: never;
@@ -1495,6 +1673,10 @@ export type ListActivityData = {
          * Limit
          */
         limit?: number;
+        /**
+         * Before Id
+         */
+        before_id?: number | null;
     };
     url: '/api/v1/activity';
 };

@@ -1371,3 +1371,45 @@ a.item-row {
 .move-form {
   margin-top: 0.6rem;
 }
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+.admin-tabs a {
+  padding: 0.5rem 0.9rem;
+  border-bottom: 3px solid transparent;
+  color: var(--muted);
+  font-weight: 600;
+  text-decoration: none;
+}
+.admin-tabs a[aria-current='page'] {
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+}
+.admin-section {
+  margin-top: 1.2rem;
+}
+.order-cell {
+  white-space: nowrap;
+}
+.order-cell button:disabled {
+  opacity: 0.25;
+}
+.admin-table tr.floor-row td {
+  background: var(--bg);
+  font-weight: 600;
+}
+.link-button {
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 500;
+  text-decoration: underline dotted;
+}
+.edit-cell button + button {
+  margin-left: 0.25rem;
+}

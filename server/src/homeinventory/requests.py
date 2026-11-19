@@ -50,6 +50,7 @@ from homeinventory.schemas import (
     ChoreCreate,
     ChoreOut,
     ChoreUpdate,
+    RequestAssign,
     RequestCreate,
     RequestDone,
     RequestKeep,
@@ -534,6 +535,7 @@ def _transition(
     request_id: int,
     *conditions,
     logged: tuple[User, Action] | None = None,
+    assignee: User | None = None,
     **values,
 ) -> Request:
     """Changes a request if it's still in the expected state; 409 if someone got there first.
@@ -548,7 +550,7 @@ def _transition(
         select(Request).where(Request.id == request_id).execution_options(populate_existing=True)
     ).one()
     if logged:
-        record_request(session, *logged, request)
+        record_request(session, *logged, request, assignee)
     session.commit()
     return request
 
@@ -574,6 +576,41 @@ def claim_request(
         reminded_at=None,
     )
     notifier.send(session, user.id, message_for(session, request, "claimed", user.display_name))
+    return RequestOut.model_validate(request)
+
+
+@router.post("/requests/{request_id}/assign")
+def assign_request(
+    request_id: int,
+    assign: RequestAssign,
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+    notifier: Notifier = Depends(get_notifier),
+) -> RequestOut:
+    """Gives a request to someone (the admin pages): claimed for them, whether it was open
+    or someone's already; they're told. They can hand it back like their own claim."""
+    assignee = session.get(User, assign.user_id)
+    if assignee is None or assignee.admin:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "No such person")
+    request = _transition(
+        session,
+        request_id,
+        Request.status.in_(ACTIVE),
+        logged=(user, Action.ASSIGNED),
+        assignee=assignee,
+        status=RequestStatus.CLAIMED,
+        claimed_by_id=assignee.id,
+        claimed_at=utcnow(),
+        reminded_by_id=None,
+        reminded_at=None,
+    )
+    if assignee.id != user.id:
+        notifier.send(
+            session,
+            user.id,
+            message_for(session, request, "assigned", user.display_name),
+            to_user_id=assignee.id,
+        )
     return RequestOut.model_validate(request)
 
 

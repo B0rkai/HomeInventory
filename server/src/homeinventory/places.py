@@ -109,8 +109,12 @@ def create_location(new: LocationCreate, session: Session = Depends(get_session)
 def update_location(
     location_id: int, update: LocationUpdate, session: Session = Depends(get_session)
 ) -> LocationOut:
-    """Renames a location, changes its icon or moves it among its siblings."""
+    """Renames a location, changes its icon, moves it among its siblings or under
+    another location (what's inside it going along)."""
     location = get_or_404(session, Location, location_id)
+    moving = "parent_id" in update.model_fields_set and update.parent_id != location.parent_id
+    if moving:
+        _move_location(session, location, update.parent_id, update.name or location.name)
     siblings = _siblings(session, location.parent_id)
     if update.name is not None:
         _check_location_name(siblings, update.name, own_id=location.id)
@@ -124,6 +128,39 @@ def update_location(
             sibling.position = position
     session.commit()
     return LocationOut.model_validate(location)
+
+
+def _height(session: Session, location: Location) -> int:
+    """How many levels deep it and what's inside it go: 1 with nothing inside."""
+    children = _siblings(session, location.id)
+    return 1 + max((_height(session, child) for child in children), default=0)
+
+
+def _move_location(session: Session, location: Location, parent_id: int | None, name: str) -> None:
+    """Puts a location last under another one (or among the floors), its siblings on both
+    sides renumbered."""
+    depth = 0
+    if parent_id is not None:
+        parent = get_or_404(session, Location, parent_id)
+        ancestor: Location | None = parent
+        while ancestor is not None:
+            if ancestor.id == location.id:
+                raise HTTPException(
+                    status.HTTP_422_UNPROCESSABLE_CONTENT, "A location can't go inside itself"
+                )
+            ancestor = ancestor.parent_id and session.get_one(Location, ancestor.parent_id)
+        depth = _depth(session, parent)
+    if depth + _height(session, location) > LOCATION_MAX_DEPTH:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT, "Locations nest at most three deep"
+        )
+    joined = _siblings(session, parent_id)
+    _check_location_name(joined, name, own_id=location.id)
+    left = [s for s in _siblings(session, location.parent_id) if s.id != location.id]
+    for position, sibling in enumerate(left):
+        sibling.position = position
+    location.parent_id = parent_id
+    location.position = len(joined)
 
 
 @router.delete("/locations/{location_id}", **NO_CONTENT)

@@ -78,6 +78,79 @@
         }
       }
     },
+    "/api/v1/users": {
+      "get": {
+        "summary": "List Users",
+        "description": "The people (not Admin), for assigning and the admin pages.",
+        "operationId": "list_users",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UserOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Users"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/{user_id}": {
+      "patch": {
+        "summary": "Update User",
+        "description": "Sets someone's nickname (admin pages).",
+        "operationId": "update_user",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/locations": {
       "get": {
         "summary": "List Locations",
@@ -141,7 +214,7 @@
     "/api/v1/locations/{location_id}": {
       "patch": {
         "summary": "Update Location",
-        "description": "Renames a location, changes its icon or moves it among its siblings.",
+        "description": "Renames a location, changes its icon, moves it among its siblings or under\nanother location (what's inside it going along).",
         "operationId": "update_location",
         "parameters": [
           {
@@ -891,6 +964,56 @@
         }
       }
     },
+    "/api/v1/requests/{request_id}/assign": {
+      "post": {
+        "summary": "Assign Request",
+        "description": "Gives a request to someone (the admin pages): claimed for them, whether it was open\nor someone's already; they're told. They can hand it back like their own claim.",
+        "operationId": "assign_request",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestAssign"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/requests/{request_id}/unclaim": {
       "post": {
         "summary": "Unclaim Request",
@@ -1198,6 +1321,60 @@
             }
           }
         }
+      },
+      "get": {
+        "summary": "List Subscriptions",
+        "description": "Every device that gets notifications, by user, last seen first (admin pages).",
+        "operationId": "list_subscriptions",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PushSubscriptionOut"
+                  },
+                  "title": "Response List Subscriptions"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/push/subscriptions/{subscription_id}": {
+      "delete": {
+        "summary": "Delete Subscription",
+        "description": "Stops notifications to a device, say an old phone (admin pages).",
+        "operationId": "delete_subscription",
+        "parameters": [
+          {
+            "name": "subscription_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Subscription Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/events": {
@@ -1215,7 +1392,7 @@
     "/api/v1/activity": {
       "get": {
         "summary": "List Activity",
-        "description": "The latest entries, newest first.",
+        "description": "The latest entries, newest first; older than `before_id` for the next page.",
         "operationId": "list_activity",
         "parameters": [
           {
@@ -1228,6 +1405,22 @@
               "minimum": 1,
               "default": 50,
               "title": "Limit"
+            }
+          },
+          {
+            "name": "before_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before Id"
             }
           }
         ],
@@ -1326,7 +1519,8 @@
           "fetched",
           "cancelled",
           "reminded",
-          "moved"
+          "moved",
+          "assigned"
         ],
         "title": "Action",
         "description": "What someone did, as the activity log records it."
@@ -1418,6 +1612,17 @@
             ],
             "title": "To Location Id"
           },
+          "assignee_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Name"
+          },
           "level": {
             "anyOf": [
               {
@@ -1442,6 +1647,7 @@
           "variant",
           "location_id",
           "to_location_id",
+          "assignee_name",
           "level"
         ],
         "title": "ActivityOut"
@@ -2034,6 +2240,17 @@
               }
             ],
             "title": "Position"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
           }
         },
         "type": "object",
@@ -2093,6 +2310,75 @@
         ],
         "title": "PushSubscriptionIn",
         "description": "A browser's PushSubscription, as its toJSON() gives it."
+      },
+      "PushSubscriptionOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "user_name": {
+            "type": "string",
+            "title": "User Name"
+          },
+          "user_agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Agent"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "seen_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seen At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "user_name",
+          "user_agent",
+          "created_at",
+          "seen_at"
+        ],
+        "title": "PushSubscriptionOut",
+        "description": "A device that gets notifications, for the admin pages."
+      },
+      "RequestAssign": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "RequestAssign",
+        "description": "Whom to give a request to: claimed for them."
       },
       "RequestCreate": {
         "properties": {

@@ -29,7 +29,7 @@ TTL_SECONDS = 24 * 60 * 60
 # "fetched": a buy request done while another place had lots of it, so it was brought
 # from there rather than bought.
 # "reminder": the other asks when a claimed request will be done.
-Event = Literal["reported", "claimed", "done", "fetched", "refilled", "due", "reminder"]
+Event = Literal["reported", "claimed", "done", "fetched", "refilled", "due", "reminder", "assigned"]
 
 
 @dataclass(frozen=True)

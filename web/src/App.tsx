@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getCurrentUser, logOut, type UserOut } from './api'
-import { AdminItems } from './AdminItems'
+import { AdminPages } from './AdminPages'
 import { AdminLogin } from './AdminLogin'
 import { Home } from './Home'
 import { useHouse } from './house'
@@ -132,7 +132,7 @@ export default function App() {
     <div className={adminView ? 'app admin' : 'app'}>
       <header className="app-header">
         <h1>
-          <a href={adminView ? href.admin : href.home}>
+          <a href={adminView ? href.admin() : href.home}>
             {t.appName}
             {adminView && <span className="muted"> · {t.admin.title}</span>}
           </a>
@@ -182,7 +182,7 @@ export default function App() {
         )}
         {user?.nickname && !editingNickname && adminView && (
           <HouseProvider me={user} onError={showError}>
-            <AdminItems />
+            <AdminPages view={route.page === 'admin' ? route.view : 'items'} />
             <UndoBar />
           </HouseProvider>
         )}

@@ -5,6 +5,7 @@ import { LevelName } from './LevelPicker'
 import { Named } from './Named'
 import { href } from './route'
 import { t } from './strings'
+import { verb } from './logText'
 
 const PAGE = 50
 // The server's limit.
@@ -50,17 +51,6 @@ function dayName(at: Date, now = new Date()): string {
   if (days === 0) return t.time.today
   if (days === 1) return t.time.yesterday
   return longDate.format(at)
-}
-
-function verb(entry: ActivityOut): string {
-  switch (entry.action) {
-    case 'done':
-      return entry.kind === 'buy' ? t.log.bought : t.log.choreDone
-    case 'level':
-      return ''
-    default:
-      return t.log[entry.action]
-  }
 }
 
 /** Who did what, newest first; refreshed whenever the house changes. */

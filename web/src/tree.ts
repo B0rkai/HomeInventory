@@ -26,7 +26,7 @@ export function placePath(locations: LocationOut[], id: number): string {
     .join(' › ')
 }
 
-function subtreeIds(locations: LocationOut[], id: number): Set<number> {
+export function subtreeIds(locations: LocationOut[], id: number): Set<number> {
   const ids = new Set([id])
   // Parents come before children only by accident, so repeat until nothing is added.
   for (let grew = true; grew;) {

@@ -327,6 +327,16 @@ class PushSubscription(Base):
     p256dh: Mapped[str] = mapped_column(String(200))
     auth: Mapped[str] = mapped_column(String(100))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    # The browser's User-Agent, to tell devices apart in the admin pages.
+    user_agent: Mapped[str | None] = mapped_column(String(300))
+    # The app sends it again on every start: a device not seen for long is likely gone.
+    seen_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+
+    user: Mapped[User] = relationship(lazy="joined")
+
+    @property
+    def user_name(self) -> str:
+        return self.user.display_name
 
 
 class Action(StrEnum):
@@ -351,6 +361,8 @@ class Action(StrEnum):
     REMINDED = "reminded"
     # Moved an item from one place to another, its level along.
     MOVED = "moved"
+    # Claimed a request for someone else (the admin pages).
+    ASSIGNED = "assigned"
 
 
 class Activity(Base):
@@ -376,11 +388,18 @@ class Activity(Base):
     to_location_id: Mapped[int | None] = mapped_column(
         ForeignKey("locations.id", ondelete="SET NULL")
     )
+    # Who it was given to, for ASSIGNED.
+    assignee_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     # The level set, for LEVEL.
     level: Mapped[Level | None] = mapped_column(str_enum(Level, "level"))
 
-    user: Mapped[User | None] = relationship(lazy="joined")
+    user: Mapped[User | None] = relationship(lazy="joined", foreign_keys=[user_id])
+    assignee: Mapped[User | None] = relationship(lazy="joined", foreign_keys=[assignee_id])
 
     @property
     def user_name(self) -> str | None:
         return self.user and self.user.display_name
+
+    @property
+    def assignee_name(self) -> str | None:
+        return self.assignee and self.assignee.display_name

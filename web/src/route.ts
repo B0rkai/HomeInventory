@@ -4,6 +4,9 @@ import { useSyncExternalStore } from 'react'
 export type MissingView = 'items' | 'places'
 // The pool of open requests, or the ones I've claimed.
 export type TodoView = 'open' | 'mine'
+// The admin pages' tabs.
+export type AdminView = 'items' | 'places' | 'todo' | 'log' | 'people'
+const ADMIN_VIEWS: AdminView[] = ['items', 'places', 'todo', 'log', 'people']
 
 export type Route =
   | { page: 'home' }
@@ -13,7 +16,7 @@ export type Route =
   | { page: 'todo'; view: TodoView }
   | { page: 'missing'; view: MissingView }
   | { page: 'log' }
-  | { page: 'admin' }
+  | { page: 'admin'; view: AdminView }
 
 export const href = {
   home: '#/',
@@ -22,7 +25,7 @@ export const href = {
   item: (id: number) => `#/items/${id}`,
   todo: (view: TodoView = 'open') => (view === 'open' ? '#/todo' : '#/todo/mine'),
   log: '#/log',
-  admin: '#/admin',
+  admin: (view: AdminView = 'items') => (view === 'items' ? '#/admin' : `#/admin/${view}`),
   missing: (view: MissingView = 'items') => (view === 'items' ? '#/missing' : '#/missing/places'),
 }
 
@@ -37,7 +40,11 @@ function parse(hash: string): Route {
   if (hash === href.missing('items')) return { page: 'missing', view: 'items' }
   if (hash === href.missing('places')) return { page: 'missing', view: 'places' }
   if (hash === href.log) return { page: 'log' }
-  if (hash === href.admin) return { page: 'admin' }
+  if (hash === href.admin()) return { page: 'admin', view: 'items' }
+  const admin = /^#\/admin\/(\w+)$/.exec(hash)
+  if (admin && ADMIN_VIEWS.includes(admin[1] as AdminView)) {
+    return { page: 'admin', view: admin[1] as AdminView }
+  }
   return { page: 'home' }
 }
 
