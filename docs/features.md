@@ -219,7 +219,7 @@ change is a single conditional update (see `CLAUDE.md`); losing a race is
 3. **Requests**: report, claim, done, cancel; the shopping list.
 4. **Notifications and live updates**: web push, the service worker, SSE.
 
-## Admin pages *(A and B done 2026-11-19; C planned)*
+## Admin pages *(done 2026-11-19)*
 
 Desktop pages for what's awkward on a phone: seeing everything at once,
 setting things up, typing in recipes, moving items between places. Built
@@ -271,7 +271,7 @@ Pages (wide tables, mouse and keyboard; not in the phone tab bar):
 
 No export for now.
 
-What the phone does that A and B left out, for milestone C. Admin doesn't
+What the phone does that A and B left out, added in milestone C. Admin doesn't
 do the work, it hands it out: so "done" or "bought" from here means a user
 did it (whoever had it claimed, or one picked). Nothing is left out for
 that, but it comes last:
@@ -287,11 +287,12 @@ that, but it comes last:
    out-of-stock item's request ("nem pótoljuk").
 5. **Undo**: the same few seconds to undo as on the phone.
 6. **Done on a user's behalf**: mark a chore done or a line bought, in the
-   name of the user who did it.
+   name of the user who did it (`by` on the done and keep calls; never Admin).
+   The log and the notifications name that person.
 
 Milestones: (A, done) the admin port, login and user, the items table, moving
 stock (on the phone too: "Áthelyezés" under the item's places); (B, done) places, chores and assigning, users and
-devices, the log; (C) the phone's actions above, so nothing needs the phone;
+devices, the log; (C, done) the phone's actions above, so nothing needs the phone;
 then the meal planner, its recipe editor here.
 
 ## Planned: meal planner *(planned, agreed 2026-11-18)*

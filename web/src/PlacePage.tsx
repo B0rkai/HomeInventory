@@ -14,7 +14,7 @@ import { AddItemForm } from './AddItemForm'
 import { ChoreList } from './ChoreList'
 import { claimText } from './claims'
 import { MAX_DEPTH, childrenOf, pathTo, restockedStock, shortageIn } from './tree'
-import { byItem, findItem, firstVariant, fullName, groupByName, hasVariants } from './variants'
+import { byItem, firstVariant, fullName, groupByName, hasVariants } from './variants'
 
 /** One place: the places inside it, and the level of everything kept here. */
 export function PlacePage({ id }: { id: number }) {
@@ -60,20 +60,9 @@ export function PlacePage({ id }: { id: number }) {
     ...COMMON_ITEMS.filter((name) => !known.has(name.toLocaleLowerCase('hu'))),
   ]
 
-  /** Keeps an item here, from the catalogue or new; a new variant takes its group's look. */
+  /** Keeps an item here, from the catalogue or new. */
   async function addItem(name: string, variant: string | null) {
-    const sibling = items.find(
-      (i) => i.name.toLocaleLowerCase('hu') === name.toLocaleLowerCase('hu'),
-    )
-    const item =
-      findItem(items, name, variant) ??
-      (await actions.addItem({
-        name: sibling?.name ?? name,
-        variant,
-        category: sibling?.category,
-        icon: sibling?.icon,
-      }))
-    return Boolean(item && (await actions.addStock(id, item.id, 'plenty')))
+    return Boolean(await actions.keepItem(name, variant, id))
   }
 
   const row = (r: (typeof rows)[number], title: ReactNode) => (

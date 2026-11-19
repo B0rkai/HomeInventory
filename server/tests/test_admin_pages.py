@@ -180,6 +180,57 @@ def test_assign_only_what_is_still_to_do(api, people, sugar_out) -> None:
     assert api("POST", f"/requests/{sugar_out}/assign", body).status_code == 409
 
 
+# Done for someone: Admin hands work out, so what's done was done by a person
+
+
+def test_mark_bought_for_someone(api, lan, people, house, sugar_out, pushes) -> None:
+    phones(api)
+    pushes.clear()
+    body = {"by": people["bela"]}
+    response = lan.post(f"/api/v1/requests/{sugar_out}/done", json=body)
+    assert response.status_code == 200, response.text
+    [stock] = api("GET", "/stock").json()
+    assert (stock["level"], stock["updated_by_name"]) == ("plenty", "Bela Kovacs")
+    [entry, *_] = api("GET", "/activity").json()
+    assert (entry["action"], entry["user_name"]) == ("done", "Bela Kovacs")
+    # Bela did it, so only Anna hears; Admin hears nothing anyway.
+    assert [(endpoint, message["actor"]) for endpoint, message in pushes] == [
+        ("https://push.example.com/anna", "Bela Kovacs")
+    ]
+
+
+def test_mark_a_chore_done_for_someone(api, lan, people, house) -> None:
+    chore = api("POST", "/chores", {"location_id": house["wc"], "name": "Takarítás"}).json()
+    response = lan.post(f"/api/v1/chores/{chore['id']}/done", json={"by": people["anna"]})
+    assert response.status_code == 200, response.text
+    assert response.json()["last_done_by_name"] == "Anna Kovacs"
+
+
+def test_keep_a_line_bought_by_someone(api, lan, people, house) -> None:
+    line = api("POST", "/requests", {"name": "Elem"}).json()
+    body = {"location_id": house["pantry"], "name": "Elem", "by": people["bela"]}
+    assert lan.post(f"/api/v1/requests/{line['id']}/keep", json=body).status_code == 200
+    [entry, *_] = api("GET", "/activity").json()
+    assert entry["user_name"] == "Bela Kovacs"
+
+
+def test_marked_only_for_a_person(api, lan, house, sugar_out) -> None:
+    admin_id = lan.get("/api/v1/users/me").json()["id"]
+    chore = api("POST", "/chores", {"location_id": house["wc"], "name": "Takarítás"}).json()
+    for user_id in (admin_id, 999):
+        body = {"by": user_id}
+        assert lan.post(f"/api/v1/requests/{sugar_out}/done", json=body).status_code == 422
+        assert lan.post(f"/api/v1/chores/{chore['id']}/done", json=body).status_code == 422
+    # Nothing was marked.
+    assert api("GET", "/requests").json()[0]["status"] == "open"
+
+
+def test_done_without_a_body_is_still_ones_own(api, house, sugar_out) -> None:
+    api("POST", f"/requests/{sugar_out}/done")
+    [stock] = api("GET", "/stock").json()
+    assert stock["updated_by_name"] == "Anna Kovacs"
+
+
 # People and devices
 
 

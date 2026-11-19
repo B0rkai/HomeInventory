@@ -1,14 +1,16 @@
 import { type KeyboardEvent, useState } from 'react'
 import type { Category, ItemOut, StockOut } from './api'
+import { AdminAddItem } from './AdminAddItem'
 import { CATEGORIES, categoryName, categoryOf, iconCategory } from './categories'
+import { claimText } from './claims'
 import { useHouse } from './house'
 import { iconOf } from './iconLookup'
 import { ItemForm } from './ItemForm'
-import { LevelName } from './LevelPicker'
+import { LevelName, LevelPicker } from './LevelPicker'
 import { IconTile } from './Named'
 import { t } from './strings'
 import { bestLevel, placePath, treeOrder } from './tree'
-import { byItem } from './variants'
+import { byItem, fullName } from './variants'
 
 type SortKey = 'name' | 'group' | 'level'
 const FULLNESS = { lots: 3, plenty: 2, low: 1, out: 0 }
@@ -89,6 +91,7 @@ export function AdminItems() {
 
   return (
     <>
+      <AdminAddItem />
       <div className="admin-filters">
         <input
           className="search"
@@ -290,10 +293,87 @@ function ItemRow({
           <td />
           <td colSpan={7}>
             <ItemForm item={item} onDone={onEdit} onDeleted={onEdit} />
+            <StockEditor item={item} rows={rows} />
           </td>
         </tr>
       )}
     </>
+  )
+}
+
+/** Where an item is kept: its level at each place, listed by hand, dropped from one, kept
+ * at another too; as on the phone's place pages. */
+function StockEditor({ item, rows }: { item: ItemOut; rows: StockOut[] }) {
+  const { me, house, actions } = useHouse()
+  if (!house) return null
+  const { locations, requests } = house
+  const kept = new Set(rows.map((row) => row.location_id))
+  return (
+    <div className="stock-editor">
+      <h4>{t.admin.stock}</h4>
+      {rows.length > 0 && (
+        <table className="admin-table">
+          <tbody>
+            {rows.map((row) => {
+              const request = requests.find(
+                (r) => r.item_id === item.id && r.location_id === row.location_id,
+              )
+              const note = claimText(request, me) ?? (request && t.place.listed)
+              return (
+                <tr key={row.location_id}>
+                  <td>{placePath(locations, row.location_id)}</td>
+                  <td>
+                    <LevelPicker
+                      level={row.level}
+                      label={fullName(item)}
+                      onChange={(level) => actions.setLevel(row.location_id, item.id, level)}
+                    />
+                  </td>
+                  <td className="small">
+                    {note ? (
+                      <span className="muted">{note}</span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="secondary small-button"
+                        onClick={() => actions.requestStock(row.location_id, item.id)}
+                      >
+                        + {t.place.toList}
+                      </button>
+                    )}
+                  </td>
+                  <td className="edit-cell">
+                    <button
+                      type="button"
+                      className="danger small-button"
+                      onClick={() => actions.removeStock(row.location_id, item.id)}
+                    >
+                      {t.admin.removeStock}
+                    </button>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      )}
+      <select
+        aria-label={t.admin.keepAlsoAt}
+        value=""
+        onChange={(event) => void actions.addStock(Number(event.target.value), item.id, 'plenty')}
+      >
+        <option value="" disabled>
+          {t.admin.keepAlsoAt}
+        </option>
+        {treeOrder(locations)
+          .filter((location) => !kept.has(location.id))
+          .map((location) => (
+            <option key={location.id} value={location.id}>
+              {placePath(locations, location.id)}
+            </option>
+          ))}
+      </select>
+    </div>
   )
 }
 

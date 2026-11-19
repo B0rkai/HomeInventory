@@ -100,6 +100,16 @@ export type ChoreCreate = {
 };
 
 /**
+ * ChoreDone
+ */
+export type ChoreDone = {
+    /**
+     * By
+     */
+    by?: number | null;
+};
+
+/**
  * ChoreOut
  */
 export type ChoreOut = {
@@ -440,6 +450,10 @@ export type RequestDone = {
      * Item Id
      */
     item_id?: number | null;
+    /**
+     * By
+     */
+    by?: number | null;
 };
 
 /**
@@ -465,6 +479,10 @@ export type RequestKeep = {
      * Restock
      */
     restock?: boolean;
+    /**
+     * By
+     */
+    by?: number | null;
 };
 
 /**
@@ -1247,7 +1265,10 @@ export type ReportChoreResponses = {
 export type ReportChoreResponse = ReportChoreResponses[keyof ReportChoreResponses];
 
 export type CompleteChoreData = {
-    body?: never;
+    /**
+     * Done
+     */
+    body?: ChoreDone | null;
     path: {
         /**
          * Chore Id

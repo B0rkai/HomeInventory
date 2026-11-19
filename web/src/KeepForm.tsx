@@ -1,5 +1,5 @@
 import { type FormEvent, useId, useState } from 'react'
-import type { RequestOut } from './api'
+import type { RequestOut, UserOut } from './api'
 import { useHouse } from './house'
 import { t } from './strings'
 import { placePath, treeOrder } from './tree'
@@ -8,8 +8,17 @@ import { parseFullName } from './variants'
 /**
  * Takes something written on the shopping list into the inventory once it's bought: the
  * item (an existing one of the same name and variant, or a new one) at plenty in a place.
+ * `people`: on the admin pages, whom to mark it bought by.
  */
-export function KeepForm({ request, onClose }: { request: RequestOut; onClose: () => void }) {
+export function KeepForm({
+  request,
+  people,
+  onClose,
+}: {
+  request: RequestOut
+  people?: UserOut[]
+  onClose: () => void
+}) {
   const id = useId()
   const { house, actions } = useHouse()
   // "Konzerv · bab" written on the list reads as a name and a variant.
@@ -18,6 +27,7 @@ export function KeepForm({ request, onClose }: { request: RequestOut; onClose: (
   const [variant, setVariant] = useState(written.variant ?? '')
   const [place, setPlace] = useState('')
   const [restock, setRestock] = useState(false)
+  const [by, setBy] = useState(request.claimed_by_id ? String(request.claimed_by_id) : '')
   const [saving, setSaving] = useState(false)
   if (!house) return null
 
@@ -29,6 +39,7 @@ export function KeepForm({ request, onClose }: { request: RequestOut; onClose: (
       name: name.trim(),
       variant: variant.trim() || null,
       restock,
+      by: people ? Number(by) : undefined,
     })
     setSaving(false)
     if (saved) onClose()
@@ -68,6 +79,21 @@ export function KeepForm({ request, onClose }: { request: RequestOut; onClose: (
           ))}
         </select>
       </label>
+      {people && (
+        <label>
+          {t.admin.keepBy}
+          <select value={by} onChange={(e) => setBy(e.target.value)} required>
+            <option value="" disabled>
+              {t.admin.pickPerson}
+            </option>
+            {people.map((person) => (
+              <option key={person.id} value={person.id}>
+                {person.display_name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label className="check">
         <input type="checkbox" checked={restock} onChange={(e) => setRestock(e.target.checked)} />
         <span>
@@ -79,7 +105,7 @@ export function KeepForm({ request, onClose }: { request: RequestOut; onClose: (
         <button type="button" className="secondary" onClick={onClose}>
           {t.cancel}
         </button>
-        <button type="submit" disabled={saving || !name.trim() || !place}>
+        <button type="submit" disabled={saving || !name.trim() || !place || (people && !by)}>
           {t.todo.keepSave}
         </button>
       </div>

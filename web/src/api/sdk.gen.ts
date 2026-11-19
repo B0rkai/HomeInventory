@@ -253,8 +253,16 @@ export const reportChore = <ThrowOnError extends boolean = false>(options: Optio
  *
  * Records a chore as done just now: its open or claimed request if it has one (and
  * tells the other), else a request that's done from the start (nobody needs telling).
+ * `by`: the person who did it, when marked for them.
  */
-export const completeChore = <ThrowOnError extends boolean = false>(options: Options<CompleteChoreData, ThrowOnError>): RequestResult<CompleteChoreResponses, CompleteChoreErrors, ThrowOnError> => (options.client ?? client).post<CompleteChoreResponses, CompleteChoreErrors, ThrowOnError>({ url: '/api/v1/chores/{chore_id}/done', ...options });
+export const completeChore = <ThrowOnError extends boolean = false>(options: Options<CompleteChoreData, ThrowOnError>): RequestResult<CompleteChoreResponses, CompleteChoreErrors, ThrowOnError> => (options.client ?? client).post<CompleteChoreResponses, CompleteChoreErrors, ThrowOnError>({
+    url: '/api/v1/chores/{chore_id}/done',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * List Requests
@@ -313,6 +321,7 @@ export const unclaimRequest = <ThrowOnError extends boolean = false>(options: Op
  * Marks a request done, whoever claimed it; a bought item's level goes back to plenty
  * (one written in by hand has none). Where any variant will do, `item_id` says which was
  * bought: that one goes to plenty in the place, kept there from now on if it wasn't.
+ * `by`: the person who bought it, when marked for them.
  */
 export const completeRequest = <ThrowOnError extends boolean = false>(options: Options<CompleteRequestData, ThrowOnError>): RequestResult<CompleteRequestResponses, CompleteRequestErrors, ThrowOnError> => (options.client ?? client).post<CompleteRequestResponses, CompleteRequestErrors, ThrowOnError>({
     url: '/api/v1/requests/{request_id}/done',
@@ -328,7 +337,8 @@ export const completeRequest = <ThrowOnError extends boolean = false>(options: O
  *
  * Marks something written on the shopping list bought, and keeps it from now on: as
  * an item (one of the same name and variant, or a new one) at plenty in a place. All or
- * nothing; 409 if the line was dealt with in the meantime.
+ * nothing; 409 if the line was dealt with in the meantime. `by`: the person who bought
+ * it, when marked for them.
  */
 export const keepRequest = <ThrowOnError extends boolean = false>(options: Options<KeepRequestData, ThrowOnError>): RequestResult<KeepRequestResponses, KeepRequestErrors, ThrowOnError> => (options.client ?? client).post<KeepRequestResponses, KeepRequestErrors, ThrowOnError>({
     url: '/api/v1/requests/{request_id}/keep',

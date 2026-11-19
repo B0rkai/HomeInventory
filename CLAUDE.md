@@ -32,9 +32,9 @@ list with the shopping list, shortages view, item catalogue, activity log
 (`activity.py`), a bottom tab bar; hash routes in `web/src/route.ts`, shared
 data in `web/src/house.ts`, where changes also wait a few seconds to be undone);
 desktop admin pages (`#/admin/...`, and the LAN port as Admin): items, places,
-to-dos with assigning, the log, people and their devices; moving stock.
-Next: admin milestone C (the phone's remaining actions on the admin pages), then
-the meal planner (`docs/features.md`). Anything marked *(planned)* describes intended
+to-dos with assigning, the log, people and their devices; moving stock;
+and everything the phone does (done for a person, never as Admin).
+Next: the meal planner (`docs/features.md`). Anything marked *(planned)* describes intended
 setup, not code that exists yet.
 
 ## Tech stack

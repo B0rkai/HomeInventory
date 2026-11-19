@@ -40,9 +40,10 @@ import {
   type RequestOut,
   type StockOut,
   type UserOut,
+  type Category,
 } from './api'
 import { t } from './strings'
-import { fullName } from './variants'
+import { findItem, fullName } from './variants'
 
 export type House = {
   locations: LocationOut[]
@@ -595,9 +596,11 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
         }
         return request
       },
-      /** Records a chore as done now, reported or not. */
-      async completeChore(id: number) {
-        const chore = (await change(completeChore({ path: { chore_id: id } })))?.data
+      /** Records a chore as done now, reported or not; `by`: done by someone else. */
+      async completeChore(id: number, by?: number) {
+        const chore = (
+          await change(completeChore({ path: { chore_id: id }, body: by ? { by } : undefined }))
+        )?.data
         if (chore) {
           setHouse(
             (h) =>
@@ -610,12 +613,12 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
         }
       },
       /** Claims, unclaims, completes or cancels requests (an item's, in every place). */
-      async act(action: RequestAction, ids: number[], bought?: number) {
+      async act(action: RequestAction, ids: number[], bought?: number, by?: number) {
         const results = await Promise.all(
           ids.map((id) =>
             change(
-              action === 'done' && bought !== undefined
-                ? completeRequest({ path: { request_id: id }, body: { item_id: bought } })
+              action === 'done' && (bought !== undefined || by !== undefined)
+                ? completeRequest({ path: { request_id: id }, body: { item_id: bought, by } })
                 : REQUEST_ACTIONS[action]({ path: { request_id: id } }),
               { 409: action === 'remind' ? t.errors.remindedToday : t.errors.requestChanged },
             ),
@@ -666,6 +669,34 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
       undo,
       /** Adds an item to a place: sent at once, there is nothing to undo yet. */
       addStock: send.setLevel,
+      /**
+       * Keeps an item at a place (or nowhere yet), from the catalogue or new; a new variant
+       * takes its group's look unless a group is given.
+       */
+      async keepItem(
+        name: string,
+        variant: string | null,
+        locationId: number | null,
+        category?: Category | null,
+      ) {
+        const items = known.current?.items ?? []
+        const sibling = items.find(
+          (i) => i.name.toLocaleLowerCase('hu') === name.toLocaleLowerCase('hu'),
+        )
+        const item =
+          findItem(items, name, variant) ??
+          (await send.addItem({
+            name: sibling?.name ?? name,
+            variant,
+            category: category === undefined ? sibling?.category : category,
+            icon: sibling?.icon,
+          }))
+        if (!item) return undefined
+        if (locationId !== null && !(await send.setLevel(locationId, item.id, 'plenty'))) {
+          return undefined
+        }
+        return item
+      },
       /** Makes a chore due now, at once (the admin pages, to give it to someone next). */
       reportChoreNow: send.reportChore,
       /** Sets a level, undoable for a moment; picking another first replaces it. */
@@ -780,7 +811,8 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
           calls: [{ method: 'POST', path: `/chores/${id}/requests` }],
         })
       },
-      completeChore(id: number) {
+      /** Marks a chore done, undoable for a moment; `by`: done by someone else. */
+      completeChore(id: number, by?: UserOut) {
         defer({
           label: t.undo.choreDone(choreName(id)),
           show: (h) => ({
@@ -790,21 +822,24 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
                 ? {
                     ...c,
                     last_done_at: new Date().toISOString(),
-                    last_done_by_name: me.display_name,
+                    last_done_by_name: (by ?? me).display_name,
                   }
                 : c,
             ),
             requests: h.requests.filter((r) => r.chore_id !== id),
           }),
-          send: () => send.completeChore(id),
-          calls: [{ method: 'POST', path: `/chores/${id}/done` }],
+          send: () => send.completeChore(id, by?.id),
+          calls: [
+            { method: 'POST', path: `/chores/${id}/done`, body: by ? { by: by.id } : undefined },
+          ],
         })
       },
       /**
        * Claims, unclaims, completes, cancels or asks after requests, undoable for a moment.
-       * `bought`: the variant bought, where any variant will do.
+       * `bought`: the variant bought, where any variant will do; `by`: who did it, when
+       * marked for someone else (the admin pages).
        */
-      act(action: RequestAction, all: number[], bought?: number) {
+      act(action: RequestAction, all: number[], bought?: number, by?: number) {
         // A request still on its way has no id yet to act on.
         const ids = all.filter((id) => id > 0)
         if (!ids.length) return
@@ -849,11 +884,11 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
               return [{ ...r, reminded_by_name: me.display_name, reminded_at: now }]
             }),
           }),
-          send: () => send.act(action, ids, bought),
+          send: () => send.act(action, ids, bought, by),
           calls: ids.map((id) => ({
             method: 'POST',
             path: `/requests/${id}/${action}`,
-            body: bought !== undefined ? { item_id: bought } : undefined,
+            body: bought !== undefined || by !== undefined ? { item_id: bought, by } : undefined,
           })),
         })
       },

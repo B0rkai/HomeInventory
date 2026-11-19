@@ -1413,3 +1413,29 @@ a.item-row {
 .edit-cell button + button {
   margin-left: 0.25rem;
 }
+.admin-filters input:not(.search) {
+  background: var(--surface);
+  width: auto;
+  flex: 0 1 12rem;
+  margin: 0;
+}
+.edit-cell select.done-for {
+  width: 9.5rem;
+}
+.stock-editor {
+  margin-top: 1rem;
+}
+.stock-editor h4 {
+  margin: 0 0 0.4rem;
+}
+.stock-editor select {
+  width: auto;
+  margin-top: 0.5rem;
+  background: var(--surface);
+}
+.edit-cell select {
+  width: auto;
+  margin: 0 0 0 0.25rem;
+  padding-block: 0.25rem;
+  background: var(--surface);
+}

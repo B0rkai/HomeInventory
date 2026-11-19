@@ -827,7 +827,7 @@
     "/api/v1/chores/{chore_id}/done": {
       "post": {
         "summary": "Complete Chore",
-        "description": "Records a chore as done just now: its open or claimed request if it has one (and\ntells the other), else a request that's done from the start (nobody needs telling).",
+        "description": "Records a chore as done just now: its open or claimed request if it has one (and\ntells the other), else a request that's done from the start (nobody needs telling).\n`by`: the person who did it, when marked for them.",
         "operationId": "complete_chore",
         "parameters": [
           {
@@ -840,6 +840,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ChoreDone"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Done"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1057,7 +1074,7 @@
     "/api/v1/requests/{request_id}/done": {
       "post": {
         "summary": "Complete Request",
-        "description": "Marks a request done, whoever claimed it; a bought item's level goes back to plenty\n(one written in by hand has none). Where any variant will do, `item_id` says which was\nbought: that one goes to plenty in the place, kept there from now on if it wasn't.",
+        "description": "Marks a request done, whoever claimed it; a bought item's level goes back to plenty\n(one written in by hand has none). Where any variant will do, `item_id` says which was\nbought: that one goes to plenty in the place, kept there from now on if it wasn't.\n`by`: the person who bought it, when marked for them.",
         "operationId": "complete_request",
         "parameters": [
           {
@@ -1114,7 +1131,7 @@
     "/api/v1/requests/{request_id}/keep": {
       "post": {
         "summary": "Keep Request",
-        "description": "Marks something written on the shopping list bought, and keeps it from now on: as\nan item (one of the same name and variant, or a new one) at plenty in a place. All or\nnothing; 409 if the line was dealt with in the meantime.",
+        "description": "Marks something written on the shopping list bought, and keeps it from now on: as\nan item (one of the same name and variant, or a new one) at plenty in a place. All or\nnothing; 409 if the line was dealt with in the meantime. `by`: the person who bought\nit, when marked for them.",
         "operationId": "keep_request",
         "parameters": [
           {
@@ -1720,6 +1737,23 @@
           "name"
         ],
         "title": "ChoreCreate"
+      },
+      "ChoreDone": {
+        "properties": {
+          "by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "By"
+          }
+        },
+        "type": "object",
+        "title": "ChoreDone"
       },
       "ChoreOut": {
         "properties": {
@@ -2408,6 +2442,17 @@
               }
             ],
             "title": "Item Id"
+          },
+          "by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "By"
           }
         },
         "type": "object",
@@ -2441,6 +2486,17 @@
             "type": "boolean",
             "title": "Restock",
             "default": false
+          },
+          "by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "By"
           }
         },
         "type": "object",

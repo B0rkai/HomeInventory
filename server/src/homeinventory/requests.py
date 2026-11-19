@@ -48,6 +48,7 @@ from homeinventory.notify import Notifier, message_for
 from homeinventory.schedule import History, due_at
 from homeinventory.schemas import (
     ChoreCreate,
+    ChoreDone,
     ChoreOut,
     ChoreUpdate,
     RequestAssign,
@@ -189,6 +190,17 @@ def merge_variant_requests(session: Session, group: list[Item], user: User) -> N
 
 
 # Chores
+
+
+def _doer(session: Session, user: User, by: int | None) -> User:
+    """Who did the work: whoever marks it, or the person it's marked for. Admin hands work
+    out but doesn't do it, so it's never marked for Admin."""
+    if by is None:
+        return user
+    doer = session.get(User, by)
+    if doer is None or doer.admin:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "No such person")
+    return doer
 
 
 def _check_chore_name(
@@ -449,14 +461,17 @@ def report_chore(
 @router.post("/chores/{chore_id}/done")
 def complete_chore(
     chore_id: int,
+    done: ChoreDone | None = None,
     user: User = Depends(current_user),
     session: Session = Depends(get_session),
     tz: ZoneInfo = Depends(household_timezone),
     notifier: Notifier = Depends(get_notifier),
 ) -> ChoreOut:
     """Records a chore as done just now: its open or claimed request if it has one (and
-    tells the other), else a request that's done from the start (nobody needs telling)."""
+    tells the other), else a request that's done from the start (nobody needs telling).
+    `by`: the person who did it, when marked for them."""
     chore = get_or_404(session, Chore, chore_id)
+    user = _doer(session, user, done and done.by)
     now = utcnow()
     closed = {"status": RequestStatus.DONE, "closed_by_id": user.id, "closed_at": now}
     finished = session.execute(
@@ -646,7 +661,9 @@ def complete_request(
 ) -> RequestOut:
     """Marks a request done, whoever claimed it; a bought item's level goes back to plenty
     (one written in by hand has none). Where any variant will do, `item_id` says which was
-    bought: that one goes to plenty in the place, kept there from now on if it wasn't."""
+    bought: that one goes to plenty in the place, kept there from now on if it wasn't.
+    `by`: the person who bought it, when marked for them."""
+    user = _doer(session, user, done and done.by)
     bought = None
     if done and done.item_id is not None:
         asked = get_or_404(session, Request, request_id)
@@ -709,7 +726,9 @@ def keep_request(
 ) -> RequestOut:
     """Marks something written on the shopping list bought, and keeps it from now on: as
     an item (one of the same name and variant, or a new one) at plenty in a place. All or
-    nothing; 409 if the line was dealt with in the meantime."""
+    nothing; 409 if the line was dealt with in the meantime. `by`: the person who bought
+    it, when marked for them."""
+    user = _doer(session, user, keep.by)
     get_or_404(session, Location, keep.location_id)
 
     def key(name: str, variant: str | None) -> tuple[str, str | None]:

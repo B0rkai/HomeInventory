@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from 'react'
 import type { LocationOut } from './api'
+import { AdminAddItem } from './AdminAddItem'
 import { TextCell } from './AdminItems'
 import { useHouse } from './house'
 import { iconOf } from './iconLookup'
@@ -11,9 +12,12 @@ import { MAX_DEPTH, childrenOf, pathTo, placePath, subtreeIds, treeOrder } from 
 /** The whole tree of places in a table: rename, icon, order, move under another, delete. */
 export function AdminPlaces() {
   const { house, actions } = useHouse()
-  const [editing, setEditing] = useState<number>()
+  // A row opened below a place: its icon, or adding items to it.
+  const [editing, setEditing] = useState<{ id: number; what: 'icon' | 'item' }>()
   if (!house) return null
   const { locations, stock, chores } = house
+  const open = (id: number, what: 'icon' | 'item') =>
+    setEditing(editing?.id === id && editing.what === what ? undefined : { id, what })
   const depthOf = (id: number) => pathTo(locations, id).length
   // How many levels it and what's inside it take up.
   const heightOf = (id: number) =>
@@ -50,8 +54,8 @@ export function AdminPlaces() {
                   key={location.id}
                   location={location}
                   depth={depthOf(location.id)}
-                  editing={editing === location.id}
-                  onEdit={() => setEditing(editing === location.id ? undefined : location.id)}
+                  editing={editing?.id === location.id ? editing.what : undefined}
+                  onEdit={() => setEditing(undefined)}
                 >
                   <td>
                     <select
@@ -101,9 +105,18 @@ export function AdminPlaces() {
                     <button
                       type="button"
                       className="secondary small-button"
-                      onClick={() => setEditing(editing === location.id ? undefined : location.id)}
+                      aria-expanded={editing?.id === location.id && editing.what === 'item'}
+                      onClick={() => open(location.id, 'item')}
                     >
-                      {editing === location.id ? t.admin.close : t.admin.icon}
+                      {t.admin.addHere}
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary small-button"
+                      aria-expanded={editing?.id === location.id && editing.what === 'icon'}
+                      onClick={() => open(location.id, 'icon')}
+                    >
+                      {t.admin.icon}
                     </button>
                     <button
                       type="button"
@@ -138,7 +151,7 @@ function PlaceRow({
 }: {
   location: LocationOut
   depth: number
-  editing: boolean
+  editing?: 'icon' | 'item'
   onEdit: () => void
   children: React.ReactNode
 }) {
@@ -160,7 +173,14 @@ function PlaceRow({
         </td>
         {children}
       </tr>
-      {editing && (
+      {editing === 'item' && (
+        <tr className="edit-row">
+          <td colSpan={5}>
+            <AdminAddItem locationId={location.id} />
+          </td>
+        </tr>
+      )}
+      {editing === 'icon' && (
         <tr className="edit-row">
           <td colSpan={5}>
             <IconPicker

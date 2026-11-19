@@ -261,6 +261,13 @@ class RequestCreate(BaseModel):
 class RequestDone(BaseModel):
     # For an item where any variant will do: the variant bought, if not the one asked for.
     item_id: int | None = None
+    # Who did it, when it's marked for them (the admin pages); unset: whoever marks it.
+    by: int | None = None
+
+
+class ChoreDone(BaseModel):
+    # Who did it, when it's marked for them (the admin pages); unset: whoever marks it.
+    by: int | None = None
 
 
 class RequestKeep(BaseModel):
@@ -273,6 +280,8 @@ class RequestKeep(BaseModel):
     # Whether running low puts it on the list again; off, since what's written on the
     # list by hand is mostly bought now and then.
     restock: bool = False
+    # Who bought it, when it's marked for them (the admin pages); unset: whoever marks it.
+    by: int | None = None
 
 
 class RequestAssign(BaseModel):
