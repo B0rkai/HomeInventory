@@ -224,8 +224,9 @@ change is a single conditional update (see `CLAUDE.md`); losing a race is
 Plan a cooking for a day; what it needs and the house lacks goes on the
 shopping list in time, but not so early that fresh food spoils, and the
 buying is bunched into a few shopping trips instead of a shop every day.
-The UI is designed before any code (the UI plan follows), so the
-pages don't end up crowded.
+The UI was tried as a clickable prototype first, so the pages don't end
+up crowded (UI below; the prototype is the `proto/meal-planner` branch,
+`#/proto` on the dev build).
 
 Decisions:
 
@@ -267,8 +268,13 @@ Features:
    lines). Each line belongs to a trip inside its window: durable ones the
    earliest, perishable ones the latest (freshest); plain shortages the
    next trip. Lines with no trip in their window make the app suggest the
-   fewest days covering them all (sort by the window's end, pick that day,
-   repeat). Anyone can still buy anything any time.
+   fewest days covering them all (sort by the window's end, pick the day
+   before it, or its first day if later; repeat). Anyone can still buy
+   anything any time.
+   - A trip ends when its last line is bought, or when whoever went taps
+     "Végeztem" (back, something wasn't there); either is undoable. A
+     trip's day passing ends it too. What's left of it moves to the next
+     trip that fits, else waits for a suggestion.
 4. **The shopping list by trip**: grouped by trip ("Saturday", "Later");
    lines whose window hasn't opened show greyed with their first day.
 5. **Notifications**: the other planned a cooking; a trip is today; a
@@ -285,9 +291,37 @@ Milestones: (5) recipes; (6) planning, reservations, missing ingredients on
 the list, "what's left?"; (7) shelf life and buying windows; (8) shopping
 trips and the list by trip. 5-6 are useful on their own.
 
-The tab bar has five tabs already: the shortages view merges into the
-catalogue (it sorts by level already; a "missing" filter covers the rest),
-and the freed tab becomes the menu.
+UI (agreed 2026-11-19 on the prototype):
+
+- **Tab bar**: Helyek, Teendők, Menü, Termékek, Napló. The shortages view
+  merges into the catalogue as a "Csak hiány" toggle beside the search
+  (the catalogue sorts by level already); its by-place view goes.
+- **Menü, "A hét"**: an agenda of only the days with something on them,
+  one card a day: trips (item count, who goes, "Elvállalom") and cookings
+  (who cooks, one status line: "✓ minden megvan" / "2 hiányzik · pénteki
+  bevásárlás" / "⚠ X: nincs rá bevásárlás"). A suggested trip is a banner
+  on top with one "Felvesz" button, only while there is one. Below: "+
+  Főzés", "+ Bevásárlás" (day chips).
+- **Menü, "Receptek"**: search and a list, each with "minden megvan" or
+  "N hiányzik"; "+ Új recept".
+- **Planning**: "+ Főzés" → pick a recipe (search) → day chips (Ma,
+  Holnap, weekdays, ten days) → a preview (what's at home; each line to
+  buy, from when, on which trip or none) → "Betervez".
+- **A cooking's page**: day, who cooks, the ingredients with their level
+  or "listán · pénteki bevásárlás" (optional ones "ha van"), a link to the
+  recipe, and "Lemond", "Áthelyez" (day chips), "Megfőztem" → "Mi maradt?"
+  (a level picker per ingredient kept somewhere, "Kész").
+- **A recipe's page**: ingredients with amounts and levels, the note,
+  "Szerkesztés", "Betervez". The editor adds ingredients one at a time
+  with the item suggestions; each row has an amount box, "ha van" and ×.
+- **Shopping list**: with no trip planned it stays as today. With trips,
+  a row of chips picks one trip at a time ("Ma 5", "Péntek 2", "Nincs
+  beosztva", "Később"), the next trip first; its head has who goes
+  ("Megyek") and "Végeztem"; inside, the groups and buttons as now. A
+  line put on for a cooking says which (chef's hat, "Paprikás csirke,
+  szombatra"); "Később" lines are greyed with their first day.
+- **Reservations** show as a small chef's hat before the level in the
+  catalogue (like the not-restocked icon) and on the place page.
 
 ## Later ideas (not scheduled)
 
