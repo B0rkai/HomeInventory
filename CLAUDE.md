@@ -169,7 +169,7 @@ tailscale serve --bg --https=8443 http://127.0.0.1:5173
 # live (only when asked): deploys origin/main, see deploy/README.md
 deploy/deploy.sh
 # the Admin password (LAN admin pages), in the live container
-docker compose -f ~/homeinventory-live/deploy/docker-compose.yml exec app python -m homeinventory.admin
+docker exec -it homeinventory-app-1 python -m homeinventory.admin
 ```
 
 ## Deployment

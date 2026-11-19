@@ -1,7 +1,7 @@
 """The Admin user: a password log-in for the admin pages on the LAN port.
 
 Set its password on the server with `python -m homeinventory.admin` (in the live
-container: `docker compose exec app python -m homeinventory.admin`).
+container: `docker exec -it homeinventory-app-1 python -m homeinventory.admin`).
 """
 
 import base64

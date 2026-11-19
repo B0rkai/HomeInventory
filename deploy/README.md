@@ -50,7 +50,7 @@ the container can't start). Requests there act only as the Admin user, who logs 
 with a password. Set or change it (this logs every browser out):
 
 ```bash
-docker compose -f ~/homeinventory-live/deploy/docker-compose.yml exec app python -m homeinventory.admin
+docker exec -it homeinventory-app-1 python -m homeinventory.admin
 ```
 
 Over the tailnet the same pages are at `https://spajz.tail61796b.ts.net/#/admin`, as
@@ -67,7 +67,7 @@ Restore (stops the app for a moment):
 
 ```bash
 cd ~/homeinventory-live
-docker compose -f deploy/docker-compose.yml stop
+docker stop homeinventory-app-1
 cp /mnt/storage/backups/homeinventory/<backup>.db ~/.local/share/homeinventory/homeinventory.db
 rm -f ~/.local/share/homeinventory/homeinventory.db-{wal,shm}
 deploy/deploy.sh <commit that matches the backup's schema>
@@ -76,8 +76,8 @@ deploy/deploy.sh <commit that matches the backup's schema>
 ## Look around
 
 ```bash
-docker compose -f ~/homeinventory-live/deploy/docker-compose.yml ps
-docker compose -f ~/homeinventory-live/deploy/docker-compose.yml logs -f
+docker ps --filter name=homeinventory-app-1
+docker logs -f homeinventory-app-1
 git -C ~/homeinventory-live log -1 --oneline     # the deployed commit
 systemctl --user list-timers homeinventory-backup.timer
 ```
