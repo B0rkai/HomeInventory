@@ -331,6 +331,14 @@ Decisions:
   recipe, so it can change without changing the recipe; a menu with a
   main course and no side dish asks for one the same way, and one that
   names a side dish keeps it.
+- **Families** *(2026-11-19)*: an optional group of different items any of
+  which will do ("Pékáru": Kenyér, Zsemle, Kifli), as "any variant will do"
+  is for the kinds of one item: a place is short only once every member
+  kept there is, one line on the list named after the family ("Pékáru ·
+  bármelyik: Kenyér, Kifli, Zsemle"), and buying asks which. Set on the item
+  (phone and admin, a column there), shared by its variants, spelled once.
+  Products keep their own names (Zsemle, not Pékáru · zsemle), so recipes
+  and suggestions find them.
 - **Substitutes**: an item names what a recipe can use instead of it
   ("Vaj": "Margarin · sütő"; "Olaj": "Zsír"), set on either item (phone
   and admin) and always both ways: a pair, since nearly every one stands in
@@ -386,7 +394,7 @@ Features:
 5. **Notifications**: the other planned a cooking; a trip is today; a
    fresh line's window opens with no trip in it.
 
-Data model additions: **ItemSubstitute** (item, substitute); **Recipe** (name unique ignoring case, icon, kind, note,
+Data model additions: **Item** `family`; **ItemSubstitute** (item, substitute); **Recipe** (name unique ignoring case, icon, kind, note,
 link: http(s) only); **RecipeIngredient** (recipe, item or part (another
 recipe), `any_variant`, amount note, optional, position; one row per item
 or part in a recipe, so "any Konzerv" and "Konzerv · borsó" can't both be

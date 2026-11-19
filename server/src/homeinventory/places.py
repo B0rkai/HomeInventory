@@ -26,6 +26,8 @@ from homeinventory.notify import Notifier, message_for
 from homeinventory.requests import (
     SHORT,
     close_buy_requests,
+    group_of,
+    interchangeable,
     merge_variant_requests,
     open_buy_request,
     sync_variants_at,
@@ -219,6 +221,7 @@ def find_or_make_item(
     item = Item(name=same_name[0].name if same_name else name, variant=variant)
     item.restock = False
     item.any_variant = any(other.any_variant for other in same_name)
+    item.family = next((other.family for other in same_name if other.family), None)
     session.add(item)
     session.flush()
     items.append(item)
@@ -234,8 +237,11 @@ def list_items(session: Session = Depends(get_session)) -> list[ItemOut]:
 def create_item(new: ItemCreate, session: Session = Depends(get_session)) -> ItemOut:
     _check_item_name(session, new.name, new.variant)
     item = Item(name=new.name, variant=new.variant, category=new.category, icon=new.icon)
-    # A new variant goes along with the others on whether any of them will do.
-    item.any_variant = any(other.any_variant for other in variants_of(session, item))
+    # A new variant goes along with the others on whether any of them will do, and joins
+    # their family.
+    same_name = variants_of(session, item)
+    item.any_variant = any(other.any_variant for other in same_name)
+    item.family = next((other.family for other in same_name if other.family), None)
     session.add(item)
     session.commit()
     return ItemOut.model_validate(item)
@@ -250,9 +256,12 @@ def update_item(
     notifier: Notifier = Depends(get_notifier),
 ) -> ItemOut:
     """Renames or regroups an item. Turning `restock` off takes it off the shopping list;
-    turning it on puts it on wherever it's already low or out. `any_variant` applies to
-    every item of the same name; renamed into another name's group, an item takes its."""
+    turning it on puts it on wherever it's already low or out. `any_variant` and `family`
+    apply to every item of the same name; renamed into another name's group, an item takes
+    theirs. A family is spelled as it already is."""
     item = get_or_404(session, Item, item_id)
+    # What would do instead of it so far: the members left behind are listed anew.
+    before = group_of(session, item)
     name = item.name if update.name is None else update.name
     variant = update.variant if "variant" in update.model_fields_set else item.variant
     _check_item_name(session, name, variant, own_id=item.id)
@@ -262,6 +271,7 @@ def update_item(
         others = [other for other in variants_of(session, item) if other.id != item.id]
         if others:
             item.any_variant = others[0].any_variant
+            item.family = others[0].family
     if "category" in update.model_fields_set:
         item.category = update.category
     if "icon" in update.model_fields_set:
@@ -292,19 +302,26 @@ def update_item(
     if update.any_variant is not None:
         for other in group:
             other.any_variant = update.any_variant
+    if "family" in update.model_fields_set:
+        family = _family_spelling(session, update.family)
+        if any(other.family != family for other in group):
+            regrouped = True
+            for other in group:
+                other.family = family
     restocked = update.restock is not None and update.restock != item.restock
     if restocked:
         item.restock = update.restock
     opened: list[tuple[int, int, Level]] = []
-    if item.any_variant and (regrouped or restocked):
+    if interchangeable(item) and (regrouped or restocked):
         # One line per place where the whole group is short.
         if not item.restock:
             for location_id in _places_of(session, [item.id]):
                 close_buy_requests(session, item.id, location_id, user, RequestStatus.CANCELLED)
-        merge_variant_requests(session, group, user)
-        for location_id in _places_of(session, [other.id for other in group]):
+        members = group_of(session, item)
+        merge_variant_requests(session, members, user)
+        for location_id in _places_of(session, [other.id for other in members]):
             if sync_variants_at(
-                session, group, location_id, user, prefer=item, closed=RequestStatus.CANCELLED
+                session, members, location_id, user, prefer=item, closed=RequestStatus.CANCELLED
             )[0]:
                 opened.append((item.id, location_id, Level.OUT))
     elif regrouped or restocked:
@@ -320,10 +337,35 @@ def update_item(
                     )
                 elif open_buy_request(session, other.id, stock.location_id, user):
                     opened.append((other.id, stock.location_id, stock.level))
+    # The family it left: still one line wherever all of the rest are short.
+    left = [other for other in before if other not in group_of(session, item)]
+    if left and interchangeable(left[0]):
+        members = group_of(session, left[0])
+        merge_variant_requests(session, members, user)
+        for location_id in _places_of(session, [other.id for other in members]):
+            if sync_variants_at(
+                session, members, location_id, user, closed=RequestStatus.CANCELLED
+            )[0]:
+                opened.append((members[0].id, location_id, Level.OUT))
     session.commit()
     for item_id, location_id, level in opened:
         _announce_opened(session, notifier, user, [item_id], location_id, level)
     return ItemOut.model_validate(item)
+
+
+def _family_spelling(session: Session, family: str | None) -> str | None:
+    """A family as the catalogue already spells it, whatever the case it's typed in."""
+    if family is None:
+        return None
+    folded = family.casefold()
+    return next(
+        (
+            known
+            for known in session.scalars(select(Item.family).where(Item.family.is_not(None)))
+            if known.casefold() == folded
+        ),
+        family,
+    )
 
 
 def _places_of(session: Session, item_ids: list[int]) -> set[int]:
@@ -369,9 +411,9 @@ def set_stock(
     # Running low is a report: it puts the item on the shopping list. Filling it up again
     # takes it off, whoever did it.
     opened, refilled = False, []
-    group = variants_of(session, item) if item.any_variant else [item]
-    if item.any_variant:
-        # Short only once every variant kept here is.
+    group = group_of(session, item)
+    if interchangeable(item):
+        # Short only once every variant (or family member) kept here is.
         opened, refilled = sync_variants_at(session, group, location_id, user, prefer=item)
     elif new.level in SHORT:
         # An item that isn't kept stocked just records that there's none (or little).
@@ -479,7 +521,7 @@ def move_stock(
     get_or_404(session, Location, move.to_location_id)
     source, target = move.from_location_id, move.to_location_id
     item_ids = list(dict.fromkeys(move.item_ids))
-    groups: dict[str, list[Item]] = {}
+    groups: dict[int, list[Item]] = {}
     for item_id in item_ids:
         item = get_or_404(session, Item, item_id)
         moving = session.scalar(
@@ -513,8 +555,9 @@ def move_stock(
                 session.flush()
             asked.location_id = target
         session.flush()
-        if item.any_variant:
-            groups[item.name.casefold()] = variants_of(session, item)
+        if interchangeable(item):
+            members = group_of(session, item)
+            groups[members[0].id] = members
         elif level in SHORT:
             if item.restock:
                 open_buy_request(session, item_id, target, user)
@@ -561,8 +604,8 @@ def remove_stock(
     session.flush()
     _stop_restocking_if_kept_nowhere(session, [item_id])
     item = session.get_one(Item, item_id)
-    group = variants_of(session, item)
-    opened = item.any_variant and sync_variants_at(session, group, location_id, user)[0]
+    group = group_of(session, item)
+    opened = interchangeable(item) and sync_variants_at(session, group, location_id, user)[0]
     session.commit()
     if opened:
         _announce_opened(

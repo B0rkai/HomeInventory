@@ -4,7 +4,7 @@ import { CATEGORIES, categoryName, iconCategory } from './categories'
 import { useHouse } from './house'
 import { IconPicker } from './IconPicker'
 import { t } from './strings'
-import { byItem, fullName, parseFullName } from './variants'
+import { byItem, familyNames, fullName, parseFullName } from './variants'
 
 /** An item's details: name, variant, group, restocking, what recipes can use instead, icon;
  * or delete it. */
@@ -24,6 +24,7 @@ export function ItemForm({
   const [icon, setIcon] = useState(item.icon)
   const [restock, setRestock] = useState(item.restock)
   const [anyVariant, setAnyVariant] = useState(item.any_variant)
+  const [family, setFamily] = useState(item.family ?? '')
   const id = useId()
   const items = house?.items ?? []
   // By name: one not in the catalogue yet joins it on saving.
@@ -69,6 +70,7 @@ export function ItemForm({
       icon,
       restock,
       any_variant: anyVariant,
+      family,
       substitutes: substitutes.map((text) => parseFullName(text)),
     })
     setSaving(false)
@@ -134,6 +136,23 @@ export function ItemForm({
           </span>
         </label>
       )}
+      <label>
+        {t.items.family}
+        <input
+          value={family}
+          onChange={(e) => setFamily(e.target.value)}
+          placeholder={t.items.familyPlaceholder}
+          list={`${id}-families`}
+          maxLength={60}
+          autoComplete="off"
+        />
+        <span className="small muted">{t.items.familyHint}</span>
+        <datalist id={`${id}-families`}>
+          {familyNames(items).map((name) => (
+            <option key={name} value={name} />
+          ))}
+        </datalist>
+      </label>
       <fieldset className="substitutes">
         <legend>{t.items.substitutes}</legend>
         <p className="small muted">{t.items.substitutesHint}</p>

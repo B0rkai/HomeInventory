@@ -10,7 +10,7 @@ import { bestLevel, placePath, treeOrder } from './tree'
 import { KeepForm } from './KeepForm'
 import { OneOffForm } from './OneOffForm'
 import { PushSettings } from './PushSettings'
-import { byItem, fullName } from './variants'
+import { byItem, fullName, groupMembers, interchangeable } from './variants'
 import { categoryName, groupByCategory } from './categories'
 
 /**
@@ -99,15 +99,13 @@ function Sections({ requests }: { requests: RequestOut[] }) {
   const byPlace = (a: { location_id: number | null }, b: { location_id: number | null }) =>
     rank(a.location_id) - rank(b.location_id)
 
-  // Where any variant will do, the variants are one row, under the first one's id, shown
-  // without a variant.
-  const groupOf = (item: ItemOut) =>
-    items.filter((i) => i.name.toLocaleLowerCase('hu') === item.name.toLocaleLowerCase('hu'))
+  // Where any variant (or any of a family) will do, they're one row, under the first one's
+  // id, shown without a variant (or as the family).
   const variantsOf = new Map<number, ItemOut[]>()
   const rowKey = (itemId: number) => {
     const item = itemsById.get(itemId)!
-    if (!item.any_variant) return itemId
-    const group = groupOf(item).sort(byItem)
+    if (!interchangeable(item)) return itemId
+    const group = groupMembers(item, items)
     variantsOf.set(group[0].id, group)
     return group[0].id
   }
@@ -126,6 +124,7 @@ function Sections({ requests }: { requests: RequestOut[] }) {
         icon: null,
         restock: false,
         any_variant: false,
+        family: null,
         substitute_ids: [],
       })
       buying.set(-request.id, [request])
@@ -156,8 +155,12 @@ function Sections({ requests }: { requests: RequestOut[] }) {
   const toBuy: ItemOut[] = []
   for (const id of buying.keys()) {
     const first = itemsById.get(id)!
-    // Shown as the supply, not one kind of it.
-    const item = variantsOf.has(id) ? { ...first, variant: null } : first
+    // Shown as the supply, not one kind of it; or as the family, its icon guessed from it.
+    const item = !variantsOf.has(id)
+      ? first
+      : first.family
+        ? { ...first, name: first.family, variant: null, icon: null }
+        : { ...first, variant: null }
     if (lotsFor(id).length) {
       refills.push(item)
       continue
@@ -216,7 +219,14 @@ function Sections({ requests }: { requests: RequestOut[] }) {
     const named = (
       <>
         <Named thing={item} kind="item" />
-        {variants && <span className="small muted any-kind"> · {t.items.anyKind}</span>}
+        {variants && (
+          <span className="small muted any-kind">
+            {' · '}
+            {variants[0].family
+              ? t.items.anyOf([...new Set(variants.map((member) => member.name))].join(', '))
+              : t.items.anyKind}
+          </span>
+        )}
       </>
     )
     return (
@@ -519,7 +529,8 @@ function RequestRow({
                   actions.act('done', ids(requests), variant.id)
                 }}
               >
-                {variant.variant ?? t.items.noVariant}
+                {/* A family's members by their whole name. */}
+                {variants[0].family ? fullName(variant) : (variant.variant ?? t.items.noVariant)}
               </button>
             ))}
           </div>

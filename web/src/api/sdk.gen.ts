@@ -135,8 +135,9 @@ export const deleteItem = <ThrowOnError extends boolean = false>(options: Option
  * Update Item
  *
  * Renames or regroups an item. Turning `restock` off takes it off the shopping list;
- * turning it on puts it on wherever it's already low or out. `any_variant` applies to
- * every item of the same name; renamed into another name's group, an item takes its.
+ * turning it on puts it on wherever it's already low or out. `any_variant` and `family`
+ * apply to every item of the same name; renamed into another name's group, an item takes
+ * theirs. A family is spelled as it already is.
  */
 export const updateItem = <ThrowOnError extends boolean = false>(options: Options<UpdateItemData, ThrowOnError>): RequestResult<UpdateItemResponses, UpdateItemErrors, ThrowOnError> => (options.client ?? client).patch<UpdateItemResponses, UpdateItemErrors, ThrowOnError>({
     url: '/api/v1/items/{item_id}',

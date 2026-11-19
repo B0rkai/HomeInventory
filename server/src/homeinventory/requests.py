@@ -119,6 +119,24 @@ def variants_of(session: Session, item: Item) -> list[Item]:
     ]
 
 
+def interchangeable(item: Item) -> bool:
+    """Whether others will do instead of it: its family's members, or its variants."""
+    return item.family is not None or item.any_variant
+
+
+def group_of(session: Session, item: Item) -> list[Item]:
+    """What will do instead of the item, itself included: its family, else its variants
+    where any will do, else just the item."""
+    if item.family is not None:
+        folded = item.family.casefold()
+        return [
+            i
+            for i in session.scalars(select(Item).order_by(Item.id))
+            if i.family is not None and i.family.casefold() == folded
+        ]
+    return variants_of(session, item) if item.any_variant else [item]
+
+
 def sync_variants_at(
     session: Session,
     group: list[Item],
@@ -668,8 +686,9 @@ def complete_request(
     if done and done.item_id is not None:
         asked = get_or_404(session, Request, request_id)
         bought = get_or_404(session, Item, done.item_id)
-        if asked.item_id is None or bought not in variants_of(
-            session, session.get_one(Item, asked.item_id)
+        wanted = session.get_one(Item, asked.item_id) if asked.item_id is not None else None
+        if wanted is None or (
+            bought not in variants_of(session, wanted) and bought not in group_of(session, wanted)
         ):
             raise HTTPException(
                 status.HTTP_422_UNPROCESSABLE_CONTENT, "Not a variant of the item asked for"
@@ -686,8 +705,8 @@ def complete_request(
     action = Action.DONE
     if request.item_id is not None:
         item = bought or session.get_one(Item, request.item_id)
-        # Where any variant will do, lots of any of them elsewhere counts.
-        sources = [i.id for i in variants_of(session, item)] if item.any_variant else [item.id]
+        # Where any variant (or family member) will do, lots of any of them elsewhere counts.
+        sources = [i.id for i in group_of(session, item)]
         # Another place stocked up on it: it was fetched from there, not bought. That
         # place's level stays; nobody books every roll carried upstairs.
         if session.scalar(

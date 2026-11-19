@@ -160,6 +160,11 @@ class Item(Base):
     # once every variant kept there is low or out, and then it's one line on the list.
     # Shared by all the items of the same name; the API keeps them alike.
     any_variant: Mapped[bool] = mapped_column(default=False, server_default=false())
+    # A group of different items any of which will do ("Pékáru": Kenyér, Zsemle, Kifli), as
+    # `any_variant` is for the variants of one: short only once every member kept in a place
+    # is, one line on the list. Shared by the items of the same name; the API keeps them
+    # alike, and one spelling per group.
+    family: Mapped[str | None] = mapped_column(String(NAME_MAX_LENGTH))
     # Unset: the client guesses one from the name. Empty: no icon.
     icon: Mapped[str | None] = mapped_column(String(ICON_MAX_LENGTH))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)

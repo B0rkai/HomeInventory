@@ -343,3 +343,11 @@ def test_writing_on_the_list_tells_the_other(api, phones, pushes) -> None:
         ),
         (ANNAS_PHONE, pushes[1][1] | {"event": "done", "actor": "Bela Kovacs"}),
     ]
+
+
+def test_a_family_is_named_in_the_message(api, house, phones, pushes) -> None:
+    beans = house["beans"]
+    api("PATCH", f"/items/{beans}", {"family": "Hüvelyes"})
+    set_level(api, house, "out")
+    [(_, message)] = pushes
+    assert (message["name"], message["variant"]) == ("Hüvelyes", None)

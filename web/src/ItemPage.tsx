@@ -77,6 +77,7 @@ export function ItemPage({ id }: { id: number }) {
         {categoryName(categoryOf(item))}
         {!item.restock && ` · ${t.items.noRestock}`}
         {item.any_variant && ` · ${t.items.anyVariantNote}`}
+        {item.family && ` · ${t.items.familyNote(item.family)}`}
         {level && (
           <>
             {' · '}

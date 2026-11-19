@@ -145,6 +145,7 @@ def test_update_item_only_changes_what_is_sent(api) -> None:
         "icon": None,
         "restock": True,
         "any_variant": False,
+        "family": None,
         "substitute_ids": [],
     }
     response = api("PATCH", f"/items/{milk}", {"category": None})
@@ -156,6 +157,7 @@ def test_update_item_only_changes_what_is_sent(api) -> None:
         "icon": None,
         "restock": True,
         "any_variant": False,
+        "family": None,
         "substitute_ids": [],
     }
 

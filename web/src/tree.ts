@@ -1,4 +1,5 @@
 import type { ItemOut, Level, LocationOut, StockOut } from './api'
+import { groupKey, interchangeable } from './variants'
 
 // Floor -> room -> spot; the server's limit too.
 export const MAX_DEPTH = 3
@@ -71,21 +72,25 @@ export function byName(a: { name: string }, b: { name: string }): number {
 
 /**
  * The stock rows whose running low is a shortage: of items kept stocked, and where any
- * variant will do, only once every variant kept in that place is short.
+ * variant (or any of a family) will do, only once every one kept in that place is short.
  */
 export function restockedStock(stock: StockOut[], items: ItemOut[]): StockOut[] {
   const byId = new Map(items.map((item) => [item.id, item]))
-  const group = (item: ItemOut) => item.name.toLocaleLowerCase('hu')
-  // Where some variant of an any-variant item isn't short: "group|place".
+  // Where some variant (or family member) of an item isn't short: "group|place".
   const covered = new Set(
     stock.flatMap((row) => {
       const item = byId.get(row.item_id)
-      return item?.any_variant && !isShort(row) ? [`${group(item)}|${row.location_id}`] : []
+      return item && interchangeable(item) && !isShort(row)
+        ? [`${groupKey(item)}|${row.location_id}`]
+        : []
     }),
   )
   return stock.filter((row) => {
     const item = byId.get(row.item_id)
-    return item?.restock && !(item.any_variant && covered.has(`${group(item)}|${row.location_id}`))
+    return (
+      item?.restock &&
+      !(interchangeable(item) && covered.has(`${groupKey(item)}|${row.location_id}`))
+    )
   })
 }
 

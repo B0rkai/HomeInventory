@@ -73,6 +73,12 @@ Variant = Annotated[
     AfterValidator(_blank_to_none),
 ]
 
+# A family of items any of which will do; blank or null for none.
+Family = Annotated[
+    Annotated[str, StringConstraints(strip_whitespace=True, max_length=NAME_MAX_LENGTH)] | None,
+    AfterValidator(_blank_to_none),
+]
+
 # An icon name from the web client's set. Null: let the client guess from the name; empty: no icon.
 Icon = Annotated[str, StringConstraints(strip_whitespace=True, max_length=ICON_MAX_LENGTH)] | None
 
@@ -117,6 +123,8 @@ class ItemOut(BaseModel):
     restock: bool
     # Any variant will do: shared by every item of the same name.
     any_variant: bool
+    # Any member of this family will do instead ("Pékáru"); shared like `any_variant`.
+    family: str | None
     # What a recipe can use instead.
     substitute_ids: list[int]
 
@@ -151,6 +159,8 @@ class ItemUpdate(BaseModel):
     restock: bool | None = None
     # Applies to every item of the same name.
     any_variant: bool | None = None
+    # Applies to every item of the same name, as `any_variant`; null takes it out of one.
+    family: Family = None
     # Replaces them all.
     substitutes: list[ItemRef] | None = Field(default=None, max_length=SUBSTITUTES_MAX)
 

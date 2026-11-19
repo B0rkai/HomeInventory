@@ -75,14 +75,16 @@ def message_for(
         )
     if request.kind == RequestKind.BUY:
         asked = session.get_one(Item, request.item_id)
-        # Any variant will do: the supply is short, not that kind of it.
-        variant = None if asked.any_variant else asked.variant
+        # Any variant will do: the supply is short, not that kind of it; any of a family:
+        # the family is. What was bought is named as it is.
+        name = asked.family or asked.name
+        variant = None if asked.any_variant or asked.family else asked.variant
         if item is not None:
-            variant = item.variant
+            name, variant = item.name, item.variant
         return Message(
             event=event,
             kind="buy",
-            name=asked.name,
+            name=name,
             variant=variant,
             place=place,
             level=level,

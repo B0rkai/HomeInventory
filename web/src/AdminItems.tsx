@@ -10,7 +10,7 @@ import { LevelName, LevelPicker } from './LevelPicker'
 import { IconTile } from './Named'
 import { t } from './strings'
 import { bestLevel, placePath, treeOrder } from './tree'
-import { byItem, fullName } from './variants'
+import { byItem, familyNames, fullName } from './variants'
 
 type SortKey = 'name' | 'group' | 'level'
 const FULLNESS = { lots: 3, plenty: 2, low: 1, out: 0 }
@@ -155,6 +155,7 @@ export function AdminItems() {
               {header('group', t.admin.group)}
               <th>{t.admin.restock}</th>
               <th>{t.admin.anyVariant}</th>
+              <th>{t.items.family}</th>
               {header('level', t.admin.where)}
               <th />
             </tr>
@@ -175,6 +176,11 @@ export function AdminItems() {
             ))}
           </tbody>
         </table>
+        <datalist id="admin-families">
+          {familyNames(items).map((name) => (
+            <option key={name} value={name} />
+          ))}
+        </datalist>
       </div>
       {shown.length === 0 && <p className="muted">{t.items.noMatch}</p>}
     </>
@@ -269,6 +275,15 @@ function ItemRow({
             <span className="muted">–</span>
           )}
         </td>
+        <td>
+          <TextCell
+            key={item.family ?? ''}
+            value={item.family ?? ''}
+            label={t.items.family}
+            list="admin-families"
+            onSave={(family) => onSave({ family })}
+          />
+        </td>
         <td className="where-cell">
           {rows.length === 0 && <span className="muted small">{t.admin.nowhere}</span>}
           {rows.map((row) => (
@@ -291,7 +306,7 @@ function ItemRow({
       {editing && (
         <tr className="edit-row">
           <td />
-          <td colSpan={7}>
+          <td colSpan={8}>
             <ItemForm item={item} onDone={onEdit} onDeleted={onEdit} />
             <StockEditor item={item} rows={rows} />
           </td>
@@ -382,10 +397,13 @@ export function TextCell({
   value,
   label,
   required = false,
+  list,
   onSave,
 }: {
   value: string
   label: string
+  // A datalist's id, for suggestions.
+  list?: string
   // A name can't be blank: emptied, it goes back.
   required?: boolean
   onSave: (value: string) => void
@@ -404,6 +422,8 @@ export function TextCell({
       className="cell-input"
       aria-label={label}
       value={text}
+      list={list}
+      autoComplete={list && 'off'}
       onChange={(event) => setText(event.target.value)}
       onKeyDown={keys}
       onBlur={() => {

@@ -289,6 +289,12 @@ export const t = {
     substitutePlaceholder: 'Például: Margarin · sütő',
     removeSubstitute: (name: string) => `${name} törlése`,
     anyKind: 'bármelyik fajta',
+    anyOf: (names: string) => `bármelyik: ${names}`,
+    family: 'Alcsoport',
+    familyPlaceholder: 'Például: Pékáru (nem kötelező)',
+    familyHint:
+      'Különböző termékek, amelyek közül bármelyik megfelel (kenyér, zsemle, kifli). Egy helyen csak akkor hiány, ha mind kevés vagy elfogyott; a listán egy sor. Minden fajtára érvényes.',
+    familyNote: (family: string) => `${family} alcsoport`,
     whichBought: 'Melyiket vetted?',
     places: (count: number) => (count ? `${count} helyen` : 'sehol'),
     delete: 'Törlés',

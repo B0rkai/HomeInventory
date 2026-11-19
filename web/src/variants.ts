@@ -1,7 +1,8 @@
 import type { ItemOut } from './api'
 
 // Items sharing a name are kinds of one supply ("Konzerv" + "kukorica"); the UI shows them
-// as one group with the variants under it.
+// as one group with the variants under it. A family ("Pékáru": Kenyér, Zsemle, Kifli) is a
+// group of different items any of which will do.
 
 const SEPARATOR = ' · '
 const fold = (text: string) => text.toLocaleLowerCase('hu')
@@ -26,6 +27,30 @@ export function findItem(items: ItemOut[], name: string, variant: string | null)
 /** An item name's first variant in list order: where its name links to. */
 export function firstVariant(items: ItemOut[], name: string): ItemOut | undefined {
   return items.filter((item) => fold(item.name) === fold(name)).sort(byItem)[0]
+}
+
+/** Whether others will do instead of it: its family's members, or its variants. */
+export function interchangeable(item: ItemOut): boolean {
+  return item.family != null || item.any_variant
+}
+
+/** The same for the items that will do instead of each other, and only for them. */
+export function groupKey(item: ItemOut): string {
+  if (item.family != null) return `family:${fold(item.family)}`
+  return item.any_variant ? `name:${fold(item.name)}` : `item:${item.id}`
+}
+
+/** What will do instead of the item, itself included, in list order. */
+export function groupMembers(item: ItemOut, items: ItemOut[]): ItemOut[] {
+  const key = groupKey(item)
+  return items.filter((other) => groupKey(other) === key).sort(byItem)
+}
+
+/** The families in the catalogue, each once, in order. */
+export function familyNames(items: ItemOut[]): string[] {
+  const names = new Map<string, string>()
+  for (const item of items) if (item.family) names.set(fold(item.family), item.family)
+  return [...names.values()].sort((a, b) => a.localeCompare(b, 'hu'))
 }
 
 /** By name, then variant, the one without a variant first. */

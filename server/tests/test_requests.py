@@ -824,3 +824,71 @@ def test_turning_any_variant_on_merges_the_lines(api, house) -> None:
     # Each on its own again: a line each.
     api("PATCH", f"/items/{ids[1]}", {"any_variant": False})
     assert len(active(api)) == 2
+
+
+# A family: different items any of which will do
+
+
+@pytest.fixture
+def bakery(api, house) -> dict[str, int]:
+    """Kenyér (two kinds), Zsemle and Kifli, the "Pékáru" family, all in the pantry."""
+    ids = {}
+    for name, variant in (("Kenyér", "fehér"), ("Kenyér", "burgonyás"), ("Zsemle", None)):
+        response = api("POST", "/items", {"name": name, "variant": variant})
+        ids[variant or name] = response.json()["id"]
+        set_level(api, house["pantry"], ids[variant or name], "plenty")
+    for item_id in (ids["fehér"], ids["Zsemle"]):
+        response = api("PATCH", f"/items/{item_id}", {"family": "Pékáru"})
+        assert response.json()["family"] == "Pékáru", response.text
+    return ids
+
+
+def test_a_family_is_shared_by_a_name_and_spelled_once(api, bakery) -> None:
+    items = {i["id"]: i for i in api("GET", "/items").json()}
+    # Every kind of Kenyér joined, not only the one set.
+    assert items[bakery["burgonyás"]]["family"] == "Pékáru"
+    # A new kind joins in; a family typed in another case is the same one.
+    roll = api("POST", "/items", {"name": "Kifli"}).json()
+    assert roll["family"] is None
+    assert api("PATCH", f"/items/{roll['id']}", {"family": "pékáru"}).json()["family"] == "Pékáru"
+    toast = api("POST", "/items", {"name": "kenyér", "variant": "toast"}).json()
+    assert toast["family"] == "Pékáru"
+
+
+def test_a_family_is_short_only_once_every_member_is(api, house, bakery) -> None:
+    pantry = house["pantry"]
+    set_level(api, pantry, bakery["fehér"], "out")
+    set_level(api, pantry, bakery["burgonyás"], "low")
+    assert active(api) == []
+    set_level(api, pantry, bakery["Zsemle"], "out", BELA)
+    [request] = active(api)
+    assert request["item_id"] == bakery["Zsemle"]
+    # One back, of any name: off the list.
+    set_level(api, pantry, bakery["fehér"], "plenty")
+    assert active(api) == []
+
+
+def test_buying_for_a_family_says_which_member(api, house, bakery) -> None:
+    pantry = house["pantry"]
+    for key in ("fehér", "burgonyás", "Zsemle"):
+        set_level(api, pantry, bakery[key], "out")
+    [request] = active(api)
+    path = f"/requests/{request['id']}/done"
+    assert api("POST", path, {"item_id": house["sugar"]}).status_code == 422
+    assert api("POST", path, {"item_id": bakery["burgonyás"]}).status_code == 200
+    assert level_of(api, pantry, bakery["burgonyás"]) == "plenty"
+    assert level_of(api, pantry, bakery["Zsemle"]) == "out"
+
+
+def test_leaving_a_family(api, house, bakery) -> None:
+    pantry = house["pantry"]
+    for key in ("fehér", "burgonyás", "Zsemle"):
+        set_level(api, pantry, bakery[key], "out")
+    assert len(active(api)) == 1
+    # Kenyér on its own again: a line for each kind of it, and one for the Zsemle left.
+    api("PATCH", f"/items/{bakery['burgonyás']}", {"family": None})
+    lines = {request["item_id"] for request in active(api)}
+    assert lines == {bakery["fehér"], bakery["burgonyás"], bakery["Zsemle"]}
+    # Joining again: one line.
+    api("PATCH", f"/items/{bakery['fehér']}", {"family": "Pékáru"})
+    assert len(active(api)) == 1

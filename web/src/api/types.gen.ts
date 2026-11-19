@@ -313,6 +313,10 @@ export type ItemOut = {
      */
     any_variant: boolean;
     /**
+     * Family
+     */
+    family: string | null;
+    /**
      * Substitute Ids
      */
     substitute_ids: Array<number>;
@@ -359,6 +363,10 @@ export type ItemUpdate = {
      * Any Variant
      */
     any_variant?: boolean | null;
+    /**
+     * Family
+     */
+    family?: string | null;
     /**
      * Substitutes
      */

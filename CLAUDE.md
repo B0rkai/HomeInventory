@@ -35,7 +35,8 @@ desktop admin pages (`#/admin/...`, and the LAN port as Admin): items, places,
 to-dos with assigning, the log, people and their devices; moving stock;
 and everything the phone does (done for a person, never as Admin); recipes (`recipes.py`,
 the Menu tab, the admin Receptek tab; a recipe has a kind (main course, soup, side
-dish, a menu of several, ...) and can take another whole; an item can name substitutes for recipes;
+dish, a menu of several, ...) and can take another whole; an item can name substitutes for recipes
+and join a family any member of which will do;
 suggested ones are added with a tap, `web/src/starterRecipes.ts`). Next: the meal planner's milestone 6, planning
 cookings (`docs/features.md`). Anything marked *(planned)* describes intended
 setup, not code that exists yet.
