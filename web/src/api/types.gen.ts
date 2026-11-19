@@ -178,6 +178,98 @@ export type ChoreUpdate = {
 };
 
 /**
+ * CookingCreate
+ */
+export type CookingCreate = {
+    /**
+     * Recipe Id
+     */
+    recipe_id: number;
+    /**
+     * Side Id
+     */
+    side_id?: number | null;
+    /**
+     * Day
+     */
+    day: string;
+    /**
+     * Cook Id
+     */
+    cook_id?: number | null;
+};
+
+/**
+ * CookingDone
+ */
+export type CookingDone = {
+    /**
+     * Levels
+     */
+    levels?: Array<LevelLeft>;
+};
+
+/**
+ * CookingOut
+ */
+export type CookingOut = {
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Recipe Id
+     */
+    recipe_id: number;
+    /**
+     * Side Id
+     */
+    side_id: number | null;
+    /**
+     * Day
+     */
+    day: string;
+    /**
+     * Cook Id
+     */
+    cook_id: number | null;
+    /**
+     * Cook Name
+     */
+    cook_name: string | null;
+    /**
+     * Created By Name
+     */
+    created_by_name: string | null;
+    /**
+     * Done At
+     */
+    done_at: string | null;
+    /**
+     * Bought Item Ids
+     */
+    bought_item_ids?: Array<number>;
+};
+
+/**
+ * CookingUpdate
+ */
+export type CookingUpdate = {
+    /**
+     * Day
+     */
+    day?: string | null;
+    /**
+     * Side Id
+     */
+    side_id?: number | null;
+    /**
+     * Cook Id
+     */
+    cook_id?: number | null;
+};
+
+/**
  * HTTPValidationError
  */
 export type HttpValidationError = {
@@ -377,6 +469,23 @@ export type ItemUpdate = {
  * Level
  */
 export type Level = 'lots' | 'plenty' | 'low' | 'out';
+
+/**
+ * LevelLeft
+ *
+ * What's left of an item in a place after cooking.
+ */
+export type LevelLeft = {
+    /**
+     * Item Id
+     */
+    item_id: number;
+    /**
+     * Location Id
+     */
+    location_id: number;
+    level: Level;
+};
 
 /**
  * LocationCreate
@@ -735,6 +844,10 @@ export type RequestOut = {
      * Reminded At
      */
     reminded_at: string | null;
+    /**
+     * Cooking Id
+     */
+    cooking_id: number | null;
 };
 
 /**
@@ -1975,6 +2088,139 @@ export type UpdateRecipeResponses = {
 };
 
 export type UpdateRecipeResponse = UpdateRecipeResponses[keyof UpdateRecipeResponses];
+
+export type ListCookingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/cookings';
+};
+
+export type ListCookingsResponses = {
+    /**
+     * Response List Cookings
+     *
+     * Successful Response
+     */
+    200: Array<CookingOut>;
+};
+
+export type ListCookingsResponse = ListCookingsResponses[keyof ListCookingsResponses];
+
+export type CreateCookingData = {
+    body: CookingCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/cookings';
+};
+
+export type CreateCookingErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateCookingError = CreateCookingErrors[keyof CreateCookingErrors];
+
+export type CreateCookingResponses = {
+    /**
+     * Successful Response
+     */
+    201: CookingOut;
+};
+
+export type CreateCookingResponse = CreateCookingResponses[keyof CreateCookingResponses];
+
+export type DeleteCookingData = {
+    body?: never;
+    path: {
+        /**
+         * Cooking Id
+         */
+        cooking_id: number;
+    };
+    query?: never;
+    url: '/api/v1/cookings/{cooking_id}';
+};
+
+export type DeleteCookingErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteCookingError = DeleteCookingErrors[keyof DeleteCookingErrors];
+
+export type DeleteCookingResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteCookingResponse = DeleteCookingResponses[keyof DeleteCookingResponses];
+
+export type UpdateCookingData = {
+    body: CookingUpdate;
+    path: {
+        /**
+         * Cooking Id
+         */
+        cooking_id: number;
+    };
+    query?: never;
+    url: '/api/v1/cookings/{cooking_id}';
+};
+
+export type UpdateCookingErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateCookingError = UpdateCookingErrors[keyof UpdateCookingErrors];
+
+export type UpdateCookingResponses = {
+    /**
+     * Successful Response
+     */
+    200: CookingOut;
+};
+
+export type UpdateCookingResponse = UpdateCookingResponses[keyof UpdateCookingResponses];
+
+export type CompleteCookingData = {
+    body: CookingDone;
+    path: {
+        /**
+         * Cooking Id
+         */
+        cooking_id: number;
+    };
+    query?: never;
+    url: '/api/v1/cookings/{cooking_id}/done';
+};
+
+export type CompleteCookingErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CompleteCookingError = CompleteCookingErrors[keyof CompleteCookingErrors];
+
+export type CompleteCookingResponses = {
+    /**
+     * Successful Response
+     */
+    200: CookingOut;
+};
+
+export type CompleteCookingResponse = CompleteCookingResponses[keyof CompleteCookingResponses];
 
 export type ListActivityData = {
     body?: never;

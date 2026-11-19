@@ -1,8 +1,9 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from enum import StrEnum
 
 from sqlalchemy import (
     CheckConstraint,
+    Date,
     DateTime,
     Enum,
     ForeignKey,
@@ -288,9 +289,10 @@ class Request(Base):
     __table_args__ = (
         CheckConstraint(
             "(kind = 'buy' AND chore_id IS NULL AND ("
-            "(item_id IS NOT NULL AND location_id IS NOT NULL AND name IS NULL)"
+            "(item_id IS NOT NULL AND name IS NULL)"
             " OR (item_id IS NULL AND location_id IS NULL AND name IS NOT NULL)))"
-            " OR (kind = 'chore' AND chore_id IS NOT NULL AND item_id IS NULL AND name IS NULL)",
+            " OR (kind = 'chore' AND chore_id IS NOT NULL AND item_id IS NULL AND name IS NULL"
+            " AND cooking_id IS NULL)",
             name="target",
         ),
         # At most one active request per item and place, or per chore: reporting twice
@@ -303,6 +305,15 @@ class Request(Base):
             sqlite_where=ACTIVE_WHERE,
         ),
         Index("uq_requests_active_chore", "chore_id", unique=True, sqlite_where=ACTIVE_WHERE),
+        # And one per item kept nowhere, bought for a cooking.
+        Index(
+            "uq_requests_active_placeless",
+            "item_id",
+            unique=True,
+            sqlite_where=text(
+                "status IN ('open', 'claimed') AND item_id IS NOT NULL AND location_id IS NULL"
+            ),
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -312,7 +323,8 @@ class Request(Base):
     # Something to buy that isn't kept track of ("Elem", "Szülinapi gyertya"), written on the
     # shopping list as it is: no item, no place.
     name: Mapped[str | None] = mapped_column(String(NAME_MAX_LENGTH))
-    # Where it's needed; a chore's own location, unset for a chore of the whole house.
+    # Where it's needed; a chore's own location, unset for a chore of the whole house, or
+    # for an item kept nowhere, bought for a cooking.
     location_id: Mapped[int | None] = mapped_column(
         ForeignKey("locations.id", ondelete="CASCADE"), index=True
     )
@@ -328,6 +340,13 @@ class Request(Base):
     # The latest "when will it be done?" nudge to whoever claimed it; once a day at most.
     reminded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     reminded_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    # The earliest planned cooking it's needed for, if any: it's due before that day.
+    cooking_id: Mapped[int | None] = mapped_column(
+        ForeignKey("cookings.id", ondelete="SET NULL"), index=True
+    )
+    # Put on for a cooking (not a shortage, nor by hand): it goes again once no planned
+    # cooking needs it, unless someone's buying it.
+    for_cooking: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     created_by: Mapped[User | None] = relationship(foreign_keys=[created_by_id], lazy="joined")
     claimed_by: Mapped[User | None] = relationship(foreign_keys=[claimed_by_id], lazy="joined")
@@ -458,6 +477,40 @@ class RecipeIngredient(Base):
     optional: Mapped[bool] = mapped_column(default=False, server_default=false())
     # Order within the recipe.
     position: Mapped[int] = mapped_column(default=0)
+
+
+class Cooking(Base):
+    """A recipe planned for a day (its side dish with it), until it's cooked. What it needs
+    and the house lacks is on the shopping list (requests point at it); cancelling one
+    deletes it."""
+
+    __tablename__ = "cookings"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    recipe_id: Mapped[int] = mapped_column(ForeignKey("recipes.id", ondelete="CASCADE"), index=True)
+    # A main course's side dish (or a menu's that names none), picked when planned.
+    side_id: Mapped[int | None] = mapped_column(ForeignKey("recipes.id", ondelete="SET NULL"))
+    # The household's local day; no meal, no time.
+    day: Mapped[date] = mapped_column(Date)
+    # Who cooks it, once someone says so.
+    cook_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    # Set once it's cooked; a cooked one is history, no longer planned.
+    done_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+
+    recipe: Mapped[Recipe] = relationship(foreign_keys=[recipe_id], lazy="joined")
+    side: Mapped[Recipe | None] = relationship(foreign_keys=[side_id], lazy="joined")
+    cook: Mapped[User | None] = relationship(foreign_keys=[cook_id], lazy="joined")
+    created_by: Mapped[User | None] = relationship(foreign_keys=[created_by_id], lazy="joined")
+
+    @property
+    def cook_name(self) -> str | None:
+        return self.cook and self.cook.display_name
+
+    @property
+    def created_by_name(self) -> str | None:
+        return self.created_by and self.created_by.display_name
 
 
 class Action(StrEnum):

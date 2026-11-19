@@ -1,7 +1,10 @@
 import { type FormEvent, useState } from 'react'
 import { categoryName, categoryOf } from './categories'
 import { claimText } from './claims'
+import { cookingName, reservations } from './cookings'
+import { dayFor } from './days'
 import { useHouse } from './house'
+import { IconArt } from './IconArt'
 import { ItemForm } from './ItemForm'
 import { LevelName } from './LevelPicker'
 import { Named } from './Named'
@@ -17,6 +20,8 @@ export function ItemPage({ id }: { id: number }) {
   if (!house) return null
   const { locations, items, stock, requests } = house
   const item = items.find((i) => i.id === id)
+  // The planned cookings needing it.
+  const planned = reservations(house).get(id) ?? []
   if (!item) {
     return (
       <div className="card">
@@ -85,6 +90,20 @@ export function ItemPage({ id }: { id: number }) {
           </>
         )}
       </p>
+      {planned.length > 0 && (
+        <p className="small item-meta cooking-note">
+          <IconArt name="chef-hat" />
+          <span className="muted">{t.menu.planned}: </span>
+          {planned.map((cooking, index) => (
+            <span key={cooking.id}>
+              {index > 0 && '; '}
+              <a href={href.cooking(cooking.id)}>
+                {t.menu.forCooking(cookingName(house, cooking), dayFor(cooking.day))}
+              </a>
+            </span>
+          ))}
+        </p>
+      )}
       {substitutes.length > 0 && (
         <p className="small item-meta">
           <span className="muted">{t.items.substitutes}: </span>

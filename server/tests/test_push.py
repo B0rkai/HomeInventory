@@ -108,6 +108,7 @@ def test_running_out_tells_the_other(api, house, phones, pushes) -> None:
                 "actor": "Anna Kovacs",
                 "tag": f"buy-{house['beans']}",
                 "url": "/#/todo",
+                "day": None,
             },
         )
     ]
@@ -339,6 +340,7 @@ def test_writing_on_the_list_tells_the_other(api, phones, pushes) -> None:
                 "actor": "Anna Kovacs",
                 "tag": f"list-{request['id']}",
                 "url": "/#/todo",
+                "day": None,
             },
         ),
         (ANNAS_PHONE, pushes[1][1] | {"event": "done", "actor": "Bela Kovacs"}),

@@ -177,6 +177,47 @@ export const t = {
     pasteHint:
       'Soronként egy hozzávaló, például „50 dkg liszt”. A mennyiséget leválasztja, a nevet a termékekhez párosítja; ellenőrizd.',
     pasteAdd: 'Felvesz',
+    // Planning cookings
+    week: 'A hét',
+    noCookings: 'Nincs betervezett főzés.',
+    noCookingsHint:
+      'Tervezz be egy receptet egy napra: ami hiányzik hozzá, felkerül a bevásárlólistára.',
+    addCooking: 'Főzés',
+    whatToCook: 'Mit főzünk?',
+    whichDay: 'Melyik napra?',
+    side: 'Köret',
+    noSide: 'Nincs',
+    iCook: 'Én főzöm',
+    atHome: 'Otthon van',
+    willList: 'Listára kerül',
+    listedAlready: 'Már a listán',
+    planIt: 'Betervez',
+    allThere: '✓ minden megvan',
+    missingListed: (n: number) => `${n} hiányzik · listán`,
+    notListed: (names: string) => `⚠ ${names}: nincs a listán`,
+    cooks: (name: string) => `${name} főz`,
+    youCook: 'Te főzöl',
+    nobodyCooks: 'Még senki',
+    claimCook: 'Elvállalom',
+    unclaimCook: 'Mégsem',
+    cancelCooking: 'Lemond',
+    confirmCancel: (name: string, day: string) =>
+      `Lemondod: ${name}, ${day}? Ami csak ehhez kellett, lekerül a listáról.`,
+    moveCooking: 'Áthelyez',
+    changeSide: 'Köret',
+    cooked: 'Megfőztem',
+    recipe: 'Recept',
+    onList: 'listán',
+    bought: 'megvettük',
+    offList: 'nincs a listán',
+    leftTitle: 'Mi maradt?',
+    leftHint: (name: string) => `${name}: állítsd be, ami elfogyott vagy kevés lett.`,
+    leftNone: 'A hozzávalók közül semmit nem tartunk sehol: nincs mit beállítani.',
+    cookingNotFound: 'Ez a főzés már nincs a tervben.',
+    forCooking: (name: string, day: string) => `${name}, ${day}`,
+    reserved: (list: string) => `Betervezve: ${list}`,
+    planned: 'Betervezve',
+    withSide: (name: string) => `+ ${name}`,
   },
   time: {
     now: 'most',
@@ -189,6 +230,19 @@ export const t = {
     // Monday first.
     weekdays: ['hétfő', 'kedd', 'szerda', 'csütörtök', 'péntek', 'szombat', 'vasárnap'],
     weekdaysShort: ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'],
+    // For a day: "mára", "szombatra".
+    todayFor: 'mára',
+    tomorrowFor: 'holnapra',
+    yesterdayFor: 'tegnapra',
+    weekdaysFor: [
+      'hétfőre',
+      'keddre',
+      'szerdára',
+      'csütörtökre',
+      'péntekre',
+      'szombatra',
+      'vasárnapra',
+    ],
   },
   // The fixed item groups, one per icon colour.
   categories: {
@@ -347,6 +401,9 @@ export const t = {
     reminderBody: (place: string) => `Mikor lesz kész? · ${place}`,
     assigned: (name: string) => `Rád osztották: ${name}`,
     assignedBy: (place: string, actor: string) => `${place} · ${actor}`,
+    planned: (actor: string, name: string) => `${actor} betervezte: ${name}`,
+    moved: (actor: string, name: string) => `${actor} áthelyezte: ${name}`,
+    dropped: (actor: string, name: string) => `${actor} lemondta: ${name}`,
   },
   nickname: {
     prompt: 'Hogy szólítsunk?',
@@ -373,6 +430,8 @@ export const t = {
     tooDeep: 'Ennél mélyebbre nem lehet helyet tenni.',
     notFound: 'Ez közben törlődött. Frissítettem a listát.',
     saveFailed: 'Nem sikerült menteni. Próbáld újra.',
+    pastDay: 'Csak mára vagy későbbre lehet tervezni.',
+    cookingChanged: 'Ezt a főzést közben már megfőzték vagy lemondták. Frissítettem.',
   },
   // The desktop admin pages (#/admin, and the LAN port as Admin).
   admin: {
@@ -454,6 +513,14 @@ export const t = {
     report: 'Most esedékes',
     deleteChore: 'Törlés',
     confirmDeleteChore: (name: string) => `Törlöd ezt a feladatot: ${name}?`,
+    // Cookings
+    cookings: 'Főzések',
+    noCookings: 'Nincs betervezett főzés.',
+    day: 'Nap',
+    dish: 'Étel',
+    cook: 'Ki főzi',
+    nobody: '— senki —',
+    planCooking: 'Új főzés',
     // People
     peopleTitle: 'Emberek',
     login: 'Tailscale-fiók',

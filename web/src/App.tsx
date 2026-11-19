@@ -6,6 +6,7 @@ import { Home } from './Home'
 import { useHouse } from './house'
 import { HouseProvider } from './HouseProvider'
 import { IconArt } from './IconArt'
+import { CookingPage, PlanPage } from './CookingPages'
 import { ItemPage } from './ItemPage'
 import { ItemsPage } from './ItemsPage'
 import { LogPage } from './LogPage'
@@ -238,7 +239,11 @@ function Page() {
   if (route.page === 'place') return <PlacePage key={route.id} id={route.id} />
   if (route.page === 'items') return <ItemsPage />
   if (route.page === 'item') return <ItemPage key={route.id} id={route.id} />
-  if (route.page === 'menu') return <MenuPage />
+  if (route.page === 'menu') return <MenuPage view={route.view} />
+  if (route.page === 'plan')
+    return <PlanPage key={route.recipeId ?? 'pick'} recipeId={route.recipeId} />
+  if (route.page === 'cooking')
+    return <CookingPage key={`${route.id}-${route.left}`} id={route.id} left={route.left} />
   if (route.page === 'recipe') return <RecipePage key={route.id} id={route.id} />
   if (route.page === 'recipeEdit') return <RecipeEditPage key={route.id ?? 'new'} id={route.id} />
   if (route.page === 'todo') return <TodoPage view={route.view} />
@@ -265,7 +270,7 @@ function NavBar() {
       ? 'home'
       : route.page === 'item'
         ? 'items'
-        : route.page === 'recipe' || route.page === 'recipeEdit'
+        : ['recipe', 'recipeEdit', 'plan', 'cooking'].includes(route.page)
           ? 'menu'
           : route.page
 

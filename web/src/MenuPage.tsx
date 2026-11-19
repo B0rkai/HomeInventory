@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import type { RecipeOut } from './api'
 import { useHouse } from './house'
-import { iconOf } from './iconLookup'
-import { IconTile } from './Named'
+import { RecipeName } from './Named'
 import { missingCount, RECIPE_KINDS } from './recipes'
-import { href } from './route'
+import { Week } from './CookingPages'
+import { href, type MenuView } from './route'
 import { StarterRecipes } from './StarterRecipes'
 import { t } from './strings'
 
@@ -17,18 +16,45 @@ const fold = (text: string) =>
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
 
-/** A recipe's tile and name. */
-export function RecipeName({ recipe }: { recipe: Pick<RecipeOut, 'name' | 'icon'> }) {
+/** The two views' tabs: the week's cookings, the recipes. */
+function MenuTabs({ view }: { view: MenuView }) {
   return (
-    <span className="named">
-      <IconTile icon={iconOf(recipe, 'recipe')} name={recipe.name} kind="recipe" hue="food" />
-      <span>{recipe.name}</span>
-    </span>
+    <div className="tabs" role="tablist">
+      {(['week', 'recipes'] as const).map((tab) => {
+        const to = tab === 'week' ? href.menu : href.recipes
+        return (
+          <a
+            key={tab}
+            role="tab"
+            aria-selected={view === tab}
+            href={to}
+            onClick={(event) => {
+              // Switching views shouldn't add to the back button's history.
+              event.preventDefault()
+              window.location.replace(to)
+            }}
+          >
+            {tab === 'week' ? t.menu.week : t.menu.recipes}
+          </a>
+        )
+      })}
+    </div>
   )
 }
 
-/** The Menu tab: the recipes by kind, each with whether everything it takes is at home. */
-export function MenuPage() {
+/** The Menu tab: the week's cookings, or the recipes. */
+export function MenuPage({ view }: { view: MenuView }) {
+  return (
+    <>
+      <h2>{t.menu.title}</h2>
+      <MenuTabs view={view} />
+      {view === 'week' ? <Week /> : <Recipes />}
+    </>
+  )
+}
+
+/** The recipes by kind, each with whether everything it takes is at home. */
+function Recipes() {
   const { house } = useHouse()
   const [search, setSearch] = useState(() => {
     try {
@@ -55,7 +81,6 @@ export function MenuPage() {
 
   return (
     <>
-      <h2>{t.menu.title}</h2>
       {recipes.length > 0 && (
         <input
           type="search"

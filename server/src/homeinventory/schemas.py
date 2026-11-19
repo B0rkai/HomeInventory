@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated, Literal
 
 from pydantic import (
@@ -257,6 +257,9 @@ class RequestOut(BaseModel):
     # The latest nudge to whoever claimed it, and who sent it.
     reminded_by_name: str | None
     reminded_at: datetime | None
+    # The planned cooking it's for, if any: needed before its day. A buy request of an item
+    # with no place is only for that.
+    cooking_id: int | None
 
 
 class ActivityOut(BaseModel):
@@ -435,3 +438,51 @@ class RecipeUpdate(BaseModel):
     note: Note = None
     link: Link = None
     ingredients: list[IngredientIn] | None = Field(default=None, max_length=INGREDIENTS_MAX)
+
+
+# Cookings: recipes planned for a day
+
+
+class CookingOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    recipe_id: int
+    side_id: int | None
+    day: date
+    cook_id: int | None
+    cook_name: str | None
+    created_by_name: str | None
+    done_at: datetime | None
+    # What was bought for it that's kept nowhere: it counts as at home for this cooking.
+    bought_item_ids: list[int] = []
+
+
+class CookingCreate(BaseModel):
+    recipe_id: int
+    # A side dish, for a main course (or a menu naming none).
+    side_id: int | None = None
+    # Today or later, the household's day.
+    day: date
+    cook_id: int | None = None
+
+
+class CookingUpdate(BaseModel):
+    # Only the fields sent change: a new day moves it; `side_id` or `cook_id` sent as null
+    # takes the side dish or the cook off.
+    day: date | None = None
+    side_id: int | None = None
+    cook_id: int | None = None
+
+
+class LevelLeft(BaseModel):
+    """What's left of an item in a place after cooking."""
+
+    item_id: int
+    location_id: int
+    level: Level
+
+
+class CookingDone(BaseModel):
+    # Only the levels that changed need sending.
+    levels: list[LevelLeft] = Field(default=[], max_length=200)

@@ -1,6 +1,9 @@
 import { type ReactNode, useState } from 'react'
-import type { Category, ItemOut, LocationOut, RequestOut } from './api'
-import { useHouse } from './house'
+import type { Category, ItemOut, RequestOut } from './api'
+import { cookingName } from './cookings'
+import { dayFor } from './days'
+import { type House, useHouse } from './house'
+import { IconArt } from './IconArt'
 import { LevelName } from './LevelPicker'
 import { Named } from './Named'
 import { href, type TodoView } from './route'
@@ -249,26 +252,29 @@ function Sections({ requests }: { requests: RequestOut[] }) {
         // Any of several variants will do: done asks which was bought.
         variants={variants && variants.length > 1 ? variants : undefined}
       >
-        {item.id > 0 && (
+        {item.id > 0 && wanted.some((request) => request.location_id !== null) && (
           <p className="small">
-            {wanted.map((request, index) => {
-              // A buy request always has a place.
-              const level = levelAt(request.location_id!)
-              return (
-                <span key={request.id}>
-                  {index > 0 && ', '}
-                  {placeLink(request.location_id)}
-                  {level && (
-                    <>
-                      {' '}
-                      <LevelName level={level} />
-                    </>
-                  )}
-                </span>
-              )
-            })}
+            {wanted
+              // Bought for a cooking, kept nowhere: no place to tell.
+              .filter((request) => request.location_id !== null)
+              .map((request, index) => {
+                const level = levelAt(request.location_id!)
+                return (
+                  <span key={request.id}>
+                    {index > 0 && ', '}
+                    {placeLink(request.location_id)}
+                    {level && (
+                      <>
+                        {' '}
+                        <LevelName level={level} />
+                      </>
+                    )}
+                  </span>
+                )
+              })}
           </p>
         )}
+        <CookingNote requests={wanted} />
         {item.id < 0 && wanted[0].created_by_name && (
           <p className="small muted">
             {t.todo.written(wanted[0].created_by_name, ago(wanted[0].created_at))}
@@ -332,7 +338,7 @@ function Sections({ requests }: { requests: RequestOut[] }) {
             <span className="head-actions">
               {/* A list of only uncategorised items has no group heading to put it on. */}
               {!headed && claimAll(toBuy)}
-              <ShareButton text={shoppingText(shopping, buying, locations, headed)} />
+              <ShareButton text={shoppingText(shopping, buying, house, headed)} />
             </span>
           </div>
           {shopping.map(([category, list]) => (
@@ -356,7 +362,7 @@ function Sections({ requests }: { requests: RequestOut[] }) {
 function shoppingText(
   shopping: [Category | null, ItemOut[]][],
   buying: Map<number, RequestOut[]>,
-  locations: LocationOut[],
+  house: House,
   headed: boolean,
 ): string {
   const lines = [t.todo.shopping]
@@ -364,13 +370,49 @@ function shoppingText(
     lines.push('')
     if (headed) lines.push(categoryName(category))
     for (const item of list) {
-      const places = buying
-        .get(item.id)!
-        .map((request) => placePath(locations, request.location_id!))
-      lines.push(`- ${fullName(item)} (${places.join(', ')})`)
+      const requests = buying.get(item.id)!
+      const why = [
+        ...requests
+          .filter((request) => request.location_id !== null)
+          .map((request) => placePath(house.locations, request.location_id!)),
+        ...forCookings(house, requests),
+      ]
+      lines.push(why.length ? `- ${fullName(item)} (${why.join(', ')})` : `- ${fullName(item)}`)
     }
   }
   return lines.join('\n')
+}
+
+/** The cookings some lines are due for: "Palacsinta, szombatra". */
+function forCookings(house: House, requests: RequestOut[]): string[] {
+  const ids = [...new Set(requests.map((request) => request.cooking_id))]
+  return ids
+    .map((id) => house.cookings.find((cooking) => cooking.id === id))
+    .filter((cooking) => cooking !== undefined)
+    .map((cooking) => t.menu.forCooking(cookingName(house, cooking), dayFor(cooking.day)))
+}
+
+/** Which cooking a line is due for, with a chef's hat; a link to it. */
+function CookingNote({ requests }: { requests: RequestOut[] }) {
+  const { house } = useHouse()
+  if (!house) return null
+  const cookings = [...new Set(requests.map((request) => request.cooking_id))]
+    .map((id) => house.cookings.find((cooking) => cooking.id === id))
+    .filter((cooking) => cooking !== undefined)
+  if (!cookings.length) return null
+  return (
+    <p className="small cooking-note">
+      <IconArt name="chef-hat" />
+      {cookings.map((cooking, index) => (
+        <span key={cooking.id}>
+          {index > 0 && '; '}
+          <a href={href.cooking(cooking.id)}>
+            {t.menu.forCooking(cookingName(house, cooking), dayFor(cooking.day))}
+          </a>
+        </span>
+      ))}
+    </p>
+  )
 }
 
 /** Hands the text to the phone's share sheet, or copies it where there is none. */

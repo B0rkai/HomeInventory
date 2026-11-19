@@ -11,9 +11,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from homeinventory.common import NO_CONTENT, announce_changes, conflict, get_or_404
+from homeinventory.cooking_lines import recipes_changed, settle
 from homeinventory.db import get_session
 from homeinventory.identity import current_user
-from homeinventory.models import Item, Recipe, RecipeIngredient, RecipeKind
+from homeinventory.models import Item, Recipe, RecipeIngredient, RecipeKind, User
 from homeinventory.places import find_or_make_item
 from homeinventory.schemas import IngredientIn, RecipeCreate, RecipeOut, RecipeUpdate
 
@@ -104,7 +105,10 @@ def create_recipe(new: RecipeCreate, session: Session = Depends(get_session)) ->
 
 @router.patch("/recipes/{recipe_id}")
 def update_recipe(
-    recipe_id: int, update: RecipeUpdate, session: Session = Depends(get_session)
+    recipe_id: int,
+    update: RecipeUpdate,
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
 ) -> RecipeOut:
     """Changes the fields sent; `ingredients` replaces the whole list."""
     recipe = get_or_404(session, Recipe, recipe_id)
@@ -126,11 +130,19 @@ def update_recipe(
         recipe.ingredients = []
         session.flush()
         _set_ingredients(session, recipe, update.ingredients)
+        session.flush()
+        # Planned cookings of it (or taking it) need other things now.
+        recipes_changed(session, user)
     session.commit()
     return RecipeOut.model_validate(recipe)
 
 
 @router.delete("/recipes/{recipe_id}", **NO_CONTENT)
-def delete_recipe(recipe_id: int, session: Session = Depends(get_session)) -> None:
+def delete_recipe(
+    recipe_id: int, user: User = Depends(current_user), session: Session = Depends(get_session)
+) -> None:
+    """Deletes a recipe; its planned cookings go with it, and the lines only they needed."""
     session.delete(get_or_404(session, Recipe, recipe_id))
+    session.flush()
+    settle(session, user)
     session.commit()

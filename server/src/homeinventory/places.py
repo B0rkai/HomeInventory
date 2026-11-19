@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from homeinventory.activity import record
 from homeinventory.common import NO_CONTENT, announce_changes, conflict, get_notifier, get_or_404
+from homeinventory.cooking_lines import level_changed
 from homeinventory.db import get_session
 from homeinventory.identity import current_user
 from homeinventory.models import (
@@ -236,7 +237,13 @@ def list_items(session: Session = Depends(get_session)) -> list[ItemOut]:
 @router.post("/items", status_code=status.HTTP_201_CREATED)
 def create_item(new: ItemCreate, session: Session = Depends(get_session)) -> ItemOut:
     _check_item_name(session, new.name, new.variant)
-    item = Item(name=new.name, variant=new.variant, category=new.category, icon=new.icon)
+    item = Item(
+        name=new.name,
+        variant=new.variant,
+        category=new.category,
+        icon=new.icon,
+        restock=new.restock,
+    )
     # A new variant goes along with the others on whether any of them will do, and joins
     # their family.
     same_name = variants_of(session, item)
@@ -388,6 +395,60 @@ def list_stock(session: Session = Depends(get_session)) -> list[StockOut]:
     return [StockOut.model_validate(stock) for stock in session.scalars(select(Stock))]
 
 
+def apply_level(
+    session: Session, user: User, item: Item, location_id: int, level: Level
+) -> tuple[bool, list[int]]:
+    """Sets an item's level in a place (keeping it there if it wasn't) and logs it; the
+    list follows. Whether it opened a request, and the ones it closed; the caller commits
+    and then tells (`tell_level`)."""
+    values = {"level": level, "updated_by_id": user.id, "updated_at": utcnow()}
+    # One statement, so two people setting the same level at once can't collide.
+    session.execute(
+        insert(Stock)
+        .values(item_id=item.id, location_id=location_id, **values)
+        .on_conflict_do_update(index_elements=[Stock.item_id, Stock.location_id], set_=values)
+    )
+    record(session, user, Action.LEVEL, item=item, location_id=location_id, level=level)
+    # Running low is a report: it puts the item on the shopping list. Filling it up again
+    # takes it off, whoever did it.
+    opened, refilled = False, []
+    group = group_of(session, item)
+    if interchangeable(item):
+        # Short only once every variant (or family member) kept here is.
+        opened, refilled = sync_variants_at(session, group, location_id, user, prefer=item)
+    elif level in SHORT:
+        # An item that isn't kept stocked just records that there's none (or little).
+        if item.restock:
+            opened = open_buy_request(session, item.id, location_id, user)
+    else:
+        refilled = close_buy_requests(session, item.id, location_id, user, RequestStatus.DONE)
+    # A planned cooking may lack it now, or not any more.
+    level_changed(session, user, [other.id for other in group])
+    return opened, refilled
+
+
+def tell_level(
+    session: Session,
+    notifier: Notifier,
+    user: User,
+    item: Item,
+    location_id: int,
+    level: Level,
+    opened: bool,
+    refilled: list[int],
+) -> None:
+    """Tells the other what `apply_level` did to the list, once it's committed."""
+    if opened:
+        _announce_opened(
+            session, notifier, user, [i.id for i in group_of(session, item)], location_id, level
+        )
+    for id in refilled:
+        request = session.get_one(Request, id)
+        notifier.send(
+            session, user.id, message_for(session, request, "refilled", user.display_name)
+        )
+
+
 @router.put("/locations/{location_id}/stock/{item_id}")
 def set_stock(
     location_id: int,
@@ -400,37 +461,9 @@ def set_stock(
     """Sets an item's level in a location, adding the item there if it isn't kept there yet."""
     get_or_404(session, Location, location_id)
     item = get_or_404(session, Item, item_id)
-    values = {"level": new.level, "updated_by_id": user.id, "updated_at": utcnow()}
-    # One statement, so two people setting the same level at once can't collide.
-    session.execute(
-        insert(Stock)
-        .values(item_id=item_id, location_id=location_id, **values)
-        .on_conflict_do_update(index_elements=[Stock.item_id, Stock.location_id], set_=values)
-    )
-    record(session, user, Action.LEVEL, item=item, location_id=location_id, level=new.level)
-    # Running low is a report: it puts the item on the shopping list. Filling it up again
-    # takes it off, whoever did it.
-    opened, refilled = False, []
-    group = group_of(session, item)
-    if interchangeable(item):
-        # Short only once every variant (or family member) kept here is.
-        opened, refilled = sync_variants_at(session, group, location_id, user, prefer=item)
-    elif new.level in SHORT:
-        # An item that isn't kept stocked just records that there's none (or little).
-        if item.restock:
-            opened = open_buy_request(session, item_id, location_id, user)
-    else:
-        refilled = close_buy_requests(session, item_id, location_id, user, RequestStatus.DONE)
+    opened, refilled = apply_level(session, user, item, location_id, new.level)
     session.commit()
-    if opened:
-        _announce_opened(
-            session, notifier, user, [other.id for other in group], location_id, new.level
-        )
-    for id in refilled:
-        request = session.get_one(Request, id)
-        notifier.send(
-            session, user.id, message_for(session, request, "refilled", user.display_name)
-        )
+    tell_level(session, notifier, user, item, location_id, new.level, opened, refilled)
     stock = session.scalars(
         select(Stock)
         .where(Stock.item_id == item_id, Stock.location_id == location_id)

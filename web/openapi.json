@@ -1074,7 +1074,7 @@
     "/api/v1/requests/{request_id}/done": {
       "post": {
         "summary": "Complete Request",
-        "description": "Marks a request done, whoever claimed it; a bought item's level goes back to plenty\n(one written in by hand has none). Where any variant will do, `item_id` says which was\nbought: that one goes to plenty in the place, kept there from now on if it wasn't.\n`by`: the person who bought it, when marked for them.",
+        "description": "Marks a request done, whoever claimed it; a bought item's level goes back to plenty\n(one written in by hand has none, nor one bought for a cooking that's kept nowhere).\nWhere any variant will do, `item_id` says which was bought: that one goes to plenty in\nthe place, kept there from now on if it wasn't.\n`by`: the person who bought it, when marked for them.",
         "operationId": "complete_request",
         "parameters": [
           {
@@ -1516,6 +1516,7 @@
       },
       "delete": {
         "summary": "Delete Recipe",
+        "description": "Deletes a recipe; its planned cookings go with it, and the lines only they needed.",
         "operationId": "delete_recipe",
         "parameters": [
           {
@@ -1531,6 +1532,197 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cookings": {
+      "get": {
+        "summary": "List Cookings",
+        "description": "The cookings not cooked yet, earliest first; past days' too.",
+        "operationId": "list_cookings",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CookingOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Cookings"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Cooking",
+        "description": "Plans a recipe for a day: what it needs and the house lacks goes on the list.",
+        "operationId": "create_cooking",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CookingCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CookingOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cookings/{cooking_id}": {
+      "patch": {
+        "summary": "Update Cooking",
+        "description": "Moves a cooking to another day, changes its side dish or who cooks it. Its lines\nfollow: the earliest cooking lacking an item is the one its line is due for.",
+        "operationId": "update_cooking",
+        "parameters": [
+          {
+            "name": "cooking_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cooking Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CookingUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CookingOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Cooking",
+        "description": "Cancels a planned cooking: the lines only it needed go, unless someone's buying them\nalready (they're told, with the other).",
+        "operationId": "delete_cooking",
+        "parameters": [
+          {
+            "name": "cooking_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cooking Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cookings/{cooking_id}/done": {
+      "post": {
+        "summary": "Complete Cooking",
+        "description": "Marks a cooking cooked, with what's left: the levels sent are set (the list follows,\nas on a place's page). Lines still waiting for it go, unless someone's buying them.",
+        "operationId": "complete_cooking",
+        "parameters": [
+          {
+            "name": "cooking_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cooking Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CookingDone"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CookingOut"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -2061,6 +2253,195 @@
         "type": "object",
         "title": "ChoreUpdate"
       },
+      "CookingCreate": {
+        "properties": {
+          "recipe_id": {
+            "type": "integer",
+            "title": "Recipe Id"
+          },
+          "side_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Side Id"
+          },
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "cook_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cook Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recipe_id",
+          "day"
+        ],
+        "title": "CookingCreate"
+      },
+      "CookingDone": {
+        "properties": {
+          "levels": {
+            "items": {
+              "$ref": "#/components/schemas/LevelLeft"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "title": "Levels",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "CookingDone"
+      },
+      "CookingOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "recipe_id": {
+            "type": "integer",
+            "title": "Recipe Id"
+          },
+          "side_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Side Id"
+          },
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day"
+          },
+          "cook_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cook Id"
+          },
+          "cook_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cook Name"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By Name"
+          },
+          "done_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Done At"
+          },
+          "bought_item_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Bought Item Ids",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "recipe_id",
+          "side_id",
+          "day",
+          "cook_id",
+          "cook_name",
+          "created_by_name",
+          "done_at"
+        ],
+        "title": "CookingOut"
+      },
+      "CookingUpdate": {
+        "properties": {
+          "day": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "side_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Side Id"
+          },
+          "cook_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cook Id"
+          }
+        },
+        "type": "object",
+        "title": "CookingUpdate"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2474,6 +2855,29 @@
           "out"
         ],
         "title": "Level"
+      },
+      "LevelLeft": {
+        "properties": {
+          "item_id": {
+            "type": "integer",
+            "title": "Item Id"
+          },
+          "location_id": {
+            "type": "integer",
+            "title": "Location Id"
+          },
+          "level": {
+            "$ref": "#/components/schemas/Level"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_id",
+          "location_id",
+          "level"
+        ],
+        "title": "LevelLeft",
+        "description": "What's left of an item in a place after cooking."
       },
       "LocationCreate": {
         "properties": {
@@ -3202,6 +3606,17 @@
               }
             ],
             "title": "Reminded At"
+          },
+          "cooking_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cooking Id"
           }
         },
         "type": "object",
@@ -3220,7 +3635,8 @@
           "claimed_by_name",
           "claimed_at",
           "reminded_by_name",
-          "reminded_at"
+          "reminded_at",
+          "cooking_id"
         ],
         "title": "RequestOut"
       },

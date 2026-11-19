@@ -4,7 +4,7 @@ import { useHouse } from './house'
 import { IconPicker } from './IconPicker'
 import { COMMON_ITEMS } from './icons'
 import { LevelName, LevelPicker } from './LevelPicker'
-import { Named } from './Named'
+import { Named, ReservedMark } from './Named'
 import { href } from './route'
 import { ShortageBadge } from './ShortageBadge'
 import { t } from './strings'
@@ -13,6 +13,7 @@ import { AddForm } from './AddForm'
 import { AddItemForm } from './AddItemForm'
 import { ChoreList } from './ChoreList'
 import { claimText } from './claims'
+import { reservations, reservedText } from './cookings'
 import { MAX_DEPTH, childrenOf, pathTo, restockedStock, shortageIn } from './tree'
 import { byItem, firstVariant, fullName, groupByName, hasVariants } from './variants'
 
@@ -24,6 +25,8 @@ export function PlacePage({ id }: { id: number }) {
   const [addingVariantTo, setAddingVariantTo] = useState<string>()
   if (!house) return null
   const { locations, items, stock, requests } = house
+  // What planned cookings need.
+  const reserved = reservations(house)
 
   const path = pathTo(locations, id)
   const place = path.at(-1)
@@ -75,6 +78,7 @@ export function PlacePage({ id }: { id: number }) {
         (request) => request.item_id === r.item_id && request.location_id === id,
       )}
       editing={editing}
+      reserved={reserved.has(r.item_id) ? reservedText(house, reserved.get(r.item_id)!) : undefined}
       onLevel={(level) => actions.setLevel(id, r.item_id, level)}
       onRemove={() => actions.removeStock(id, r.item_id)}
       onList={() => actions.requestStock(id, r.item_id)}
@@ -289,6 +293,7 @@ function StockRow({
   title,
   request,
   editing,
+  reserved,
   onLevel,
   onRemove,
   onList,
@@ -299,6 +304,8 @@ function StockRow({
   // Its open or claimed request to buy it here, if any.
   request: RequestOut | undefined
   editing: boolean
+  // What planned cookings need it, if any.
+  reserved?: string
   onLevel: (level: StockOut['level']) => void
   onRemove: () => void
   // Puts it on the shopping list by hand (for what isn't kept stocked).
@@ -323,6 +330,7 @@ function StockRow({
           </button>
         ) : (
           <span className="small">
+            {reserved && <ReservedMark text={reserved} />}
             <LevelName level={row.level} />
             <span className="muted">
               {t.place.updated(row.updated_by_name, ago(row.updated_at))}

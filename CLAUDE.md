@@ -37,8 +37,10 @@ and everything the phone does (done for a person, never as Admin); recipes (`rec
 the Menu tab, the admin Receptek tab; a recipe has a kind (main course, soup, side
 dish, a menu of several, ...) and can take another whole; an item can name substitutes for recipes
 and join a family any member of which will do;
-suggested ones are added with a tap, `web/src/starterRecipes.ts`). Next: the meal planner's milestone 6, planning
-cookings (`docs/features.md`). Anything marked *(planned)* describes intended
+suggested ones are added with a tap, `web/src/starterRecipes.ts`); planning cookings
+(`cookings.py`, the lines they put on the list in `cooking_lines.py`; the Menu tab's
+"A hét", `web/src/CookingPages.tsx`, the admin Főzések tab). Next: the meal planner's
+milestone 7, shelf life and buying windows (`docs/features.md`). Anything marked *(planned)* describes intended
 setup, not code that exists yet.
 
 ## Tech stack

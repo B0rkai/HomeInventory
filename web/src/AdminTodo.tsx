@@ -1,6 +1,8 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { listUsers, type ChoreOut, type RequestOut, type UserOut } from './api'
 import { TextCell } from './AdminItems'
+import { cookingName } from './cookings'
+import { dayFor } from './days'
 import { useHouse } from './house'
 import { KeepForm } from './KeepForm'
 import { Named } from './Named'
@@ -66,6 +68,8 @@ function RequestRow({ request, people }: { request: RequestOut; people: UserOut[
   const item = house.items.find((i) => i.id === request.item_id)
   const chore = house.chores.find((c) => c.id === request.chore_id)
   const thing = item ?? chore ?? { name: request.name ?? '', icon: null }
+  // The cooking it's due for.
+  const cooking = house.cookings.find((c) => c.id === request.cooking_id)
   return (
     <>
       <tr>
@@ -78,6 +82,11 @@ function RequestRow({ request, people }: { request: RequestOut; people: UserOut[
               ? t.home.wholeHouse
               : t.notify.shoppingList
             : placePath(house.locations, request.location_id)}
+          {cooking && (
+            <div className="muted">
+              {t.menu.forCooking(cookingName(house, cooking), dayFor(cooking.day))}
+            </div>
+          )}
         </td>
         <td className="small muted">{ago(request.created_at)}</td>
         <td>

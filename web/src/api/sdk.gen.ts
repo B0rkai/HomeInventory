@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AssignRequestData, AssignRequestErrors, AssignRequestResponses, CancelRequestData, CancelRequestErrors, CancelRequestResponses, ClaimRequestData, ClaimRequestErrors, ClaimRequestResponses, CompleteChoreData, CompleteChoreErrors, CompleteChoreResponses, CompleteRequestData, CompleteRequestErrors, CompleteRequestResponses, CreateChoreData, CreateChoreErrors, CreateChoreResponses, CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, CreateRequestData, CreateRequestErrors, CreateRequestResponses, DeleteChoreData, DeleteChoreErrors, DeleteChoreResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, DeleteSubscriptionData, DeleteSubscriptionErrors, DeleteSubscriptionResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, GetPushKeyData, GetPushKeyResponses, KeepRequestData, KeepRequestErrors, KeepRequestResponses, ListActivityData, ListActivityErrors, ListActivityResponses, ListChoresData, ListChoresResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListRecipesData, ListRecipesResponses, ListRequestsData, ListRequestsResponses, ListStockData, ListStockResponses, ListSubscriptionsData, ListSubscriptionsResponses, ListUsersData, ListUsersResponses, LogInData, LogInErrors, LogInResponses, LogOutData, LogOutResponses, MoveStockData, MoveStockErrors, MoveStockResponses, RemindRequestData, RemindRequestErrors, RemindRequestResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, ReportChoreData, ReportChoreErrors, ReportChoreResponses, RequestStockData, RequestStockErrors, RequestStockResponses, SetStockData, SetStockErrors, SetStockResponses, StreamEventsData, StreamEventsResponses, SubscribeData, SubscribeErrors, SubscribeResponses, UnclaimRequestData, UnclaimRequestErrors, UnclaimRequestResponses, UnsubscribeData, UnsubscribeErrors, UnsubscribeResponses, UpdateChoreData, UpdateChoreErrors, UpdateChoreResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses } from './types.gen';
+import type { AssignRequestData, AssignRequestErrors, AssignRequestResponses, CancelRequestData, CancelRequestErrors, CancelRequestResponses, ClaimRequestData, ClaimRequestErrors, ClaimRequestResponses, CompleteChoreData, CompleteChoreErrors, CompleteChoreResponses, CompleteCookingData, CompleteCookingErrors, CompleteCookingResponses, CompleteRequestData, CompleteRequestErrors, CompleteRequestResponses, CreateChoreData, CreateChoreErrors, CreateChoreResponses, CreateCookingData, CreateCookingErrors, CreateCookingResponses, CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, CreateRequestData, CreateRequestErrors, CreateRequestResponses, DeleteChoreData, DeleteChoreErrors, DeleteChoreResponses, DeleteCookingData, DeleteCookingErrors, DeleteCookingResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, DeleteSubscriptionData, DeleteSubscriptionErrors, DeleteSubscriptionResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, GetPushKeyData, GetPushKeyResponses, KeepRequestData, KeepRequestErrors, KeepRequestResponses, ListActivityData, ListActivityErrors, ListActivityResponses, ListChoresData, ListChoresResponses, ListCookingsData, ListCookingsResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListRecipesData, ListRecipesResponses, ListRequestsData, ListRequestsResponses, ListStockData, ListStockResponses, ListSubscriptionsData, ListSubscriptionsResponses, ListUsersData, ListUsersResponses, LogInData, LogInErrors, LogInResponses, LogOutData, LogOutResponses, MoveStockData, MoveStockErrors, MoveStockResponses, RemindRequestData, RemindRequestErrors, RemindRequestResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, ReportChoreData, ReportChoreErrors, ReportChoreResponses, RequestStockData, RequestStockErrors, RequestStockResponses, SetStockData, SetStockErrors, SetStockResponses, StreamEventsData, StreamEventsResponses, SubscribeData, SubscribeErrors, SubscribeResponses, UnclaimRequestData, UnclaimRequestErrors, UnclaimRequestResponses, UnsubscribeData, UnsubscribeErrors, UnsubscribeResponses, UpdateChoreData, UpdateChoreErrors, UpdateChoreResponses, UpdateCookingData, UpdateCookingErrors, UpdateCookingResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -320,8 +320,9 @@ export const unclaimRequest = <ThrowOnError extends boolean = false>(options: Op
  * Complete Request
  *
  * Marks a request done, whoever claimed it; a bought item's level goes back to plenty
- * (one written in by hand has none). Where any variant will do, `item_id` says which was
- * bought: that one goes to plenty in the place, kept there from now on if it wasn't.
+ * (one written in by hand has none, nor one bought for a cooking that's kept nowhere).
+ * Where any variant will do, `item_id` says which was bought: that one goes to plenty in
+ * the place, kept there from now on if it wasn't.
  * `by`: the person who bought it, when marked for them.
  */
 export const completeRequest = <ThrowOnError extends boolean = false>(options: Options<CompleteRequestData, ThrowOnError>): RequestResult<CompleteRequestResponses, CompleteRequestErrors, ThrowOnError> => (options.client ?? client).post<CompleteRequestResponses, CompleteRequestErrors, ThrowOnError>({
@@ -435,6 +436,8 @@ export const createRecipe = <ThrowOnError extends boolean = false>(options: Opti
 
 /**
  * Delete Recipe
+ *
+ * Deletes a recipe; its planned cookings go with it, and the lines only they needed.
  */
 export const deleteRecipe = <ThrowOnError extends boolean = false>(options: Options<DeleteRecipeData, ThrowOnError>): RequestResult<DeleteRecipeResponses, DeleteRecipeErrors, ThrowOnError> => (options.client ?? client).delete<DeleteRecipeResponses, DeleteRecipeErrors, ThrowOnError>({ url: '/api/v1/recipes/{recipe_id}', ...options });
 
@@ -445,6 +448,65 @@ export const deleteRecipe = <ThrowOnError extends boolean = false>(options: Opti
  */
 export const updateRecipe = <ThrowOnError extends boolean = false>(options: Options<UpdateRecipeData, ThrowOnError>): RequestResult<UpdateRecipeResponses, UpdateRecipeErrors, ThrowOnError> => (options.client ?? client).patch<UpdateRecipeResponses, UpdateRecipeErrors, ThrowOnError>({
     url: '/api/v1/recipes/{recipe_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List Cookings
+ *
+ * The cookings not cooked yet, earliest first; past days' too.
+ */
+export const listCookings = <ThrowOnError extends boolean = false>(options?: Options<ListCookingsData, ThrowOnError>): RequestResult<ListCookingsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListCookingsResponses, unknown, ThrowOnError>({ url: '/api/v1/cookings', ...options });
+
+/**
+ * Create Cooking
+ *
+ * Plans a recipe for a day: what it needs and the house lacks goes on the list.
+ */
+export const createCooking = <ThrowOnError extends boolean = false>(options: Options<CreateCookingData, ThrowOnError>): RequestResult<CreateCookingResponses, CreateCookingErrors, ThrowOnError> => (options.client ?? client).post<CreateCookingResponses, CreateCookingErrors, ThrowOnError>({
+    url: '/api/v1/cookings',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete Cooking
+ *
+ * Cancels a planned cooking: the lines only it needed go, unless someone's buying them
+ * already (they're told, with the other).
+ */
+export const deleteCooking = <ThrowOnError extends boolean = false>(options: Options<DeleteCookingData, ThrowOnError>): RequestResult<DeleteCookingResponses, DeleteCookingErrors, ThrowOnError> => (options.client ?? client).delete<DeleteCookingResponses, DeleteCookingErrors, ThrowOnError>({ url: '/api/v1/cookings/{cooking_id}', ...options });
+
+/**
+ * Update Cooking
+ *
+ * Moves a cooking to another day, changes its side dish or who cooks it. Its lines
+ * follow: the earliest cooking lacking an item is the one its line is due for.
+ */
+export const updateCooking = <ThrowOnError extends boolean = false>(options: Options<UpdateCookingData, ThrowOnError>): RequestResult<UpdateCookingResponses, UpdateCookingErrors, ThrowOnError> => (options.client ?? client).patch<UpdateCookingResponses, UpdateCookingErrors, ThrowOnError>({
+    url: '/api/v1/cookings/{cooking_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Complete Cooking
+ *
+ * Marks a cooking cooked, with what's left: the levels sent are set (the list follows,
+ * as on a place's page). Lines still waiting for it go, unless someone's buying them.
+ */
+export const completeCooking = <ThrowOnError extends boolean = false>(options: Options<CompleteCookingData, ThrowOnError>): RequestResult<CompleteCookingResponses, CompleteCookingErrors, ThrowOnError> => (options.client ?? client).post<CompleteCookingResponses, CompleteCookingErrors, ThrowOnError>({
+    url: '/api/v1/cookings/{cooking_id}/done',
     ...options,
     headers: {
         'Content-Type': 'application/json',

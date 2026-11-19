@@ -4,8 +4,10 @@ import { useSyncExternalStore } from 'react'
 // The pool of open requests, or the ones I've claimed.
 export type TodoView = 'open' | 'mine'
 // The admin pages' tabs.
-export type AdminView = 'items' | 'places' | 'todo' | 'recipes' | 'log' | 'people'
-const ADMIN_VIEWS: AdminView[] = ['items', 'places', 'todo', 'recipes', 'log', 'people']
+export type AdminView = 'items' | 'places' | 'todo' | 'cookings' | 'recipes' | 'log' | 'people'
+const ADMIN_VIEWS: AdminView[] = ['items', 'places', 'todo', 'cookings', 'recipes', 'log', 'people']
+// The Menu tab: the planned cookings, or the recipes.
+export type MenuView = 'week' | 'recipes'
 
 export type Route =
   | { page: 'home' }
@@ -13,7 +15,11 @@ export type Route =
   | { page: 'items' }
   | { page: 'item'; id: number }
   | { page: 'todo'; view: TodoView }
-  | { page: 'menu' }
+  | { page: 'menu'; view: MenuView }
+  // Planning a cooking: picking the recipe, then (with its id) the day.
+  | { page: 'plan'; recipeId?: number }
+  // A planned cooking; `left`: what's left after cooking it.
+  | { page: 'cooking'; id: number; left: boolean }
   // A recipe's page; `edit` its editor; no id: a new one.
   | { page: 'recipe'; id: number }
   | { page: 'recipeEdit'; id?: number }
@@ -29,6 +35,10 @@ export const href = {
   log: '#/log',
   admin: (view: AdminView = 'items') => (view === 'items' ? '#/admin' : `#/admin/${view}`),
   menu: '#/menu',
+  recipes: '#/menu/recipes',
+  plan: (recipeId?: number) => (recipeId === undefined ? '#/plan' : `#/plan/${recipeId}`),
+  cooking: (id: number) => `#/cookings/${id}`,
+  cookingDone: (id: number) => `#/cookings/${id}/done`,
   recipe: (id: number) => `#/recipes/${id}`,
   recipeEdit: (id?: number) => (id === undefined ? '#/recipes/new' : `#/recipes/${id}/edit`),
 }
@@ -43,7 +53,13 @@ function parse(hash: string): Route {
   if (hash === href.todo('mine')) return { page: 'todo', view: 'mine' }
   // The shortages page went into the catalogue ("Csak hiány").
   if (hash.startsWith('#/missing')) return { page: 'items' }
-  if (hash === href.menu) return { page: 'menu' }
+  if (hash === href.menu) return { page: 'menu', view: 'week' }
+  if (hash === href.recipes) return { page: 'menu', view: 'recipes' }
+  if (hash === href.plan()) return { page: 'plan' }
+  const plan = /^#\/plan\/(\d+)$/.exec(hash)
+  if (plan) return { page: 'plan', recipeId: Number(plan[1]) }
+  const cooking = /^#\/cookings\/(\d+)(\/done)?$/.exec(hash)
+  if (cooking) return { page: 'cooking', id: Number(cooking[1]), left: Boolean(cooking[2]) }
   if (hash === href.recipeEdit()) return { page: 'recipeEdit' }
   const recipe = /^#\/recipes\/(\d+)(\/edit)?$/.exec(hash)
   if (recipe) {

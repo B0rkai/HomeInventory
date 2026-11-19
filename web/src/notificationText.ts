@@ -1,9 +1,21 @@
+import { dayTitle } from './days'
 import { t } from './strings'
 
 /** What the server sends for a notification (server/src/homeinventory/notify.py). */
 export type PushMessage = {
-  event: 'reported' | 'claimed' | 'done' | 'fetched' | 'refilled' | 'due' | 'reminder' | 'assigned'
-  kind: 'buy' | 'chore'
+  event:
+    | 'reported'
+    | 'claimed'
+    | 'done'
+    | 'fetched'
+    | 'refilled'
+    | 'due'
+    | 'reminder'
+    | 'assigned'
+    | 'planned'
+    | 'moved'
+    | 'dropped'
+  kind: 'buy' | 'chore' | 'cooking'
   name: string
   variant: string | null
   place: string | null
@@ -11,6 +23,8 @@ export type PushMessage = {
   actor: string | null
   tag: string
   url: string
+  // A cooking's day ("2026-11-22").
+  day?: string | null
 }
 
 /** The notification's title and body, in Hungarian. */
@@ -47,5 +61,17 @@ export function notificationText(message: PushMessage): { title: string; body: s
       return { title: t.notify.due(name), body: place }
     case 'assigned':
       return { title: t.notify.assigned(name), body: t.notify.assignedBy(place, actor) }
+    case 'planned':
+      return {
+        title: t.notify.planned(actor, name),
+        body: message.day ? dayTitle(message.day) : '',
+      }
+    case 'moved':
+      return { title: t.notify.moved(actor, name), body: message.day ? dayTitle(message.day) : '' }
+    case 'dropped':
+      return {
+        title: t.notify.dropped(actor, name),
+        body: message.day ? dayTitle(message.day) : '',
+      }
   }
 }

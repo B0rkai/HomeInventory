@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useHouse } from './house'
-import { RecipeName } from './MenuPage'
+import { RecipeName } from './Named'
 import { RecipeEditor } from './RecipeEditor'
 import { ingredientText, missingCount, RECIPE_KINDS } from './recipes'
 import { StarterRecipes } from './StarterRecipes'

@@ -296,7 +296,7 @@ stock (on the phone too: "Áthelyezés" under the item's places); (B, done) plac
 devices, the log; (C, done) the phone's actions above, so nothing needs the phone;
 then the meal planner, its recipe editor here.
 
-## Meal planner *(agreed 2026-11-18; recipes done 2026-11-19)*
+## Meal planner *(agreed 2026-11-18; recipes and planning done 2026-11-19)*
 
 Plan a cooking for a day; what it needs and the house lacks goes on the
 shopping list in time, but not so early that fresh food spoils, and the
@@ -378,6 +378,16 @@ Features:
      lines; a claimed line stays, and whoever claimed it is told.
    - Marking it cooked asks "what's left?": a level picker per ingredient,
      so the stock stays true without visiting each place.
+   - *(Built, milestone 6.)* A missing ingredient kept somewhere goes on as
+     that place's line (the one already there, if it's low and restocked);
+     one kept nowhere goes on with no place, and buying it sets no level: it
+     counts as at home for that cooking only. One line per item however many
+     cookings lack it, due for the earliest (`Request.cooking_id`); lines a
+     cooking put on (`for_cooking`) go once no planned cooking lacks the item,
+     unless someone has claimed them. Every change to a cooking, a level or a
+     recipe settles the lines again (`server/.../cooking_lines.py`). Cancelling
+     a cooking deletes it (no "cancelled" status); a cooked one keeps
+     `done_at`. Days are today or later, the household's local date.
 3. **Shopping trips**: a day, and who goes (claimable, claiming all its
    lines). Each line belongs to a trip inside its window: durable ones the
    earliest, perishable ones the latest (freshest); plain shortages the
@@ -405,15 +415,18 @@ name kept in variants, typed without one, means any of them will do. The
 admin editor's pasted list is split client-side (`parseIngredients` in
 `web/src/recipes.ts`): the amount ("50 dkg", "csipet", "ízlés szerint")
 off the front or end, the name matched to the longest catalogue name or
-variant found in the line, else taken as typed and marked "új termék". Still to come: **Cooking** (recipe, side dish (a main course's), day, cook, status planned / done /
-cancelled); **ShoppingTrip** (day, claimed by, status); **Item**
-`keeps_days` (null: any time); **Request** `buy_from`, `buy_by`, `cooking`,
-`trip`.
+variant found in the line, else taken as typed and marked "új termék".
+**Cooking** (recipe, side dish (a main course's, or a menu's naming none), day,
+cook, created by, `done_at`; a cancelled one is deleted); **Request**
+`cooking_id` (the earliest planned cooking lacking it), `for_cooking`, and an
+item's line may have no place (kept nowhere, bought for a cooking). Still to
+come: **ShoppingTrip** (day, claimed by, status); **Item** `keeps_days` (null:
+any time); **Request** `buy_from`, `trip`.
 
 Milestones: (5, done) recipes, the Menu tab, "Csak hiány" in the
 catalogue (the shortages tab is gone), the admin recipe editor; then
-recipes taking recipes, recipe kinds and the suggested recipes; (6) planning, reservations, missing ingredients on
-the list, "what's left?"; (7) shelf life and buying windows; (8) shopping
+recipes taking recipes, recipe kinds and the suggested recipes; (6, done) planning, reservations, missing ingredients on
+the list, "what's left?", the admin Főzések tab; (7) shelf life and buying windows; (8) shopping
 trips and the list by trip. 5-6 are useful on their own.
 
 UI (agreed 2026-11-19 on the prototype):

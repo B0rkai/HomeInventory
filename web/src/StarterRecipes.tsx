@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useHouse } from './house'
-import { RecipeName } from './MenuPage'
+import { RecipeName } from './Named'
 import { RECIPE_KINDS } from './recipes'
 import { type Starter, startersLeft, startersWithParts, starterBody } from './starterRecipes'
 import { t } from './strings'

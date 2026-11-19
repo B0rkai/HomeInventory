@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import type { Category, ItemOut, Level } from './api'
 import { CATEGORIES, categoryName, categoryOf, groupByCategory } from './categories'
+import { reservations, reservedText } from './cookings'
 import { useHouse } from './house'
 import { IconArt } from './IconArt'
 import { LevelName } from './LevelPicker'
-import { Named } from './Named'
+import { Named, ReservedMark } from './Named'
 import { href } from './route'
 import { t } from './strings'
 import { bestLevel, isShort, restockedStock, treeOrder } from './tree'
@@ -69,6 +70,8 @@ export function ItemsPage() {
     .filter(isShort)
     .sort((a, b) => (placeOrder.get(a.location_id) ?? 0) - (placeOrder.get(b.location_id) ?? 0))
   const placeName = (id: number) => locations.find((l) => l.id === id)?.name ?? ''
+  // What planned cookings need.
+  const reserved = reservations(house)
 
   const groupOf = (item: ItemOut): Tab => categoryOf(item) ?? 'none'
   // Only the groups that have items, in list order.
@@ -204,6 +207,9 @@ export function ItemsPage() {
                         <span className="no-restock" role="img" aria-label={t.items.noRestock}>
                           <IconArt name="repeat-off" />
                         </span>
+                      )}
+                      {reserved.has(item.id) && (
+                        <ReservedMark text={reservedText(house, reserved.get(item.id)!)} />
                       )}
                       {level && <LevelName level={level} />}
                       <span className="muted">

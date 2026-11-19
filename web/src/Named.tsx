@@ -1,7 +1,7 @@
 import { IconArt } from './IconArt'
 import { iconOf } from './iconLookup'
 import { hueOf, type Hue, type IconKind } from './icons'
-import type { Category } from './api'
+import type { Category, RecipeOut } from './api'
 
 type Thing = {
   name: string
@@ -44,6 +44,25 @@ export function Named({ thing, kind }: { thing: Thing; kind: IconKind }) {
         {thing.name}
         {thing.variant && <span className="variant"> · {thing.variant}</span>}
       </span>
+    </span>
+  )
+}
+
+/** A recipe's tile and name. */
+export function RecipeName({ recipe }: { recipe: Pick<RecipeOut, 'name' | 'icon'> }) {
+  return (
+    <span className="named">
+      <IconTile icon={iconOf(recipe, 'recipe')} name={recipe.name} kind="recipe" hue="food" />
+      <span>{recipe.name}</span>
+    </span>
+  )
+}
+
+/** A small chef's hat: planned cookings need it (named in the label). */
+export function ReservedMark({ text }: { text: string }) {
+  return (
+    <span className="no-restock reserved" role="img" aria-label={text} title={text}>
+      <IconArt name="chef-hat" />
     </span>
   )
 }

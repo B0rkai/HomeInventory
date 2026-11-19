@@ -678,8 +678,9 @@ def complete_request(
     notifier: Notifier = Depends(get_notifier),
 ) -> RequestOut:
     """Marks a request done, whoever claimed it; a bought item's level goes back to plenty
-    (one written in by hand has none). Where any variant will do, `item_id` says which was
-    bought: that one goes to plenty in the place, kept there from now on if it wasn't.
+    (one written in by hand has none, nor one bought for a cooking that's kept nowhere).
+    Where any variant will do, `item_id` says which was bought: that one goes to plenty in
+    the place, kept there from now on if it wasn't.
     `by`: the person who bought it, when marked for them."""
     user = _doer(session, user, done and done.by)
     bought = None
@@ -703,7 +704,10 @@ def complete_request(
     )
     event = "done"
     action = Action.DONE
-    if request.item_id is not None:
+    if request.item_id is not None and request.location_id is None:
+        # Bought for a cooking, kept nowhere: there's no level to set.
+        record(session, user, action, item=bought or session.get_one(Item, request.item_id))
+    elif request.item_id is not None:
         item = bought or session.get_one(Item, request.item_id)
         # Where any variant (or family member) will do, lots of any of them elsewhere counts.
         sources = [i.id for i in group_of(session, item)]

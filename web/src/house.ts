@@ -1,6 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import {
   assignRequest,
+  completeCooking,
+  createCooking,
+  deleteCooking,
+  listCookings,
+  updateCooking,
+  type CookingCreate,
+  type CookingOut,
+  type CookingUpdate,
+  type LevelLeft,
   createRecipe,
   deleteRecipe,
   listRecipes,
@@ -60,6 +69,8 @@ export type House = {
   // The open and claimed ones.
   requests: RequestOut[]
   recipes: RecipeOut[]
+  // The planned ones, earliest first.
+  cookings: CookingOut[]
 }
 
 export type RequestAction = 'claim' | 'unclaim' | 'done' | 'cancel' | 'remind'
@@ -149,6 +160,7 @@ function readCache(userId: number): Cached | undefined {
     const cached = JSON.parse(text) as Cached
     // Saved before there were recipes.
     cached.house.recipes ??= []
+    cached.house.cookings ??= []
     // Before there were substitutes.
     for (const item of cached.house.items) item.substitute_ids ??= []
     return cached
@@ -190,13 +202,14 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
   }, [house])
 
   const reload = useCallback(async () => {
-    const [locations, items, stock, chores, requests, recipes] = await Promise.all([
+    const [locations, items, stock, chores, requests, recipes, cookings] = await Promise.all([
       listLocations(),
       listItems(),
       listStock(),
       listChores(),
       listRequests(),
       listRecipes(),
+      listCookings(),
     ]).catch(() => [])
     if (
       locations?.data &&
@@ -204,7 +217,8 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
       stock?.data &&
       chores?.data &&
       requests?.data &&
-      recipes?.data
+      recipes?.data &&
+      cookings?.data
     ) {
       const loaded = {
         locations: locations.data,
@@ -213,6 +227,7 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
         chores: chores.data,
         requests: requests.data,
         recipes: recipes.data,
+        cookings: cookings.data,
       }
       setHouse(loaded)
       setLoadError(undefined)
@@ -406,6 +421,7 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
       claimed_at: null,
       reminded_by_name: null,
       reminded_at: null,
+      cooking_id: null,
     }),
     [me],
   )
@@ -591,7 +607,41 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
       },
       async deleteRecipe(id: number) {
         const ok = await change(deleteRecipe({ path: { recipe_id: id } }))
-        if (ok) setHouse((h) => h && { ...h, recipes: h.recipes.filter((r) => r.id !== id) })
+        // Its planned cookings went with it, and their lines.
+        if (ok) await reload()
+        return Boolean(ok)
+      },
+      /** Plans a recipe for a day; what it lacks goes on the list. */
+      async planCooking(body: CookingCreate) {
+        const cooking = (await change(createCooking({ body }), { 422: t.errors.pastDay }))?.data
+        // Lines went on the list.
+        if (cooking) await reload()
+        return cooking
+      },
+      /** Moves a cooking, changes its side dish or who cooks it. */
+      async updateCooking(id: number, body: CookingUpdate) {
+        const cooking = (
+          await change(updateCooking({ path: { cooking_id: id }, body }), {
+            409: t.errors.cookingChanged,
+            422: t.errors.pastDay,
+          })
+        )?.data
+        if (cooking) await reload()
+        return cooking
+      },
+      async cancelCooking(id: number) {
+        const ok = await change(deleteCooking({ path: { cooking_id: id } }), {
+          409: t.errors.cookingChanged,
+        })
+        if (ok) await reload()
+        return Boolean(ok)
+      },
+      /** Marks a cooking cooked, with the levels that changed. */
+      async completeCooking(id: number, levels: LevelLeft[]) {
+        const ok = await change(completeCooking({ path: { cooking_id: id }, body: { levels } }), {
+          409: t.errors.cookingChanged,
+        })
+        if (ok) await reload()
         return Boolean(ok)
       },
       /** Writes something on the shopping list that isn't kept track of. */

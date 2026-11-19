@@ -19,7 +19,15 @@ from pywebpush import WebPushException, webpush
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, sessionmaker
 
-from homeinventory.models import Chore, Item, Location, PushSubscription, Request, RequestKind
+from homeinventory.models import (
+    Chore,
+    Cooking,
+    Item,
+    Location,
+    PushSubscription,
+    Request,
+    RequestKind,
+)
 
 log = logging.getLogger(__name__)
 
@@ -29,13 +37,26 @@ TTL_SECONDS = 24 * 60 * 60
 # "fetched": a buy request done while another place had lots of it, so it was brought
 # from there rather than bought.
 # "reminder": the other asks when a claimed request will be done.
-Event = Literal["reported", "claimed", "done", "fetched", "refilled", "due", "reminder", "assigned"]
+# "planned", "moved", "dropped": a cooking was planned, moved to another day, cancelled.
+Event = Literal[
+    "reported",
+    "claimed",
+    "done",
+    "fetched",
+    "refilled",
+    "due",
+    "reminder",
+    "assigned",
+    "planned",
+    "moved",
+    "dropped",
+]
 
 
 @dataclass(frozen=True)
 class Message:
     event: Event
-    kind: Literal["buy", "chore"]
+    kind: Literal["buy", "chore", "cooking"]
     name: str
     variant: str | None
     # The place's own name; unset for a chore of the whole house.
@@ -48,6 +69,8 @@ class Message:
     tag: str
     # The page a tap opens.
     url: str = "/#/todo"
+    # A cooking's day (ISO date).
+    day: str | None = None
 
 
 def message_for(
@@ -101,6 +124,26 @@ def message_for(
         level=None,
         actor=actor,
         tag=f"chore-{chore.id}",
+    )
+
+
+def cooking_message(cooking: Cooking, event: Event, actor: str) -> Message:
+    """What to tell about a cooking: its recipe (and side dish) and day."""
+    name = cooking.recipe.name
+    if cooking.side is not None:
+        name = f"{name}, {cooking.side.name}"
+    return Message(
+        event=event,
+        kind="cooking",
+        name=name,
+        variant=None,
+        place=None,
+        level=None,
+        actor=actor,
+        tag=f"cooking-{cooking.id}",
+        # A cancelled one has no page left.
+        url="/#/menu" if event == "dropped" else f"/#/cookings/{cooking.id}",
+        day=cooking.day.isoformat(),
     )
 
 

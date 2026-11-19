@@ -1608,20 +1608,14 @@ h2 .named .tile {
   padding-left: 2.55rem;
   font-weight: normal;
 }
-.kind-chips .chip {
+.kind-chips .chip,
+.side-chips .chip {
   min-height: 2.1rem;
   padding: 0.2rem 0.7rem;
 }
-.kind-chips .chip[aria-checked='true'] {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--on-accent);
-}
-.kind-chips .chip {
-  min-height: 2.1rem;
-  padding: 0.2rem 0.7rem;
-}
-.kind-chips .chip[aria-checked='true'] {
+.kind-chips .chip[aria-checked='true'],
+.side-chips .chip[aria-checked='true'],
+.day-chips .chip[aria-checked='true'] {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--on-accent);
@@ -1651,4 +1645,61 @@ h2 .named .tile {
 .substitutes .chip button.icon {
   min-height: 0;
   padding: 0 0.2rem;
+}
+
+/* The Menu tab: planned cookings */
+.agenda-status {
+  margin: 0.15rem 0 0.2rem 2.55rem;
+  font-weight: 600;
+}
+td.agenda-status {
+  margin: 0;
+}
+.agenda-status.ok,
+.plan-preview .mark.ok {
+  color: var(--accent);
+}
+.agenda-status.low,
+.plan-preview .mark.low,
+.on-list {
+  color: var(--low);
+}
+.agenda-status.out,
+.off-list {
+  color: var(--out);
+  font-weight: 600;
+}
+.plan-preview p {
+  margin: 0 0 0.35rem;
+}
+.plan-preview .mark {
+  display: inline-block;
+  width: 1rem;
+  font-weight: 700;
+  text-align: center;
+}
+.cook-toggle {
+  min-height: 2.25rem;
+  padding: 0.2rem 0.8rem;
+}
+.cook-toggle[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.cook-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.3rem 0 0;
+}
+.cooking-note .icon-art {
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.25rem;
+  vertical-align: -0.15rem;
+  color: var(--muted);
+}
+.cooking-note {
+  margin: 0.15rem 0 0;
 }

@@ -1,7 +1,6 @@
 import { useHouse } from './house'
 import { LevelName } from './LevelPicker'
-import { RecipeName } from './MenuPage'
-import { Named } from './Named'
+import { Named, RecipeName } from './Named'
 import { RecipeEditor } from './RecipeEditor'
 import { ingredientItems, ingredientLevel, missingCount, standIn, takenBy } from './recipes'
 import { href } from './route'
@@ -12,7 +11,7 @@ function Crumbs() {
   return (
     <nav className="crumbs">
       <a
-        href={href.menu}
+        href={href.recipes}
         aria-label={t.back}
         onClick={(event) => {
           event.preventDefault()
@@ -21,7 +20,7 @@ function Crumbs() {
       >
         ←
       </a>
-      <a href={href.menu}>{t.menu.title}</a>
+      <a href={href.recipes}>{t.menu.title}</a>
     </nav>
   )
 }
@@ -30,7 +29,7 @@ function NotFound() {
   return (
     <div className="card">
       <p>{t.menu.notFound}</p>
-      <a className="link" href={href.menu}>
+      <a className="link" href={href.recipes}>
         {t.back}
       </a>
     </div>
@@ -54,13 +53,20 @@ export function RecipePage({ id }: { id: number }) {
           <RecipeName recipe={recipe} />
           <span className="small muted">{t.menu.kinds[recipe.kind]}</span>
         </h2>
-        <button
-          type="button"
-          className="secondary"
-          onClick={() => (window.location.hash = href.recipeEdit(id))}
-        >
-          {t.edit}
-        </button>
+        <span className="actions">
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => (window.location.hash = href.recipeEdit(id))}
+          >
+            {t.edit}
+          </button>
+          {recipe.kind !== 'base' && (
+            <button type="button" onClick={() => (window.location.hash = href.plan(id))}>
+              {t.menu.planIt}
+            </button>
+          )}
+        </span>
       </div>
       <section className="card">
         <h3>{recipe.kind === 'menu' ? t.menu.courses : t.menu.ingredients}</h3>
@@ -174,7 +180,7 @@ export function RecipeEditPage({ id }: { id?: number }) {
           recipe={recipe}
           onSaved={(saved) => window.location.replace(href.recipe(saved.id))}
           onCancel={() => history.back()}
-          onDeleted={() => window.location.replace(href.menu)}
+          onDeleted={() => window.location.replace(href.recipes)}
         />
       </div>
     </>
