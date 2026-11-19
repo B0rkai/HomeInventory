@@ -271,19 +271,23 @@ Pages (wide tables, mouse and keyboard; not in the phone tab bar):
 
 No export for now.
 
-What the phone does that A and B left out, for milestone C:
+What the phone does that A and B left out, for milestone C. Admin doesn't
+do the work, it hands it out: so "done" or "bought" from here means a user
+did it (whoever had it claimed, or one picked). Nothing is left out for
+that, but it comes last:
 
-- **Items**: add a new item (name, variant, group, optionally a place to
-  keep it at, "plenty"); its suggestions as on the phone.
-- **Stock**: keep an item at another place, drop it from one, set a level
-  ("out" and "low" report it like the phone, restocked items onto the list);
-  all from the items table's "where and how much", and "+ item" on a place's
-  row.
-- **Shopping list**: add a free line ("elem a listára") or an item; mark
-  bought; keep or drop an out-of-stock item's request ("nem pótoljuk").
-- **Chores**: add one (per place or the whole house, with its schedule);
-  mark one done.
-- **Undo**: the same few seconds to undo as on the phone.
+1. **Items**: add a new item (name, variant, group, optionally a place to
+   keep it at, "plenty"); its suggestions as on the phone.
+2. **Stock**: keep an item at another place, drop it from one, set a level
+   ("out" and "low" report it like the phone, restocked items onto the
+   list); all from the items table's "where and how much", and "+ item" on
+   a place's row.
+3. **Chores**: add one (per place or the whole house, with its schedule).
+4. **Shopping list**: add a free line or an item; keep or drop an
+   out-of-stock item's request ("nem pótoljuk").
+5. **Undo**: the same few seconds to undo as on the phone.
+6. **Done on a user's behalf**: mark a chore done or a line bought, in the
+   name of the user who did it.
 
 Milestones: (A, done) the admin port, login and user, the items table, moving
 stock (on the phone too: "Áthelyezés" under the item's places); (B, done) places, chores and assigning, users and
