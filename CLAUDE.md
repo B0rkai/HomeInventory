@@ -34,7 +34,8 @@ data in `web/src/house.ts`, where changes also wait a few seconds to be undone);
 desktop admin pages (`#/admin/...`, and the LAN port as Admin): items, places,
 to-dos with assigning, the log, people and their devices; moving stock;
 and everything the phone does (done for a person, never as Admin); recipes (`recipes.py`,
-the Menu tab, the admin Receptek tab). Next: the meal planner's milestone 6, planning
+the Menu tab, the admin Receptek tab; a recipe can take another whole, and
+suggested ones are added with a tap, `web/src/starterRecipes.ts`). Next: the meal planner's milestone 6, planning
 cookings (`docs/features.md`). Anything marked *(planned)* describes intended
 setup, not code that exists yet.
 

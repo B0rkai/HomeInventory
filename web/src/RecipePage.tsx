@@ -3,7 +3,7 @@ import { LevelName } from './LevelPicker'
 import { RecipeName } from './MenuPage'
 import { Named } from './Named'
 import { RecipeEditor } from './RecipeEditor'
-import { ingredientItems, ingredientLevel } from './recipes'
+import { ingredientItems, ingredientLevel, missingCount, takenBy } from './recipes'
 import { href } from './route'
 import { t } from './strings'
 
@@ -40,9 +40,10 @@ function NotFound() {
 export function RecipePage({ id }: { id: number }) {
   const { house } = useHouse()
   if (!house) return null
-  const { items, stock } = house
-  const recipe = house.recipes.find((r) => r.id === id)
+  const { items, stock, recipes } = house
+  const recipe = recipes.find((r) => r.id === id)
   if (!recipe) return <NotFound />
+  const users = takenBy(recipe, recipes)
 
   return (
     <>
@@ -64,6 +65,32 @@ export function RecipePage({ id }: { id: number }) {
         {recipe.ingredients.length === 0 && <p className="muted">{t.menu.noIngredients}</p>}
         <ul className="item-list">
           {recipe.ingredients.map((ingredient) => {
+            const part = recipes.find((r) => r.id === ingredient.part_id)
+            if (part) {
+              const missing = missingCount(part, recipes, items, stock)
+              return (
+                <li key={`part-${part.id}`}>
+                  <a className="item-row" href={href.recipe(part.id)}>
+                    <span>
+                      <RecipeName recipe={part} />
+                      <span className="small muted"> · {t.menu.partBadge}</span>
+                      {ingredient.amount && (
+                        <span className="small muted"> · {ingredient.amount}</span>
+                      )}
+                    </span>
+                    <span className="small">
+                      {ingredient.optional ? (
+                        <span className="muted">{t.menu.ifAny}</span>
+                      ) : missing ? (
+                        <span className="muted">{t.menu.missing(missing)}</span>
+                      ) : (
+                        <span className="all-there">{t.menu.allAtHome}</span>
+                      )}
+                    </span>
+                  </a>
+                </li>
+              )
+            }
             const [first] = ingredientItems(ingredient, items)
             if (!first) return null
             const level = ingredientLevel(ingredient, items, stock)
@@ -105,6 +132,20 @@ export function RecipePage({ id }: { id: number }) {
           </p>
         )}
       </section>
+      {users.length > 0 && (
+        <section className="card">
+          <h3>{t.menu.usedIn}</h3>
+          <ul className="item-list">
+            {users.map((user) => (
+              <li key={user.id}>
+                <a className="item-row" href={href.recipe(user.id)}>
+                  <RecipeName recipe={user} />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </>
   )
 }

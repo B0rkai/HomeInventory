@@ -2113,6 +2113,11 @@
             "title": "Any Variant",
             "default": false
           },
+          "recipe": {
+            "type": "boolean",
+            "title": "Recipe",
+            "default": false
+          },
           "amount": {
             "anyOf": [
               {
@@ -2136,13 +2141,31 @@
           "name"
         ],
         "title": "IngredientIn",
-        "description": "An ingredient by name: the catalogue item of this name and variant, made (kept\nnowhere) if there's none. `any_variant`: any variant of the name will do, the variant\nis left out."
+        "description": "An ingredient by name: the catalogue item of this name and variant, made (kept\nnowhere) if there's none. `any_variant`: any variant of the name will do, the variant\nis left out. `recipe`: the name is a recipe's, taken whole (a part, \"Nokedli\"); it has\nno variant."
       },
       "IngredientOut": {
         "properties": {
           "item_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Item Id"
+          },
+          "part_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Part Id"
           },
           "any_variant": {
             "type": "boolean",
@@ -2167,11 +2190,13 @@
         "type": "object",
         "required": [
           "item_id",
+          "part_id",
           "any_variant",
           "amount",
           "optional"
         ],
-        "title": "IngredientOut"
+        "title": "IngredientOut",
+        "description": "An item (`item_id`) or another recipe (`part_id`), never both."
       },
       "ItemCreate": {
         "properties": {

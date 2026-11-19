@@ -562,6 +562,21 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
         if (recipe) await reload()
         return recipe
       },
+      /** Several recipes in order (a part before the recipes taking it); stops at a
+       * failure. How many were added. */
+      async addRecipes(bodies: RecipeCreate[]) {
+        let added = 0
+        for (const body of bodies) {
+          const response = await change(createRecipe({ body }), {
+            409: t.errors.duplicateRecipe,
+            422: t.errors.duplicateIngredient,
+          })
+          if (!response) break
+          added += 1
+        }
+        if (added) await reload()
+        return added
+      },
       async updateRecipe(id: number, body: RecipeUpdate) {
         const recipe = (
           await change(updateRecipe({ path: { recipe_id: id }, body }), {

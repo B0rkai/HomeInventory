@@ -2,7 +2,15 @@ import { type FormEvent, type KeyboardEvent, useId, useState } from 'react'
 import type { RecipeOut } from './api'
 import { useHouse } from './house'
 import { IconPicker } from './IconPicker'
-import { ingredientFrom, ingredientText, knownIngredient, parseIngredients } from './recipes'
+import {
+  ingredientFrom,
+  ingredientText,
+  knownIngredient,
+  parseIngredients,
+  recipeNamed,
+  takenBy,
+  takes,
+} from './recipes'
 import { t } from './strings'
 import { byItem, fullName } from './variants'
 
@@ -12,13 +20,14 @@ const AMOUNT_MAX_LENGTH = 40
 const NOTE_MAX_LENGTH = 2000
 const LINK_MAX_LENGTH = 500
 
-type Row = { key: number; text: string; amount: string; optional: boolean }
+// `part`: the text names a recipe, taken whole.
+type Row = { key: number; text: string; amount: string; optional: boolean; part: boolean }
 
 let rowKeys = 0
 
 /**
- * A recipe's name, ingredients (one at a time, from the catalogue's names or new ones),
- * note, link and icon. `paste`: the admin pages' box that takes a whole ingredient list.
+ * A recipe's name, ingredients (one at a time, from the catalogue's names or new ones, or
+ * other recipes' names: "Nokedli" in "Paprikás csirke"), note, link and icon. `paste`: the admin pages' box that takes a whole ingredient list.
  */
 export function RecipeEditor({
   recipe,
@@ -36,6 +45,7 @@ export function RecipeEditor({
   const id = useId()
   const { house, actions } = useHouse()
   const items = house?.items ?? []
+  const recipes = house?.recipes ?? []
   const [name, setName] = useState(recipe?.name ?? '')
   const [icon, setIcon] = useState(recipe?.icon ?? null)
   const [note, setNote] = useState(recipe?.note ?? '')
@@ -44,26 +54,41 @@ export function RecipeEditor({
     () =>
       recipe?.ingredients.map((ingredient) => ({
         key: ++rowKeys,
-        text: ingredientText(ingredient, items),
+        text: ingredientText(ingredient, items, recipes),
         amount: ingredient.amount ?? '',
         optional: ingredient.optional,
+        part: ingredient.part_id !== null,
       })) ?? [],
   )
   const [adding, setAdding] = useState('')
   const [pasted, setPasted] = useState('')
   const [saving, setSaving] = useState(false)
 
-  // A name kept in variants alone means any of them; or one variant.
+  // A name kept in variants alone means any of them; or one variant; or a recipe, but not
+  // this one or one taking it.
   const suggestions = [
     ...new Set([
       ...items.filter((item) => item.variant).map((item) => item.name),
       ...[...items].sort(byItem).map(fullName),
+      ...recipes
+        .filter((other) => !recipe || !takes(other, recipe.id, recipes))
+        .map((other) => other.name)
+        .sort((a, b) => a.localeCompare(b, 'hu')),
     ]),
   ]
+  const isPart = (text: string) => recipeNamed(text, recipes) !== undefined
+  // A part that would have the recipe take itself; the server refuses it.
+  const loops = (row: Row) => {
+    const part = row.part && recipe ? recipeNamed(row.text, recipes) : undefined
+    return part !== undefined && takes(part, recipe!.id, recipes)
+  }
   const change = (key: number, fields: Partial<Row>) =>
     setRows(rows.map((row) => (row.key === key ? { ...row, ...fields } : row)))
   const addRows = (added: { text: string; amount: string }[]) =>
-    setRows([...rows, ...added.map((row) => ({ key: ++rowKeys, optional: false, ...row }))])
+    setRows([
+      ...rows,
+      ...added.map((row) => ({ key: ++rowKeys, optional: false, part: isPart(row.text), ...row })),
+    ])
 
   function addTyped() {
     if (!adding.trim()) return
@@ -99,7 +124,12 @@ export function RecipeEditor({
   }
 
   async function remove() {
-    if (!recipe || !window.confirm(t.menu.confirmDelete(recipe.name))) return
+    if (!recipe) return
+    const users = takenBy(recipe, recipes).map((other) => other.name)
+    const question = users.length
+      ? t.menu.confirmDeletePart(recipe.name, users.join(', '))
+      : t.menu.confirmDelete(recipe.name)
+    if (!window.confirm(question)) return
     if (await actions.deleteRecipe(recipe.id)) onDeleted?.()
   }
 
@@ -128,13 +158,22 @@ export function RecipeEditor({
                 <input
                   aria-label={t.menu.ingredient}
                   value={row.text}
-                  onChange={(event) => change(row.key, { text: event.target.value })}
+                  onChange={(event) =>
+                    change(row.key, { text: event.target.value, part: isPart(event.target.value) })
+                  }
                   list={`${id}-items`}
                   maxLength={NAME_MAX_LENGTH + 43}
                   autoComplete="off"
                 />
-                {row.text.trim() && !knownIngredient(row.text, items) && (
-                  <span className="new-item small">{t.menu.newItem}</span>
+                {loops(row) ? (
+                  <span className="new-item small">{t.menu.loop}</span>
+                ) : row.part ? (
+                  <span className="part-badge small">{t.menu.partBadge}</span>
+                ) : (
+                  row.text.trim() &&
+                  !knownIngredient(row.text, items) && (
+                    <span className="new-item small">{t.menu.newItem}</span>
+                  )
                 )}
               </span>
               <input
@@ -236,7 +275,7 @@ export function RecipeEditor({
           <button type="button" className="secondary" onClick={onCancel} disabled={saving}>
             {t.cancel}
           </button>
-          <button type="submit" disabled={saving || !name.trim()}>
+          <button type="submit" disabled={saving || !name.trim() || rows.some(loops)}>
             {t.save}
           </button>
         </span>

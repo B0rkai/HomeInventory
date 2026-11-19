@@ -202,7 +202,8 @@ export type Health = {
  *
  * An ingredient by name: the catalogue item of this name and variant, made (kept
  * nowhere) if there's none. `any_variant`: any variant of the name will do, the variant
- * is left out.
+ * is left out. `recipe`: the name is a recipe's, taken whole (a part, "Nokedli"); it has
+ * no variant.
  */
 export type IngredientIn = {
     /**
@@ -218,6 +219,10 @@ export type IngredientIn = {
      */
     any_variant?: boolean;
     /**
+     * Recipe
+     */
+    recipe?: boolean;
+    /**
      * Amount
      */
     amount?: string | null;
@@ -229,12 +234,18 @@ export type IngredientIn = {
 
 /**
  * IngredientOut
+ *
+ * An item (`item_id`) or another recipe (`part_id`), never both.
  */
 export type IngredientOut = {
     /**
      * Item Id
      */
-    item_id: number;
+    item_id: number | null;
+    /**
+     * Part Id
+     */
+    part_id: number | null;
     /**
      * Any Variant
      */

@@ -351,19 +351,30 @@ INGREDIENTS_MAX = 60
 class IngredientIn(BaseModel):
     """An ingredient by name: the catalogue item of this name and variant, made (kept
     nowhere) if there's none. `any_variant`: any variant of the name will do, the variant
-    is left out."""
+    is left out. `recipe`: the name is a recipe's, taken whole (a part, "Nokedli"); it has
+    no variant."""
 
     name: Name
     variant: Variant = None
     any_variant: bool = False
+    recipe: bool = False
     amount: Amount = None
     optional: bool = False
 
+    @model_validator(mode="after")
+    def part_has_no_variant(self) -> "IngredientIn":
+        if self.recipe and (self.variant or self.any_variant):
+            raise ValueError("A recipe has no variants")
+        return self
+
 
 class IngredientOut(BaseModel):
+    """An item (`item_id`) or another recipe (`part_id`), never both."""
+
     model_config = ConfigDict(from_attributes=True)
 
-    item_id: int
+    item_id: int | None
+    part_id: int | None
     any_variant: bool
     amount: str | None
     optional: bool

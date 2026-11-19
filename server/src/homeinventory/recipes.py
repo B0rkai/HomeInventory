@@ -2,7 +2,8 @@
 
 An ingredient is named, not picked by id: a name the catalogue doesn't have yet becomes an
 item kept nowhere (and not restocked), so a recipe can be typed in before anything is
-bought for it.
+bought for it. An ingredient can also be another recipe, a part ("Nokedli"), as long as
+no recipe ends up taking itself.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -51,18 +52,47 @@ def _item_for(session: Session, items: list[Item], wanted: IngredientIn) -> Item
     return item
 
 
+def _takes(part: Recipe, recipe_id: int) -> bool:
+    """Whether `part` is the recipe, or takes it, through its parts' parts too."""
+    if part.id == recipe_id:
+        return True
+    return any(
+        ingredient.part_id is not None and _takes(ingredient.part, recipe_id)
+        for ingredient in part.ingredients
+    )
+
+
+def _part_for(session: Session, recipe: Recipe, wanted: IngredientIn) -> Recipe:
+    name = wanted.name.casefold()
+    part = next(
+        (other for other in session.scalars(select(Recipe)) if other.name.casefold() == name),
+        None,
+    )
+    if part is None:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "No such recipe")
+    if _takes(part, recipe.id):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "A recipe can't take itself")
+    return part
+
+
 def _set_ingredients(session: Session, recipe: Recipe, wanted: list[IngredientIn]) -> None:
     items = list(session.scalars(select(Item)))
-    ingredients = []
+    ingredients: list[RecipeIngredient] = []
     for position, ingredient in enumerate(wanted):
-        item = _item_for(session, items, ingredient)
-        if any(i.item_id == item.id for i in ingredients):
+        if ingredient.recipe:
+            target = {"part_id": _part_for(session, recipe, ingredient).id}
+        else:
+            target = {"item_id": _item_for(session, items, ingredient).id}
+        if any(
+            (i.item_id, i.part_id) == (target.get("item_id"), target.get("part_id"))
+            for i in ingredients
+        ):
             raise HTTPException(
                 status.HTTP_422_UNPROCESSABLE_CONTENT, "An ingredient is listed twice"
             )
         ingredients.append(
             RecipeIngredient(
-                item_id=item.id,
+                **target,
                 any_variant=ingredient.any_variant,
                 amount=ingredient.amount,
                 optional=ingredient.optional,

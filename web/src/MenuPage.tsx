@@ -5,6 +5,7 @@ import { iconOf } from './iconLookup'
 import { IconTile } from './Named'
 import { missingCount } from './recipes'
 import { href } from './route'
+import { StarterRecipes } from './StarterRecipes'
 import { t } from './strings'
 
 // The search survives a visit to a recipe and back.
@@ -74,7 +75,7 @@ export function MenuPage() {
           <h3>{t.menu.recipes}</h3>
           <ul className="item-list">
             {found.map((recipe) => {
-              const missing = missingCount(recipe, items, stock)
+              const missing = missingCount(recipe, recipes, items, stock)
               return (
                 <li key={recipe.id}>
                   <a className="item-row" href={href.recipe(recipe.id)}>
@@ -102,6 +103,7 @@ export function MenuPage() {
           + {t.menu.addRecipe}
         </button>
       </div>
+      <StarterRecipes />
     </>
   )
 }

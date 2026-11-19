@@ -138,3 +138,70 @@ def test_a_deleted_item_leaves_the_recipe(api, items) -> None:
 def test_both_see_the_recipes(api) -> None:
     api("POST", "/recipes", lecso())
     assert [r["name"] for r in api("GET", "/recipes", headers=BELA).json()] == ["Lecsó"]
+
+
+def test_a_recipe_takes_another(api) -> None:
+    nokedli = api("POST", "/recipes", {"name": "Nokedli", "ingredients": [{"name": "Liszt"}]})
+    body = {
+        "name": "Paprikás csirke",
+        "ingredients": [
+            {"name": "Csirkecomb", "amount": "1 kg"},
+            {"name": "nokedli", "recipe": True, "amount": "egy adag"},
+        ],
+    }
+    response = api("POST", "/recipes", body)
+    assert response.status_code == 201, response.text
+    meat, part = response.json()["ingredients"]
+    assert meat["part_id"] is None and meat["item_id"] is not None
+    # Found by name, whatever its case; no item is made for it.
+    assert (part["part_id"], part["item_id"], part["amount"]) == (
+        nokedli.json()["id"],
+        None,
+        "egy adag",
+    )
+    assert sorted(item["name"] for item in api("GET", "/items").json()) == ["Csirkecomb", "Liszt"]
+
+
+def test_a_part_must_exist_and_has_no_variant(api) -> None:
+    missing = {"name": "Lasagne", "ingredients": [{"name": "Besamel", "recipe": True}]}
+    assert api("POST", "/recipes", missing).status_code == 422
+    assert api("GET", "/recipes").json() == []
+    api("POST", "/recipes", {"name": "Besamel"})
+    variant = {"name": "Besamel", "variant": "light", "recipe": True}
+    assert api("POST", "/recipes", {**missing, "ingredients": [variant]}).status_code == 422
+
+
+def test_a_part_listed_twice(api) -> None:
+    api("POST", "/recipes", {"name": "Nokedli"})
+    twice = [{"name": "Nokedli", "recipe": True}, {"name": "NOKEDLI", "recipe": True}]
+    response = api("POST", "/recipes", {"name": "Pörkölt", "ingredients": twice})
+    assert response.status_code == 422
+
+
+def test_no_recipe_takes_itself(api) -> None:
+    sauce = api("POST", "/recipes", {"name": "Paradicsomszósz"}).json()
+    lasagne = api(
+        "POST",
+        "/recipes",
+        {"name": "Lasagne", "ingredients": [{"name": "Paradicsomszósz", "recipe": True}]},
+    ).json()
+    itself = {"ingredients": [{"name": "paradicsomszósz", "recipe": True}]}
+    assert api("PATCH", f"/recipes/{sauce['id']}", itself).status_code == 422
+    # Nor through another: the sauce taking the lasagne, which takes the sauce.
+    loop = {"ingredients": [{"name": "Lasagne", "recipe": True}]}
+    assert api("PATCH", f"/recipes/{sauce['id']}", loop).status_code == 422
+    assert api("GET", "/recipes").json()[0]["ingredients"] == []
+    assert len(lasagne["ingredients"]) == 1
+
+
+def test_a_deleted_part_leaves_the_recipes_taking_it(api) -> None:
+    nokedli = api("POST", "/recipes", {"name": "Nokedli"}).json()
+    body = {
+        "name": "Pörkölt",
+        "ingredients": [{"name": "Hagyma"}, {"name": "Nokedli", "recipe": True}],
+    }
+    stew = api("POST", "/recipes", body).json()
+    assert api("DELETE", f"/recipes/{nokedli['id']}").status_code == 204
+    (left,) = api("GET", "/recipes").json()
+    assert left["id"] == stew["id"]
+    assert [i["part_id"] for i in left["ingredients"]] == [None]

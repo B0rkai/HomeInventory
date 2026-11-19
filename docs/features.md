@@ -315,7 +315,16 @@ Decisions:
 - **Days, no meals.** A cooking is planned for a day, not lunch or dinner.
 - **One shop, no fixed shopping days.** Shopping trips are planned as
   needed; the app suggests the days.
-- **No starter recipes**: the users add their own.
+- **Suggested recipes** *(2026-11-19, replacing "no starter recipes")*: about
+  twenty common Hungarian dishes and base recipes, in the client
+  (`web/src/starterRecipes.ts`). Nothing is added until picked: one tap adds
+  one (with the base recipes it takes), or all at once; from then on they are
+  the household's own. A suggestion shows while no recipe has its name.
+- **Recipes take recipes**: a base recipe ("Nokedli", "Besamel") is an
+  ingredient of others, whole. What a recipe takes counts its parts' items
+  too, each once (optional only if optional everywhere; an optional part's
+  items are all optional). No recipe may take itself, directly or through
+  others; a deleted recipe leaves the recipes taking it (asked first).
 - **Shelf life** by the item's group, changeable per item: raw meat and
   fish at most 1 day before the cooking, other fresh food (vegetables,
   fruit, dairy, eggs, bread) at most 7 days, the rest any time. Frozen meat
@@ -325,8 +334,9 @@ Features:
 
 1. **Recipes**: name, icon, ingredients, an optional note and link. An
    ingredient is a catalogue item (typing a new name makes an item kept
-   nowhere), a variant or any variant of it, with an optional amount note;
-   optional ingredients (garnish) are never listed or warned about.
+   nowhere), a variant or any variant of it, or another recipe (a part),
+   with an optional amount note; optional ingredients (garnish) are never
+   listed or warned about. A recipe's page lists the recipes taking it.
 2. **Planning a cooking**: a recipe on a day, optionally claimed by who
    cooks. Planning shows at once what's at home, what will go on the list
    and from when, and whether a trip is needed for it.
@@ -358,10 +368,11 @@ Features:
    fresh line's window opens with no trip in it.
 
 Data model additions: **Recipe** (name unique ignoring case, icon, note,
-link: http(s) only); **RecipeIngredient** (recipe, item, `any_variant`,
-amount note, optional, position; one row per item in a recipe, so "any
-Konzerv" and "Konzerv · borsó" can't both be in one). The API takes
-ingredients by name and variant, finding the item or making one kept
+link: http(s) only); **RecipeIngredient** (recipe, item or part (another
+recipe), `any_variant`, amount note, optional, position; one row per item
+or part in a recipe, so "any Konzerv" and "Konzerv · borsó" can't both be
+in one). The API takes
+ingredients by name and variant (a part by its recipe's name, `recipe`), finding the item or making one kept
 nowhere (not restocked); a deleted item leaves the recipes it was in. A
 name kept in variants, typed without one, means any of them will do. The
 admin editor's pasted list is split client-side (`parseIngredients` in
@@ -373,7 +384,8 @@ cancelled); **ShoppingTrip** (day, claimed by, status); **Item**
 `trip`.
 
 Milestones: (5, done) recipes, the Menu tab, "Csak hiány" in the
-catalogue (the shortages tab is gone), the admin recipe editor; (6) planning, reservations, missing ingredients on
+catalogue (the shortages tab is gone), the admin recipe editor; then
+recipes taking recipes and the suggested recipes; (6) planning, reservations, missing ingredients on
 the list, "what's left?"; (7) shelf life and buying windows; (8) shopping
 trips and the list by trip. 5-6 are useful on their own.
 
@@ -389,7 +401,8 @@ UI (agreed 2026-11-19 on the prototype):
   on top with one "Felvesz" button, only while there is one. Below: "+
   Főzés", "+ Bevásárlás" (day chips).
 - **Menü, "Receptek"**: search and a list, each with "minden megvan" or
-  "N hiányzik"; "+ Új recept".
+  "N hiányzik"; "+ Új recept"; below, "Receptjavaslatok" (open while there
+  are no recipes), each with "+ Felvesz", and "Mindet felveszem".
 - **Planning**: "+ Főzés" → pick a recipe (search) → day chips (Ma,
   Holnap, weekdays, ten days) → a preview (what's at home; each line to
   buy, from when, on which trip or none) → "Betervez".

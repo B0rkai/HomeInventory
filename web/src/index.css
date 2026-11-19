@@ -1558,3 +1558,30 @@ h2 .named .tile {
 .recipe-form.wide .ingredients li > button.icon {
   margin-left: 0;
 }
+.part-badge {
+  flex: none;
+  padding: 0 0.35rem;
+  border-radius: 0.5rem;
+  background: var(--accent);
+  color: var(--on-accent);
+  white-space: nowrap;
+}
+.starters summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.starters .item-row {
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+}
+.starters .item-row > span {
+  flex: 1;
+  min-width: 0;
+}
+.starters .item-row > button {
+  flex: none;
+}
+.starter-ingredients {
+  display: block;
+  margin-left: 2.2rem;
+}

@@ -132,6 +132,16 @@ export const t = {
     removeIngredient: (name: string) => `${name} törlése`,
     deleteRecipe: 'Recept törlése',
     confirmDelete: (name: string) => `Törlöd ezt a receptet: ${name}?`,
+    confirmDeletePart: (name: string, users: string) =>
+      `Törlöd ezt a receptet: ${name}? Ezekből is kikerül: ${users}.`,
+    partBadge: 'recept',
+    loop: 'önmagát tartalmazná',
+    usedIn: 'Ebben is szerepel',
+    starters: 'Receptjavaslatok',
+    startersHint:
+      'Gyakori ételek és alapreceptek (nokedli, besamel…). Felvétel után átírhatjátok a saját változatotokra.',
+    addStarter: 'Felvesz',
+    addAllStarters: 'Mindet felveszem',
     paste: 'Beillesztés listából',
     pasteHint:
       'Soronként egy hozzávaló, például „50 dkg liszt”. A mennyiséget leválasztja, a nevet a termékekhez párosítja; ellenőrizd.',
@@ -314,7 +324,7 @@ export const t = {
     duplicateLocation: 'Itt már van ilyen nevű hely.',
     duplicateItem: 'Már van ilyen nevű termék.',
     duplicateRecipe: 'Már van ilyen nevű recept.',
-    duplicateIngredient: 'Egy hozzávaló kétszer szerepel.',
+    duplicateIngredient: 'Egy hozzávaló kétszer szerepel, vagy a recept önmagát tartalmazná.',
     duplicateChore: 'Itt már van ilyen nevű feladat.',
     remindedToday: 'Ma már érdeklődtél erről. Holnap újra lehet.',
     requestChanged: 'Ezt közben a másik már elvállalta vagy elintézte. Frissítettem.',

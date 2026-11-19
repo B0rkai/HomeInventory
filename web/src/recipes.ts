@@ -29,38 +29,102 @@ export function atHome(level: Level | undefined): boolean {
   return level !== undefined && AT_HOME.includes(level)
 }
 
-/** How many of the ingredients it needs (not the optional ones) aren't at home. */
-export function missingCount(recipe: RecipeOut, items: ItemOut[], stock: StockOut[]): number {
-  return recipe.ingredients.filter(
+/**
+ * The items a recipe takes, its parts' included ("Nokedli" in "Paprikás csirke"), each
+ * once: optional only if it's optional everywhere (an optional part's are all optional).
+ */
+export function flatIngredients(
+  recipe: RecipeOut,
+  recipes: RecipeOut[],
+  optional = false,
+  seen = new Set<number>(),
+): IngredientOut[] {
+  // The server refuses loops; this guards against a stale copy anyway.
+  if (seen.has(recipe.id)) return []
+  seen.add(recipe.id)
+  const flat = new Map<string, IngredientOut>()
+  for (const ingredient of recipe.ingredients) {
+    const part = recipes.find((r) => r.id === ingredient.part_id)
+    const taken = part
+      ? flatIngredients(part, recipes, optional || ingredient.optional, seen)
+      : ingredient.item_id === null
+        ? []
+        : [{ ...ingredient, optional: optional || ingredient.optional }]
+    for (const item of taken) {
+      const key = `${item.item_id}:${item.any_variant}`
+      const before = flat.get(key)
+      if (!before || (before.optional && !item.optional)) flat.set(key, item)
+    }
+  }
+  seen.delete(recipe.id)
+  return [...flat.values()]
+}
+
+/** How many of the items it needs (not the optional ones, its parts' too) aren't at home. */
+export function missingCount(
+  recipe: RecipeOut,
+  recipes: RecipeOut[],
+  items: ItemOut[],
+  stock: StockOut[],
+): number {
+  return flatIngredients(recipe, recipes).filter(
     (ingredient) => !ingredient.optional && !atHome(ingredientLevel(ingredient, items, stock)),
   ).length
 }
 
-/** How an ingredient reads: "Konzerv · borsó", or just "Konzerv" when any will do. */
-export function ingredientText(ingredient: IngredientOut, items: ItemOut[]): string {
+/** How an ingredient reads: "Konzerv · borsó", just "Konzerv" when any will do, or a
+ * part's name. */
+export function ingredientText(
+  ingredient: IngredientOut,
+  items: ItemOut[],
+  recipes: RecipeOut[],
+): string {
+  if (ingredient.part_id !== null)
+    return recipes.find((recipe) => recipe.id === ingredient.part_id)?.name ?? ''
   const item = items.find((i) => i.id === ingredient.item_id)
   if (!item) return ''
   return ingredient.any_variant ? item.name : fullName(item)
 }
 
+/** The recipe of this name, whatever its case. */
+export function recipeNamed(text: string, recipes: RecipeOut[]): RecipeOut | undefined {
+  const wanted = fold(text.trim())
+  return wanted ? recipes.find((recipe) => fold(recipe.name) === wanted) : undefined
+}
+
+/** Whether `part` is the recipe `id`, or takes it (through its parts too): it can't be
+ * one of that recipe's ingredients. */
+export function takes(part: RecipeOut, id: number, recipes: RecipeOut[]): boolean {
+  if (part.id === id) return true
+  return part.ingredients.some((ingredient) => {
+    const next = recipes.find((recipe) => recipe.id === ingredient.part_id)
+    return next !== undefined && takes(next, id, recipes)
+  })
+}
+
+/** The recipes taking this one as a part. */
+export function takenBy(recipe: RecipeOut, recipes: RecipeOut[]): RecipeOut[] {
+  return recipes.filter((other) =>
+    other.ingredients.some((ingredient) => ingredient.part_id === recipe.id),
+  )
+}
+
 /**
  * An ingredient typed as text ("Konzerv · borsó", "Konzerv"), for the server, which finds
  * or makes the item. A name kept in variants, typed without one, means any of them will do.
+ * `part`: the text is a recipe's name.
  */
 export function ingredientFrom(
   text: string,
   items: ItemOut[],
-  fields: { amount: string; optional: boolean },
+  fields: { amount?: string; optional?: boolean; part?: boolean },
 ): IngredientIn {
+  const amount = fields.amount?.trim() || null
+  const optional = fields.optional ?? false
+  if (fields.part) return { name: text.trim(), recipe: true, amount, optional }
   const { name, variant } = parseFullName(text.trim())
   const variants = items.filter((item) => fold(item.name) === fold(name) && item.variant)
-  return {
-    name,
-    variant,
-    any_variant: variant === null && variants.length > 0,
-    amount: fields.amount.trim() || null,
-    optional: fields.optional,
-  }
+  return { name, variant, any_variant: variant === null && variants.length > 0, amount, optional }
 }
 
 /** Whether an ingredient typed as text is in the catalogue yet (else saving adds it). */

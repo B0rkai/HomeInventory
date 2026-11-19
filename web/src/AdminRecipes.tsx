@@ -3,6 +3,7 @@ import { useHouse } from './house'
 import { RecipeName } from './MenuPage'
 import { RecipeEditor } from './RecipeEditor'
 import { ingredientText, missingCount } from './recipes'
+import { StarterRecipes } from './StarterRecipes'
 import { t } from './strings'
 
 /** Every recipe in a table, edited below its row; a new one, with a pasted list, on top. */
@@ -47,7 +48,7 @@ export function AdminRecipes() {
             </thead>
             <tbody>
               {sorted.map((recipe) => {
-                const missing = missingCount(recipe, items, stock)
+                const missing = missingCount(recipe, recipes, items, stock)
                 return [
                   <tr key={recipe.id}>
                     <td>
@@ -55,7 +56,7 @@ export function AdminRecipes() {
                     </td>
                     <td className="small">
                       {recipe.ingredients
-                        .map((ingredient) => ingredientText(ingredient, items))
+                        .map((ingredient) => ingredientText(ingredient, items, recipes))
                         .join(', ')}
                     </td>
                     <td className="small">
@@ -94,6 +95,7 @@ export function AdminRecipes() {
           </table>
         </div>
       )}
+      <StarterRecipes />
     </>
   )
 }

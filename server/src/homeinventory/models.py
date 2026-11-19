@@ -362,6 +362,7 @@ class Recipe(Base):
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
     ingredients: Mapped[list["RecipeIngredient"]] = relationship(
+        foreign_keys="RecipeIngredient.recipe_id",
         order_by="RecipeIngredient.position",
         cascade="all, delete-orphan",
         passive_deletes=True,
@@ -370,17 +371,30 @@ class Recipe(Base):
 
 
 class RecipeIngredient(Base):
-    """What a recipe takes: a catalogue item, or any variant of its name ("Konzerv", any).
+    """What a recipe takes: a catalogue item, or any variant of its name ("Konzerv", any),
+    or another recipe (a part: "Nokedli" in "Paprikás csirke"), with what that one takes.
     No quantity the app counts: levels say whether there's enough, `amount` is a note for
     the cook."""
 
     __tablename__ = "recipe_ingredients"
-    __table_args__ = (UniqueConstraint("recipe_id", "item_id"),)
+    __table_args__ = (
+        UniqueConstraint("recipe_id", "item_id"),
+        # Part first: it is also the index for finding what takes a recipe.
+        UniqueConstraint("part_id", "recipe_id"),
+        CheckConstraint("(item_id IS NULL) != (part_id IS NULL)", name="item_or_part"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     recipe_id: Mapped[int] = mapped_column(ForeignKey("recipes.id", ondelete="CASCADE"))
     # An item deleted from the catalogue leaves the recipes it was in.
-    item_id: Mapped[int] = mapped_column(ForeignKey("items.id", ondelete="CASCADE"), index=True)
+    item_id: Mapped[int | None] = mapped_column(
+        ForeignKey("items.id", ondelete="CASCADE"), index=True
+    )
+    # So does a recipe deleted. Never the recipe itself, nor one that takes it (the API
+    # checks).
+    part_id: Mapped[int | None] = mapped_column(ForeignKey("recipes.id", ondelete="CASCADE"))
+
+    part: Mapped[Recipe | None] = relationship(foreign_keys=[part_id], lazy="selectin")
     # Any variant of the item's name will do.
     any_variant: Mapped[bool] = mapped_column(default=False, server_default=false())
     # "50 dkg", "2 fej": for the cook, the app doesn't count it.
