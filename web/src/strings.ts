@@ -286,7 +286,7 @@ export const t = {
     substitutes: 'Helyettesítheti',
     substitutesHint:
       'Receptekben ez is jó helyette, ha ez nincs itthon. A bevásárlólistát nem érinti.',
-    substitutePlaceholder: 'Például: Margarin',
+    substitutePlaceholder: 'Például: Margarin · sütő',
     removeSubstitute: (name: string) => `${name} törlése`,
     standsInFor: 'Ezt helyettesíti',
     anyKind: 'bármelyik fajta',

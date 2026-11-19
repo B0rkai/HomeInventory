@@ -8,8 +8,8 @@ def post_item(api, name: str, variant: str | None = None) -> dict:
 def test_an_item_gets_substitutes_by_name(api) -> None:
     butter = post_item(api, "Vaj")
     assert butter["substitute_ids"] == []
-    marg = post_item(api, "Margarin", "főző")
-    body = {"substitutes": [{"name": "margarin", "variant": "FŐZŐ"}, {"name": "Olaj"}]}
+    marg = post_item(api, "Margarin", "sütő")
+    body = {"substitutes": [{"name": "margarin", "variant": "SÜTŐ"}, {"name": "Olaj"}]}
     response = api("PATCH", f"/items/{butter['id']}", body)
     assert response.status_code == 200, response.text
     items = {item["id"]: item for item in api("GET", "/items").json()}

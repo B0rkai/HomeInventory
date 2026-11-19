@@ -164,7 +164,7 @@ class Item(Base):
     icon: Mapped[str | None] = mapped_column(String(ICON_MAX_LENGTH))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
-    # What a recipe can use instead of it ("Vaj": "Margarin · főző"); one way only.
+    # What a recipe can use instead of it ("Vaj": "Margarin · sütő"); one way only.
     substitutes: Mapped[list["Item"]] = relationship(
         secondary="item_substitutes",
         primaryjoin="Item.id == ItemSubstitute.item_id",
