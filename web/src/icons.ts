@@ -12,9 +12,10 @@ type Entry = [icon: string, hue: Hue, keywords: string[]]
 // ("kockacukor"). The first matching entry wins, so specific ones come first. An empty
 // icon stops a word from matching a shorter keyword further down ("borsó" isn't "bors").
 const ITEMS: Entry[] = [
-  ['toilet-paper', 'body', ['wc papir', 'wcpapir', 'toalettpapir', 'papirtorlo', 'konyhai papir']],
+  ['paper-towel', 'body', ['papirtorlo', 'konyhai papir', 'konyhapapir']],
+  ['toilet-paper', 'body', ['wc papir', 'wcpapir', 'toalettpapir']],
   ['tissue', 'body', ['zsebkendo', 'papirzsebkendo', 'szalveta', 'fultisztito', 'vatta']],
-  ['toilet-paper', 'home', ['alufolia', 'sutopapir', 'folpack', 'folia']],
+  ['foil', 'home', ['alufolia', 'sutopapir', 'folpack', 'folia']],
   ['milk', 'food', ['tej', 'tejszin', 'tejfol', 'joghurt', 'kefir']],
   ['cheese', 'food', ['sajt', 'turo']],
   ['butter', 'food', ['vaj', 'margarin', 'zsir']],
@@ -29,7 +30,8 @@ const ITEMS: Entry[] = [
     ['so', 'fuszer', 'szerecsendio', 'komeny', 'fahej', 'vanilia', 'curry', 'gyomber'],
   ],
   ['wheat', 'food', ['liszt', 'zabpehely', 'muzli', 'gabona']],
-  ['rice', 'food', ['rizs', 'lencse', 'csicseri']],
+  ['rice', 'food', ['rizs']],
+  ['lentils', 'food', ['lencse', 'csicseri']],
   ['meat', 'food', ['leveshus']],
   ['bowl-spoon', 'food', ['teszta', 'spagetti', 'leves', 'csusza', 'metelt']],
   ['bottle', 'food', ['olaj', 'olivaolaj', 'ecet']],

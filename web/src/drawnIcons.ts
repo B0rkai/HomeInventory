@@ -15,6 +15,17 @@ export const DRAWN_ICONS: Record<string, string> = {
     '<path d="M12 4c-3 3 -7 5 -7 10a7 6 0 0 0 14 0c0 -5 -4 -7 -7 -10"/><path d="M12 4v-1"/><path d="M12 8c-1.5 2 -3 4 -3 7"/><path d="M12 8c1.5 2 3 4 3 7"/><path d="M10 21h4"/>',
   tomato:
     '<path d="M5 13a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/><path d="M9 6.5l3 1.5l3 -1.5"/><path d="M12 8v-4"/>',
+  // A loaf with three cuts across its crust.
+  bread:
+    '<path d="M3.5 15.5c0 -4.5 3.8 -7.5 8.5 -7.5s8.5 3 8.5 7.5c0 1.9 -1.6 3.5 -3.5 3.5h-10c-1.9 0 -3.5 -1.6 -3.5 -3.5z"/><path d="M7 12c.8 -.9 1.8 -1.5 3 -1.8"/><path d="M10.5 13c.9 -1 2 -1.6 3.3 -1.9"/><path d="M14 14c.9 -1 2 -1.6 3.3 -1.9"/>',
+  // Tabler's toilet paper stood on its end.
+  'paper-towel':
+    '<g transform="rotate(90 12 12)"><path d="M3 10a3 7 0 1 0 6 0a3 7 0 1 0 -6 0"/><path d="M21 10c0 -3.866 -1.343 -7 -3 -7"/><path d="M6 3h12"/><path d="M21 10v10l-3 -1l-3 2l-3 -3l-3 2v-10"/><path d="M6 10h.01"/></g>',
+  // A long thin roll with a sheet torn off it: foil, baking paper, cling film.
+  foil: '<path d="M3 8a1.5 2.5 0 1 0 3 0a1.5 2.5 0 1 0 -3 0"/><path d="M4.5 5.5h15a1.5 2.5 0 0 1 0 5h-15"/><path d="M4.5 8h.01"/><path d="M8 10.5v8.5l2 -1l2 1l2 -1l2 1l2 -1v-7.5"/>',
+  // Five round grains.
+  lentils:
+    '<path d="M4 7.5a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M12.5 7a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M8 13a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M15 15a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M3.5 18a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/>',
   // Three florets on a short stem; cauliflower too.
   broccoli:
     '<path d="M6 13a2.5 2.5 0 0 1 0 -5a2.5 2.5 0 0 1 3.5 -2.5a2.5 2.5 0 0 1 5 0a2.5 2.5 0 0 1 3.5 2.5a2.5 2.5 0 0 1 0 5z"/><path d="M10 13v6a1 1 0 0 0 1 1h2a1 1 0 0 0 1 -1v-6"/><path d="M12 13v3"/>',
