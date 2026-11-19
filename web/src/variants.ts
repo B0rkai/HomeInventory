@@ -1,4 +1,5 @@
 import type { ItemOut } from './api'
+import { iconOf } from './iconLookup'
 
 // Items sharing a name are kinds of one supply ("Konzerv" + "kukorica"); the UI shows them
 // as one group with the variants under it. A family ("Pékáru": Kenyér, Zsemle, Kifli) is a
@@ -50,6 +51,16 @@ export function oneName(members: ItemOut[]): boolean {
 export function groupMembers(item: ItemOut, items: ItemOut[]): ItemOut[] {
   const key = groupKey(item)
   return items.filter((other) => groupKey(other) === key).sort(byItem)
+}
+
+/**
+ * An item, or the family it's in, as one thing: the family's name, and the icon of its
+ * first member (the one longest in the catalogue, so it doesn't change as others join).
+ */
+export function asGroup(item: ItemOut, items: ItemOut[]): ItemOut {
+  if (!interchangeable(item)) return item
+  const first = groupMembers(item, items).sort((a, b) => a.id - b.id)[0] ?? item
+  return { ...first, name: item.family!, variant: null, icon: iconOf(first, 'item') }
 }
 
 /** A family's members as the list names them: an item by its name when every variant of

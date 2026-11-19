@@ -4,7 +4,7 @@ import { IconArt } from './IconArt'
 import { iconOf } from './iconLookup'
 import { t } from './strings'
 import type { Shortage } from './tree'
-import { fullName } from './variants'
+import { asGroup, fullName, groupKey, interchangeable } from './variants'
 
 // More than this many and the rest is a "+".
 const MAX_ICONS = 5
@@ -15,31 +15,38 @@ const MAX_ICONS = 5
  */
 export function ShortageBadge({ shortage }: { shortage: Shortage }) {
   const { house } = useHouse()
-  const itemsById = new Map(house?.items.map((item) => [item.id, item]))
-  // An item short in two places inside (say, two WCs) shows once, at its worst.
-  const seen = new Set<number>()
-  const shown: { item: ItemOut; level: 'out' | 'low' }[] = []
+  const items = house?.items ?? []
+  const itemsById = new Map(items.map((item) => [item.id, item]))
+  // An item short in two places inside (say, two WCs) shows once, at its worst; a family
+  // once for all its members, as low while any of them is only low.
+  const shown = new Map<string, { item: ItemOut; level: 'out' | 'low' }>()
   const add = (rows: StockOut[], level: 'out' | 'low') => {
     for (const row of rows) {
       const item = itemsById.get(row.item_id)
-      if (!item || seen.has(item.id)) continue
-      seen.add(item.id)
-      shown.push({ item, level })
+      if (!item) continue
+      const key = groupKey(item)
+      const before = shown.get(key)
+      if (!before) shown.set(key, { item: asGroup(item, items), level })
+      else if (interchangeable(item)) before.level = level
     }
   }
   add(shortage.out, 'out')
   add(shortage.low, 'low')
-  if (!shown.length) return null
-  const rest = shown.length - MAX_ICONS
+  // Out first.
+  const list = [...shown.values()].sort(
+    (a, b) => Number(a.level === 'low') - Number(b.level === 'low'),
+  )
+  if (!list.length) return null
+  const rest = list.length - MAX_ICONS
 
   return (
     <span className="badges">
-      {shown.slice(0, rest > 0 ? MAX_ICONS : undefined).map(({ item, level }) => {
+      {list.slice(0, rest > 0 ? MAX_ICONS : undefined).map(({ item, level }) => {
         const icon = iconOf(item, 'item')
         const label = `${t.levels[level]}: ${fullName(item)}`
         return (
           <span
-            key={item.id}
+            key={groupKey(item)}
             className="badge one"
             data-level={level}
             title={label}
@@ -53,7 +60,7 @@ export function ShortageBadge({ shortage }: { shortage: Shortage }) {
       {rest > 0 && (
         <span
           className="badge more"
-          data-level={shown[MAX_ICONS].level}
+          data-level={list[MAX_ICONS].level}
           title={t.home.moreShort(rest)}
           aria-label={t.home.moreShort(rest)}
           role="img"

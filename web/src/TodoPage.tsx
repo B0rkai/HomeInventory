@@ -13,8 +13,15 @@ import { bestLevel, placePath, treeOrder } from './tree'
 import { KeepForm } from './KeepForm'
 import { OneOffForm } from './OneOffForm'
 import { PushSettings } from './PushSettings'
-import { iconOf } from './iconLookup'
-import { byItem, fullName, groupMembers, interchangeable, memberNames, oneName } from './variants'
+import {
+  asGroup,
+  byItem,
+  fullName,
+  groupMembers,
+  interchangeable,
+  memberNames,
+  oneName,
+} from './variants'
 import { categoryName, groupByCategory } from './categories'
 
 /**
@@ -159,18 +166,9 @@ function Sections({ requests }: { requests: RequestOut[] }) {
   const toBuy: ItemOut[] = []
   for (const id of buying.keys()) {
     const first = itemsById.get(id)!
-    // Shown as the supply, not one kind of it; or as the family, its icon guessed from its
-    // name, else its first member's (so it's grouped with them).
-    const item = !variantsOf.has(id)
-      ? first
-      : first.family
-        ? {
-            ...first,
-            name: first.family,
-            variant: null,
-            icon: iconOf({ name: first.family, icon: null }, 'item') ? null : iconOf(first, 'item'),
-          }
-        : { ...first, variant: null }
+    // Shown as the family (any variant: the item, not one kind of it), with its first
+    // member's icon, so it's grouped with them.
+    const item = variantsOf.has(id) ? { ...asGroup(first, items), id } : first
     if (lotsFor(id).length) {
       refills.push(item)
       continue
