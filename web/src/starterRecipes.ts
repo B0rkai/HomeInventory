@@ -84,6 +84,20 @@ export const STARTER_RECIPES: Starter[] = [
     ],
   },
   {
+    name: 'Párolt lilakáposzta',
+    kind: 'side',
+    ingredients: [
+      item('Lilakáposzta', '1 fej'),
+      item('Hagyma', '1 fej'),
+      item('Ecet', '2 ek'),
+      item('Cukor', '1 ek'),
+      item('Olaj', '2 ek'),
+      item('Só'),
+      ifAny('Alma', '1 db'),
+      ifAny('Köménymag', '1 kk'),
+    ],
+  },
+  {
     name: 'Krémleves alap',
     kind: 'base',
     ingredients: [

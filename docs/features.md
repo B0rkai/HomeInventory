@@ -328,7 +328,9 @@ Decisions:
   three course meal is planned at once. A menu is never an ingredient
   itself; no menus are suggested. New recipes are main courses. A side
   dish is picked when a main course is planned, not written into its
-  recipe.
+  recipe, so it can change without changing the recipe; a menu with a
+  main course and no side dish asks for one the same way, and one that
+  names a side dish keeps it.
 - **Recipes take recipes**: a base recipe ("Nokedli", "Besamel") is an
   ingredient of others, whole. What a recipe takes counts its parts' items
   too, each once (optional only if optional everywhere; an optional part's
@@ -414,7 +416,7 @@ UI (agreed 2026-11-19 on the prototype):
   are no recipes), each with "+ Felvesz", and "Mindet felveszem".
 - **Planning**: "+ Főzés" → pick a recipe (search) → day chips (Ma,
   Holnap, weekdays, ten days) → for a main course, "+ Köret" (the side
-  dishes, optional) → a preview (what's at home; each line to
+  dishes, optional; for a menu too, unless it names a side dish) → a preview (what's at home; each line to
   buy, from when, on which trip or none) → "Betervez".
 - **A cooking's page**: day, who cooks, the ingredients with their level
   or "listán · pénteki bevásárlás" (optional ones "ha van"), a link to the
