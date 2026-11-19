@@ -401,6 +401,12 @@ UI (agreed 2026-11-19 on the prototype):
 
 ## Later ideas (not scheduled)
 
+- **Drag and drop on the admin places table**: drop a row on another's top
+  or bottom edge to put it before or after, on its middle to put it inside;
+  a line shows where it lands, forbidden targets (itself, too deep) refuse
+  it. Native HTML drag and drop, no library; the server's `PATCH
+  /locations/{id}` (parent, position) already does it. The arrows and the
+  parent picker stay. Not for items: the bulk move does that better.
 - **Offline changes**: ticking items off in a shop with no signal, queued
   and sent once back online (someone else's claim in the meantime dropped
   quietly). Reading offline is done (feature 11); build this if the shop
