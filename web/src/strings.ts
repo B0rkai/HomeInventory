@@ -339,8 +339,12 @@ export const t = {
     contents: 'Termék / feladat',
     counts: (items: number, chores: number) => `${items} / ${chores}`,
     deletePlace: 'Törlés',
-    addPlace: 'Új hely',
+    addPlaceHere: '+ hely',
+    addPlaceIn: (name: string) => `Új hely ebben: ${name}`,
     addPlaceName: 'Név, például: Nappali',
+    addFloor: 'Új szint',
+    addFloorName: 'Név, például: Emelet',
+    changeIcon: (name: string) => `${name} ikonja`,
     // To do
     active: 'Most teendő',
     noActive: 'Nincs nyitott teendő.',

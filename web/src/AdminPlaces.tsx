@@ -12,11 +12,11 @@ import { MAX_DEPTH, childrenOf, pathTo, placePath, subtreeIds, treeOrder } from 
 /** The whole tree of places in a table: rename, icon, order, move under another, delete. */
 export function AdminPlaces() {
   const { house, actions } = useHouse()
-  // A row opened below a place: its icon, or adding items to it.
-  const [editing, setEditing] = useState<{ id: number; what: 'icon' | 'item' }>()
+  // A row opened below a place: its icon, or adding items or places to it.
+  const [editing, setEditing] = useState<{ id: number; what: Opened }>()
   if (!house) return null
   const { locations, stock, chores } = house
-  const open = (id: number, what: 'icon' | 'item') =>
+  const open = (id: number, what: Opened) =>
     setEditing(editing?.id === id && editing.what === what ? undefined : { id, what })
   const depthOf = (id: number) => pathTo(locations, id).length
   // How many levels it and what's inside it take up.
@@ -55,6 +55,7 @@ export function AdminPlaces() {
                   location={location}
                   depth={depthOf(location.id)}
                   editing={editing?.id === location.id ? editing.what : undefined}
+                  onIcon={() => open(location.id, 'icon')}
                   onEdit={() => setEditing(undefined)}
                 >
                   <td>
@@ -110,13 +111,16 @@ export function AdminPlaces() {
                     >
                       {t.admin.addHere}
                     </button>
+                    {/* A place can only be so deep; the button's room is kept, so the
+                        column lines up. */}
                     <button
                       type="button"
                       className="secondary small-button"
-                      aria-expanded={editing?.id === location.id && editing.what === 'icon'}
-                      onClick={() => open(location.id, 'icon')}
+                      hidden={depthOf(location.id) >= MAX_DEPTH}
+                      aria-expanded={editing?.id === location.id && editing.what === 'place'}
+                      onClick={() => open(location.id, 'place')}
                     >
-                      {t.admin.icon}
+                      {t.admin.addPlaceHere}
                     </button>
                     <button
                       type="button"
@@ -142,16 +146,20 @@ export function AdminPlaces() {
   )
 }
 
+type Opened = 'icon' | 'item' | 'place'
+
 function PlaceRow({
   location,
   depth,
   editing,
+  onIcon,
   onEdit,
   children,
 }: {
   location: LocationOut
   depth: number
-  editing?: 'icon' | 'item'
+  editing?: Opened
+  onIcon: () => void
   onEdit: () => void
   children: React.ReactNode
 }) {
@@ -161,7 +169,16 @@ function PlaceRow({
       <tr className={depth === 1 ? 'floor-row' : undefined}>
         <td>
           <div className="name-cell" style={{ paddingLeft: `${(depth - 1) * 1.75}rem` }}>
-            <IconTile icon={iconOf(location, 'place')} name={location.name} kind="place" />
+            <button
+              type="button"
+              className="tile-button"
+              aria-label={t.admin.changeIcon(location.name)}
+              title={t.admin.icon}
+              aria-expanded={editing === 'icon'}
+              onClick={onIcon}
+            >
+              <IconTile icon={iconOf(location, 'place')} name={location.name} kind="place" />
+            </button>
             <TextCell
               key={location.name}
               value={location.name}
@@ -177,6 +194,13 @@ function PlaceRow({
         <tr className="edit-row">
           <td colSpan={5}>
             <AdminAddItem locationId={location.id} />
+          </td>
+        </tr>
+      )}
+      {editing === 'place' && (
+        <tr className="edit-row">
+          <td colSpan={5}>
+            <AddPlace parent={location} />
           </td>
         </tr>
       )}
@@ -199,16 +223,15 @@ function PlaceRow({
   )
 }
 
-function AddPlace() {
-  const { house, actions } = useHouse()
+/** A new place inside `parent`, from its row; without one, a new floor. */
+function AddPlace({ parent }: { parent?: LocationOut }) {
+  const { actions } = useHouse()
   const [name, setName] = useState('')
-  const [parent, setParent] = useState('')
-  if (!house) return null
-  const { locations } = house
 
   async function add(event: FormEvent) {
     event.preventDefault()
-    const added = await actions.addLocation(name.trim(), parent ? Number(parent) : null)
+    // Stays open for the next one.
+    const added = await actions.addLocation(name.trim(), parent?.id ?? null)
     if (added) setName('')
   }
 
@@ -216,28 +239,15 @@ function AddPlace() {
     <form className="admin-filters" onSubmit={add}>
       <input
         className="search"
-        aria-label={t.admin.addPlace}
-        placeholder={t.admin.addPlaceName}
+        aria-label={parent ? t.admin.addPlaceIn(parent.name) : t.admin.addFloor}
+        placeholder={parent ? t.admin.addPlaceName : t.admin.addFloorName}
         value={name}
         onChange={(event) => setName(event.target.value)}
         maxLength={60}
+        autoFocus={Boolean(parent)}
       />
-      <select
-        aria-label={t.admin.parent}
-        value={parent}
-        onChange={(event) => setParent(event.target.value)}
-      >
-        <option value="">{t.admin.floor}</option>
-        {treeOrder(locations)
-          .filter((location) => pathTo(locations, location.id).length < MAX_DEPTH)
-          .map((location) => (
-            <option key={location.id} value={location.id}>
-              {placePath(locations, location.id)}
-            </option>
-          ))}
-      </select>
       <button type="submit" disabled={!name.trim()}>
-        + {t.admin.addPlace}
+        + {parent ? t.admin.addPlaceIn(parent.name) : t.admin.addFloor}
       </button>
     </form>
   )

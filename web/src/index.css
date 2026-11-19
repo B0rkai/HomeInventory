@@ -1439,3 +1439,21 @@ a.item-row {
   padding-block: 0.25rem;
   background: var(--surface);
 }
+.tile-button {
+  flex: none;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0.5rem;
+  background: none;
+  cursor: pointer;
+}
+.tile-button:hover,
+.tile-button[aria-expanded='true'] {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.edit-cell button[hidden] {
+  display: inline-block;
+  visibility: hidden;
+}
