@@ -140,3 +140,8 @@ label.ing-optional input {
 .proto-legend {
   margin: 0.6rem 0 0;
 }
+.trip-who {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}

@@ -1054,11 +1054,28 @@ function Shopping({ data, set, tripArg }: Props & { tripArg?: string }) {
     ...(later.length ? [{ key: 'later', label: 'Később', lines: later }] : []),
   ]
   const current = tabs.find((tab) => tab.key === tripArg) ?? tabs[0]
-  const bought = (line: Line) =>
-    set((d) => ({
-      ...d,
-      items: d.items.map((it) => (it.name === line.item.name ? { ...it, level: 'plenty' } : it)),
-    }))
+  // A trip ends when its last line is bought, or when whoever went says they're back;
+  // what's left of it moves on to the next trip that fits.
+  const finish = (trip: Trip, d: Data) => {
+    setClosed({ label: `${cap(dayAdj(trip.day))} bevásárlás kész`, before: data })
+    set(() => ({ ...d, trips: d.trips.filter((x) => x.id !== trip.id) }))
+    swap('todo')
+  }
+  const bought = (line: Line) => {
+    const after: Data = {
+      ...data,
+      items: data.items.map((it) => (it.name === line.item.name ? { ...it, level: 'plenty' } : it)),
+    }
+    const trip = line.trip
+    if (trip && !linesOf(after).some((l) => l.trip?.id === trip.id)) finish(trip, after)
+    else set(() => after)
+  }
+  const [closed, setClosed] = useState<{ label: string; before: Data }>()
+  useEffect(() => {
+    if (!closed) return
+    const timer = setTimeout(() => setClosed(undefined), 6000)
+    return () => clearTimeout(timer)
+  }, [closed])
   const byCategory = (list: Line[]) =>
     (['food', 'drink', 'clean', 'body', 'home'] as Category[])
       .map((c) => [c, list.filter((l) => l.item.category === c)] as const)
@@ -1104,7 +1121,7 @@ function Shopping({ data, set, tripArg }: Props & { tripArg?: string }) {
                   : t.todo.shopping}
             </h3>
             {current.trip && (
-              <span className="small">
+              <span className="small trip-who">
                 {current.trip.who ? (
                   <span className="claim">
                     {current.trip.who === ME ? 'Te mész' : `${current.trip.who} megy`}
@@ -1125,6 +1142,13 @@ function Shopping({ data, set, tripArg }: Props & { tripArg?: string }) {
                     Megyek
                   </button>
                 )}
+                <button
+                  type="button"
+                  className="secondary small-button"
+                  onClick={() => finish(current.trip!, data)}
+                >
+                  Végeztem
+                </button>
               </span>
             )}
           </div>
@@ -1191,6 +1215,21 @@ function Shopping({ data, set, tripArg }: Props & { tripArg?: string }) {
       {!current && (
         <div className="card">
           <p>{t.todo.none}</p>
+        </div>
+      )}
+      {closed && (
+        <div className="undo-bar" role="status">
+          <span>✓ {closed.label}</span>
+          <button
+            type="button"
+            className="undo-button"
+            onClick={() => {
+              set(() => closed.before)
+              setClosed(undefined)
+            }}
+          >
+            {t.undo.undo}
+          </button>
         </div>
       )}
     </>
