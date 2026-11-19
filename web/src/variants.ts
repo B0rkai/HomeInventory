@@ -60,7 +60,8 @@ export function memberNames(members: ItemOut[], items: ItemOut[]): string[] {
     const whole = items
       .filter((item) => fold(item.name) === fold(member.name))
       .every((item) => members.some((other) => other.id === item.id))
-    const name = whole ? member.name : fullName(member)
+    // A list may break between members, never inside one.
+    const name = whole ? member.name : fullName(member).replace(SEPARATOR, '\u00a0·\u00a0')
     if (!names.includes(name)) names.push(name)
   }
   return names

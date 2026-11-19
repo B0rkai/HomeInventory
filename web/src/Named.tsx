@@ -43,7 +43,13 @@ export function Named({ thing, kind, note }: { thing: Thing; kind: IconKind; not
       />
       <span>
         {thing.name}
-        {thing.variant && <span className="variant"> · {thing.variant}</span>}
+        {/* No break between the name and its variant. */}
+        {thing.variant && (
+          <span className="variant">
+            {'\u00a0·\u00a0'}
+            {thing.variant}
+          </span>
+        )}
         {note && <span className="small muted any-kind"> · {note}</span>}
       </span>
     </span>
