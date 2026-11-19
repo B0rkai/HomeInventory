@@ -1,6 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import {
   assignRequest,
+  createRecipe,
+  deleteRecipe,
+  listRecipes,
+  updateRecipe,
+  type RecipeCreate,
+  type RecipeOut,
+  type RecipeUpdate,
   cancelRequest,
   claimRequest,
   completeChore,
@@ -52,6 +59,7 @@ export type House = {
   chores: ChoreOut[]
   // The open and claimed ones.
   requests: RequestOut[]
+  recipes: RecipeOut[]
 }
 
 export type RequestAction = 'claim' | 'unclaim' | 'done' | 'cancel' | 'remind'
@@ -137,7 +145,11 @@ type Cached = { at: string; house: House }
 function readCache(userId: number): Cached | undefined {
   try {
     const text = localStorage.getItem(CACHE_KEY(userId))
-    return text ? (JSON.parse(text) as Cached) : undefined
+    if (!text) return undefined
+    const cached = JSON.parse(text) as Cached
+    // Saved before there were recipes.
+    cached.house.recipes ??= []
+    return cached
   } catch {
     return undefined
   }
@@ -176,20 +188,29 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
   }, [house])
 
   const reload = useCallback(async () => {
-    const [locations, items, stock, chores, requests] = await Promise.all([
+    const [locations, items, stock, chores, requests, recipes] = await Promise.all([
       listLocations(),
       listItems(),
       listStock(),
       listChores(),
       listRequests(),
+      listRecipes(),
     ]).catch(() => [])
-    if (locations?.data && items?.data && stock?.data && chores?.data && requests?.data) {
+    if (
+      locations?.data &&
+      items?.data &&
+      stock?.data &&
+      chores?.data &&
+      requests?.data &&
+      recipes?.data
+    ) {
       const loaded = {
         locations: locations.data,
         items: items.data,
         stock: stock.data,
         chores: chores.data,
         requests: requests.data,
+        recipes: recipes.data,
       }
       setHouse(loaded)
       setLoadError(undefined)
@@ -527,6 +548,33 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
         })
         // A new item, its stock, the line closed: fetch it all.
         if (ok) await reload()
+        return Boolean(ok)
+      },
+      /** A recipe; ingredients the catalogue lacks join it, kept nowhere. */
+      async addRecipe(body: RecipeCreate) {
+        const recipe = (
+          await change(createRecipe({ body }), {
+            409: t.errors.duplicateRecipe,
+            422: t.errors.duplicateIngredient,
+          })
+        )?.data
+        // New ingredients may have joined the catalogue.
+        if (recipe) await reload()
+        return recipe
+      },
+      async updateRecipe(id: number, body: RecipeUpdate) {
+        const recipe = (
+          await change(updateRecipe({ path: { recipe_id: id }, body }), {
+            409: t.errors.duplicateRecipe,
+            422: t.errors.duplicateIngredient,
+          })
+        )?.data
+        if (recipe) await reload()
+        return recipe
+      },
+      async deleteRecipe(id: number) {
+        const ok = await change(deleteRecipe({ path: { recipe_id: id } }))
+        if (ok) setHouse((h) => h && { ...h, recipes: h.recipes.filter((r) => r.id !== id) })
         return Boolean(ok)
       },
       /** Writes something on the shopping list that isn't kept track of. */

@@ -1457,3 +1457,104 @@ a.item-row {
   display: inline-block;
   visibility: hidden;
 }
+
+/* The Menu tab: recipes */
+.order-button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.all-there {
+  color: var(--accent);
+  font-weight: 600;
+}
+h2 .named .tile {
+  width: 2rem;
+  height: 2rem;
+}
+.recipe-note {
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--border);
+  white-space: pre-wrap;
+}
+.recipe-form fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.recipe-form legend {
+  margin-bottom: 0.3rem;
+  font-weight: 600;
+}
+.recipe-form .ingredients ul {
+  margin: 0 0 0.4rem;
+  padding: 0;
+  list-style: none;
+}
+.recipe-form .ingredients li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0;
+}
+.recipe-form .ingredients li + li {
+  border-top: 1px solid var(--border);
+}
+/* On a phone the name takes a line, the amount, "ha van" and × the next. */
+.ingredient-name {
+  display: flex;
+  flex: 1 1 100%;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.ingredient-name input {
+  flex: 1;
+  min-width: 0;
+}
+.recipe-form input.ingredient-amount {
+  width: 6.5rem;
+  flex: none;
+}
+.recipe-form .ingredients li > button.icon {
+  margin-left: auto;
+}
+.recipe-form label.ingredient-optional {
+  flex: none;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+.new-item {
+  flex: none;
+  padding: 0 0.35rem;
+  border-radius: 0.5rem;
+  background: var(--low-bg);
+  color: var(--low);
+  white-space: nowrap;
+}
+.recipe-form .paste {
+  margin-top: 0.6rem;
+}
+.recipe-form .paste summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+}
+.recipe-form .paste textarea {
+  display: block;
+  width: 100%;
+  margin: 0.4rem 0;
+}
+.admin-editor {
+  margin-top: 0.75rem;
+}
+.recipe-form.wide .ingredients li {
+  flex-wrap: nowrap;
+}
+.recipe-form.wide .ingredient-name {
+  flex: 0 1 24rem;
+}
+.recipe-form.wide .ingredients li > button.icon {
+  margin-left: 0;
+}

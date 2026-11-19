@@ -339,6 +339,58 @@ class PushSubscription(Base):
         return self.user.display_name
 
 
+# Recipes (the meal planner)
+
+AMOUNT_MAX_LENGTH = 40
+NOTE_MAX_LENGTH = 2000
+LINK_MAX_LENGTH = 500
+
+
+class Recipe(Base):
+    """A dish the household cooks: what it takes, for planning a cooking of it."""
+
+    __tablename__ = "recipes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    # Unique ignoring case (checked by the API).
+    name: Mapped[str] = mapped_column(String(NAME_MAX_LENGTH))
+    # Unset: the client guesses one from the name. Empty: no icon.
+    icon: Mapped[str | None] = mapped_column(String(ICON_MAX_LENGTH))
+    note: Mapped[str | None] = mapped_column(String(NOTE_MAX_LENGTH))
+    # Where the recipe is written down in full (a web page).
+    link: Mapped[str | None] = mapped_column(String(LINK_MAX_LENGTH))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+
+    ingredients: Mapped[list["RecipeIngredient"]] = relationship(
+        order_by="RecipeIngredient.position",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
+    )
+
+
+class RecipeIngredient(Base):
+    """What a recipe takes: a catalogue item, or any variant of its name ("Konzerv", any).
+    No quantity the app counts: levels say whether there's enough, `amount` is a note for
+    the cook."""
+
+    __tablename__ = "recipe_ingredients"
+    __table_args__ = (UniqueConstraint("recipe_id", "item_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    recipe_id: Mapped[int] = mapped_column(ForeignKey("recipes.id", ondelete="CASCADE"))
+    # An item deleted from the catalogue leaves the recipes it was in.
+    item_id: Mapped[int] = mapped_column(ForeignKey("items.id", ondelete="CASCADE"), index=True)
+    # Any variant of the item's name will do.
+    any_variant: Mapped[bool] = mapped_column(default=False, server_default=false())
+    # "50 dkg", "2 fej": for the cook, the app doesn't count it.
+    amount: Mapped[str | None] = mapped_column(String(AMOUNT_MAX_LENGTH))
+    # Garnish and the like: used if there is some, never listed or warned about.
+    optional: Mapped[bool] = mapped_column(default=False, server_default=false())
+    # Order within the recipe.
+    position: Mapped[int] = mapped_column(default=0)
+
+
 class Action(StrEnum):
     """What someone did, as the activity log records it."""
 

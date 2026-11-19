@@ -198,6 +198,58 @@ export type Health = {
 };
 
 /**
+ * IngredientIn
+ *
+ * An ingredient by name: the catalogue item of this name and variant, made (kept
+ * nowhere) if there's none. `any_variant`: any variant of the name will do, the variant
+ * is left out.
+ */
+export type IngredientIn = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Variant
+     */
+    variant?: string | null;
+    /**
+     * Any Variant
+     */
+    any_variant?: boolean;
+    /**
+     * Amount
+     */
+    amount?: string | null;
+    /**
+     * Optional
+     */
+    optional?: boolean;
+};
+
+/**
+ * IngredientOut
+ */
+export type IngredientOut = {
+    /**
+     * Item Id
+     */
+    item_id: number;
+    /**
+     * Any Variant
+     */
+    any_variant: boolean;
+    /**
+     * Amount
+     */
+    amount: string | null;
+    /**
+     * Optional
+     */
+    optional: boolean;
+};
+
+/**
  * ItemCreate
  */
 export type ItemCreate = {
@@ -416,6 +468,88 @@ export type PushSubscriptionOut = {
      * Seen At
      */
     seen_at: string | null;
+};
+
+/**
+ * RecipeCreate
+ */
+export type RecipeCreate = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Icon
+     */
+    icon?: string | null;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Link
+     */
+    link?: string | null;
+    /**
+     * Ingredients
+     */
+    ingredients?: Array<IngredientIn>;
+};
+
+/**
+ * RecipeOut
+ */
+export type RecipeOut = {
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Icon
+     */
+    icon: string | null;
+    /**
+     * Note
+     */
+    note: string | null;
+    /**
+     * Link
+     */
+    link: string | null;
+    /**
+     * Ingredients
+     */
+    ingredients: Array<IngredientOut>;
+};
+
+/**
+ * RecipeUpdate
+ */
+export type RecipeUpdate = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Icon
+     */
+    icon?: string | null;
+    /**
+     * Note
+     */
+    note?: string | null;
+    /**
+     * Link
+     */
+    link?: string | null;
+    /**
+     * Ingredients
+     */
+    ingredients?: Array<IngredientIn> | null;
 };
 
 /**
@@ -1685,6 +1819,109 @@ export type StreamEventsResponses = {
      */
     200: unknown;
 };
+
+export type ListRecipesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/recipes';
+};
+
+export type ListRecipesResponses = {
+    /**
+     * Response List Recipes
+     *
+     * Successful Response
+     */
+    200: Array<RecipeOut>;
+};
+
+export type ListRecipesResponse = ListRecipesResponses[keyof ListRecipesResponses];
+
+export type CreateRecipeData = {
+    body: RecipeCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/recipes';
+};
+
+export type CreateRecipeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateRecipeError = CreateRecipeErrors[keyof CreateRecipeErrors];
+
+export type CreateRecipeResponses = {
+    /**
+     * Successful Response
+     */
+    201: RecipeOut;
+};
+
+export type CreateRecipeResponse = CreateRecipeResponses[keyof CreateRecipeResponses];
+
+export type DeleteRecipeData = {
+    body?: never;
+    path: {
+        /**
+         * Recipe Id
+         */
+        recipe_id: number;
+    };
+    query?: never;
+    url: '/api/v1/recipes/{recipe_id}';
+};
+
+export type DeleteRecipeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteRecipeError = DeleteRecipeErrors[keyof DeleteRecipeErrors];
+
+export type DeleteRecipeResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteRecipeResponse = DeleteRecipeResponses[keyof DeleteRecipeResponses];
+
+export type UpdateRecipeData = {
+    body: RecipeUpdate;
+    path: {
+        /**
+         * Recipe Id
+         */
+        recipe_id: number;
+    };
+    query?: never;
+    url: '/api/v1/recipes/{recipe_id}';
+};
+
+export type UpdateRecipeErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateRecipeError = UpdateRecipeErrors[keyof UpdateRecipeErrors];
+
+export type UpdateRecipeResponses = {
+    /**
+     * Successful Response
+     */
+    200: RecipeOut;
+};
+
+export type UpdateRecipeResponse = UpdateRecipeResponses[keyof UpdateRecipeResponses];
 
 export type ListActivityData = {
     body?: never;

@@ -28,13 +28,14 @@ Milestones 1-4 done: locations, items and stock levels (`places.py`); chores
 requests with claiming (`requests.py`); web push (`notify.py`, keys made on
 first use in the data directory) and live updates over SSE (`live.py`,
 `/api/v1/events`); and the web pages for them (home tree, place page, to-do
-list with the shopping list, shortages view, item catalogue, activity log
+list with the shopping list, item catalogue (its "Csak hiány" is the shortages), activity log
 (`activity.py`), a bottom tab bar; hash routes in `web/src/route.ts`, shared
 data in `web/src/house.ts`, where changes also wait a few seconds to be undone);
 desktop admin pages (`#/admin/...`, and the LAN port as Admin): items, places,
 to-dos with assigning, the log, people and their devices; moving stock;
-and everything the phone does (done for a person, never as Admin).
-Next: the meal planner (`docs/features.md`). Anything marked *(planned)* describes intended
+and everything the phone does (done for a person, never as Admin); recipes (`recipes.py`,
+the Menu tab, the admin Receptek tab). Next: the meal planner's milestone 6, planning
+cookings (`docs/features.md`). Anything marked *(planned)* describes intended
 setup, not code that exists yet.
 
 ## Tech stack

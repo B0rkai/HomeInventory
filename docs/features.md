@@ -26,10 +26,11 @@ check stock remotely, and avoid duplicating the job.
    exact counts. *Lots* means stocked up for weeks (20+ rolls of toilet
    paper in the basement, where a WC only keeps 3-4).
 3. **Check remotely.** See what any place has or lacks, from anywhere on the
-   tailnet (e.g. at the shop). The *shortages* view lists everything low or
-   out, by item (with the places that have *lots* of it, to fetch from) or
-   by place, as a dense read-only list (by item, each variant is a block of its own: the
-   variant, then a row per place); levels change on a place's page.
+   tailnet (e.g. at the shop). The catalogue's "Csak hiány" toggle lists
+   everything low or out (and kept stocked), out first, each with where, and
+   where there's *lots* of it to fetch from; levels change on a place's
+   page. (A shortages tab of its own, by item or by place, gave its place in
+   the tab bar to the meal planner.)
    Items and places show a two-tone icon (a line icon on a tile coloured
    by group: food, drinks, cleaning, hygiene, household, places), guessed
    from the name or chosen; without one, the first letter stands in. Adding an item suggests common
@@ -295,7 +296,7 @@ stock (on the phone too: "Áthelyezés" under the item's places); (B, done) plac
 devices, the log; (C, done) the phone's actions above, so nothing needs the phone;
 then the meal planner, its recipe editor here.
 
-## Planned: meal planner *(planned, agreed 2026-11-18)*
+## Meal planner *(agreed 2026-11-18; recipes done 2026-11-19)*
 
 Plan a cooking for a day; what it needs and the house lacks goes on the
 shopping list in time, but not so early that fresh food spoils, and the
@@ -356,14 +357,23 @@ Features:
 5. **Notifications**: the other planned a cooking; a trip is today; a
    fresh line's window opens with no trip in it.
 
-Data model additions: **Recipe** (name, icon, note, link);
-**RecipeIngredient** (recipe, item name and variant or any, amount note,
-optional); **Cooking** (recipe, day, cook, status planned / done /
+Data model additions: **Recipe** (name unique ignoring case, icon, note,
+link: http(s) only); **RecipeIngredient** (recipe, item, `any_variant`,
+amount note, optional, position; one row per item in a recipe, so "any
+Konzerv" and "Konzerv · borsó" can't both be in one). The API takes
+ingredients by name and variant, finding the item or making one kept
+nowhere (not restocked); a deleted item leaves the recipes it was in. A
+name kept in variants, typed without one, means any of them will do. The
+admin editor's pasted list is split client-side (`parseIngredients` in
+`web/src/recipes.ts`): the amount ("50 dkg", "csipet", "ízlés szerint")
+off the front or end, the name matched to the longest catalogue name or
+variant found in the line, else taken as typed and marked "új termék". Still to come: **Cooking** (recipe, day, cook, status planned / done /
 cancelled); **ShoppingTrip** (day, claimed by, status); **Item**
 `keeps_days` (null: any time); **Request** `buy_from`, `buy_by`, `cooking`,
 `trip`.
 
-Milestones: (5) recipes; (6) planning, reservations, missing ingredients on
+Milestones: (5, done) recipes, the Menu tab, "Csak hiány" in the
+catalogue (the shortages tab is gone), the admin recipe editor; (6) planning, reservations, missing ingredients on
 the list, "what's left?"; (7) shelf life and buying windows; (8) shopping
 trips and the list by trip. 5-6 are useful on their own.
 

@@ -11,9 +11,12 @@ from pydantic import (
 )
 
 from homeinventory.models import (
+    AMOUNT_MAX_LENGTH,
     ICON_MAX_LENGTH,
+    LINK_MAX_LENGTH,
     NAME_MAX_LENGTH,
     NICKNAME_MAX_LENGTH,
+    NOTE_MAX_LENGTH,
     VARIANT_MAX_LENGTH,
     Action,
     Category,
@@ -319,3 +322,76 @@ class PushSubscriptionIn(BaseModel):
 
     endpoint: Annotated[str, StringConstraints(pattern=r"^https://", max_length=1000)]
     keys: PushKeys
+
+
+# Recipes
+
+
+def _optional_text(max_length: int):
+    return Annotated[
+        Annotated[str, StringConstraints(strip_whitespace=True, max_length=max_length)] | None,
+        AfterValidator(_blank_to_none),
+    ]
+
+
+def _web_link(value: str | None) -> str | None:
+    if value is not None and not value.lower().startswith(("http://", "https://")):
+        raise ValueError("A link starts with http:// or https://")
+    return value
+
+
+Amount = _optional_text(AMOUNT_MAX_LENGTH)
+Note = _optional_text(NOTE_MAX_LENGTH)
+Link = Annotated[_optional_text(LINK_MAX_LENGTH), AfterValidator(_web_link)]
+
+# More than any dish takes; a bound on what one request can add to the catalogue.
+INGREDIENTS_MAX = 60
+
+
+class IngredientIn(BaseModel):
+    """An ingredient by name: the catalogue item of this name and variant, made (kept
+    nowhere) if there's none. `any_variant`: any variant of the name will do, the variant
+    is left out."""
+
+    name: Name
+    variant: Variant = None
+    any_variant: bool = False
+    amount: Amount = None
+    optional: bool = False
+
+
+class IngredientOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    item_id: int
+    any_variant: bool
+    amount: str | None
+    optional: bool
+
+
+class RecipeOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    icon: str | None
+    note: str | None
+    link: str | None
+    ingredients: list[IngredientOut]
+
+
+class RecipeCreate(BaseModel):
+    name: Name
+    icon: Icon = None
+    note: Note = None
+    link: Link = None
+    ingredients: list[IngredientIn] = Field(default=[], max_length=INGREDIENTS_MAX)
+
+
+class RecipeUpdate(BaseModel):
+    # Only the fields sent change; `ingredients`, sent, replaces them all.
+    name: Name | None = None
+    icon: Icon = None
+    note: Note = None
+    link: Link = None
+    ingredients: list[IngredientIn] | None = Field(default=None, max_length=INGREDIENTS_MAX)

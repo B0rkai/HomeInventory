@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AssignRequestData, AssignRequestErrors, AssignRequestResponses, CancelRequestData, CancelRequestErrors, CancelRequestResponses, ClaimRequestData, ClaimRequestErrors, ClaimRequestResponses, CompleteChoreData, CompleteChoreErrors, CompleteChoreResponses, CompleteRequestData, CompleteRequestErrors, CompleteRequestResponses, CreateChoreData, CreateChoreErrors, CreateChoreResponses, CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, CreateRequestData, CreateRequestErrors, CreateRequestResponses, DeleteChoreData, DeleteChoreErrors, DeleteChoreResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, DeleteSubscriptionData, DeleteSubscriptionErrors, DeleteSubscriptionResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, GetPushKeyData, GetPushKeyResponses, KeepRequestData, KeepRequestErrors, KeepRequestResponses, ListActivityData, ListActivityErrors, ListActivityResponses, ListChoresData, ListChoresResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListRequestsData, ListRequestsResponses, ListStockData, ListStockResponses, ListSubscriptionsData, ListSubscriptionsResponses, ListUsersData, ListUsersResponses, LogInData, LogInErrors, LogInResponses, LogOutData, LogOutResponses, MoveStockData, MoveStockErrors, MoveStockResponses, RemindRequestData, RemindRequestErrors, RemindRequestResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, ReportChoreData, ReportChoreErrors, ReportChoreResponses, RequestStockData, RequestStockErrors, RequestStockResponses, SetStockData, SetStockErrors, SetStockResponses, StreamEventsData, StreamEventsResponses, SubscribeData, SubscribeErrors, SubscribeResponses, UnclaimRequestData, UnclaimRequestErrors, UnclaimRequestResponses, UnsubscribeData, UnsubscribeErrors, UnsubscribeResponses, UpdateChoreData, UpdateChoreErrors, UpdateChoreResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses } from './types.gen';
+import type { AssignRequestData, AssignRequestErrors, AssignRequestResponses, CancelRequestData, CancelRequestErrors, CancelRequestResponses, ClaimRequestData, ClaimRequestErrors, ClaimRequestResponses, CompleteChoreData, CompleteChoreErrors, CompleteChoreResponses, CompleteRequestData, CompleteRequestErrors, CompleteRequestResponses, CreateChoreData, CreateChoreErrors, CreateChoreResponses, CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, CreateRequestData, CreateRequestErrors, CreateRequestResponses, DeleteChoreData, DeleteChoreErrors, DeleteChoreResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, DeleteSubscriptionData, DeleteSubscriptionErrors, DeleteSubscriptionResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, GetPushKeyData, GetPushKeyResponses, KeepRequestData, KeepRequestErrors, KeepRequestResponses, ListActivityData, ListActivityErrors, ListActivityResponses, ListChoresData, ListChoresResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListRecipesData, ListRecipesResponses, ListRequestsData, ListRequestsResponses, ListStockData, ListStockResponses, ListSubscriptionsData, ListSubscriptionsResponses, ListUsersData, ListUsersResponses, LogInData, LogInErrors, LogInResponses, LogOutData, LogOutResponses, MoveStockData, MoveStockErrors, MoveStockResponses, RemindRequestData, RemindRequestErrors, RemindRequestResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, ReportChoreData, ReportChoreErrors, ReportChoreResponses, RequestStockData, RequestStockErrors, RequestStockResponses, SetStockData, SetStockErrors, SetStockResponses, StreamEventsData, StreamEventsResponses, SubscribeData, SubscribeErrors, SubscribeResponses, UnclaimRequestData, UnclaimRequestErrors, UnclaimRequestResponses, UnsubscribeData, UnsubscribeErrors, UnsubscribeResponses, UpdateChoreData, UpdateChoreErrors, UpdateChoreResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -412,6 +412,44 @@ export const deleteSubscription = <ThrowOnError extends boolean = false>(options
  * Server-Sent Events: `{"by": <user id or null>}` whenever the house changes.
  */
 export const streamEvents = <ThrowOnError extends boolean = false>(options?: Options<StreamEventsData, ThrowOnError>): RequestResult<StreamEventsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<StreamEventsResponses, unknown, ThrowOnError>({ url: '/api/v1/events', ...options });
+
+/**
+ * List Recipes
+ */
+export const listRecipes = <ThrowOnError extends boolean = false>(options?: Options<ListRecipesData, ThrowOnError>): RequestResult<ListRecipesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListRecipesResponses, unknown, ThrowOnError>({ url: '/api/v1/recipes', ...options });
+
+/**
+ * Create Recipe
+ *
+ * Adds a recipe; ingredients the catalogue doesn't have yet are added to it.
+ */
+export const createRecipe = <ThrowOnError extends boolean = false>(options: Options<CreateRecipeData, ThrowOnError>): RequestResult<CreateRecipeResponses, CreateRecipeErrors, ThrowOnError> => (options.client ?? client).post<CreateRecipeResponses, CreateRecipeErrors, ThrowOnError>({
+    url: '/api/v1/recipes',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete Recipe
+ */
+export const deleteRecipe = <ThrowOnError extends boolean = false>(options: Options<DeleteRecipeData, ThrowOnError>): RequestResult<DeleteRecipeResponses, DeleteRecipeErrors, ThrowOnError> => (options.client ?? client).delete<DeleteRecipeResponses, DeleteRecipeErrors, ThrowOnError>({ url: '/api/v1/recipes/{recipe_id}', ...options });
+
+/**
+ * Update Recipe
+ *
+ * Changes the fields sent; `ingredients` replaces the whole list.
+ */
+export const updateRecipe = <ThrowOnError extends boolean = false>(options: Options<UpdateRecipeData, ThrowOnError>): RequestResult<UpdateRecipeResponses, UpdateRecipeErrors, ThrowOnError> => (options.client ?? client).patch<UpdateRecipeResponses, UpdateRecipeErrors, ThrowOnError>({
+    url: '/api/v1/recipes/{recipe_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * List Activity

@@ -10,6 +10,7 @@ from homeinventory.identity import current_user
 from homeinventory.models import ADMIN_LOGIN, User
 from homeinventory.places import router as places_router
 from homeinventory.push import router as push_router
+from homeinventory.recipes import router as recipes_router
 from homeinventory.requests import router as requests_router
 from homeinventory.schemas import Health, UserOut, UserUpdate
 
@@ -65,5 +66,6 @@ def update_user(
 router.include_router(places_router)
 router.include_router(requests_router)
 router.include_router(push_router)
+router.include_router(recipes_router)
 router.include_router(activity_router)
 router.include_router(admin_router)

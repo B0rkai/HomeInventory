@@ -113,6 +113,32 @@ const CHORES: Entry[] = [
   ['tool', 'home', ['javitas', 'szereles']],
 ]
 
+// Dishes, for recipes; one that matches nothing gets the chef's hat.
+const RECIPES: Entry[] = [
+  ['soup', 'food', ['leves', 'gulyas', 'halaszle']],
+  ['salad', 'food', ['salata']],
+  ['pizza', 'food', ['pizza']],
+  ['fish', 'food', ['hal', 'lazac', 'tonhal', 'pisztrang']],
+  ['egg-fried', 'food', ['rantotta', 'omlett', 'tojas']],
+  ['pepper', 'food', ['lecso', 'toltott paprika']],
+  ['cake-roll', 'food', ['palacsinta', 'piskota', 'tekercs']],
+  ['cake', 'food', ['torta', 'sutemeny', 'suti', 'pite', 'retes', 'kalacs', 'muffin']],
+  ['bread', 'food', ['pogacsa', 'langos', 'kenyer']],
+  ['burger', 'food', ['hamburger', 'burger', 'szendvics']],
+  [
+    'bowl-spoon',
+    'food',
+    ['teszta', 'spagetti', 'lasagne', 'makaroni', 'nokedli', 'fozelek', 'rizotto', 'rakott'],
+  ],
+  ['grill', 'food', ['grill', 'bbq']],
+  [
+    'meat',
+    'food',
+    ['porkolt', 'paprikas', 'csirke', 'hus', 'rantott', 'sult', 'kolbasz', 'fasirt', 'tokany'],
+  ],
+  ['chef-hat', 'food', []],
+]
+
 /** Icons the app uses outside these tables: the tab bar. */
 export const UI_ICONS = [
   'home',
@@ -121,11 +147,17 @@ export const UI_ICONS = [
   'clipboard-list',
   'history',
   'repeat-off',
+  'chef-hat',
 ]
 
-export type IconKind = 'item' | 'place' | 'chore'
+export type IconKind = 'item' | 'place' | 'chore' | 'recipe'
 
-export const ICON_TABLES: Record<IconKind, Entry[]> = { item: ITEMS, place: PLACES, chore: CHORES }
+export const ICON_TABLES: Record<IconKind, Entry[]> = {
+  item: ITEMS,
+  place: PLACES,
+  chore: CHORES,
+  recipe: RECIPES,
+}
 
 function normalize(text: string): string {
   return text
@@ -147,7 +179,7 @@ export function guessIcon(name: string, kind: IconKind): string {
   for (const [icon, , keywords] of ICON_TABLES[kind]) {
     if (keywords.some((keyword) => matches(normalized, normalize(keyword)))) return icon
   }
-  return ''
+  return kind === 'recipe' ? 'chef-hat' : ''
 }
 
 /** The tile colour for an icon in this table; a letter tile gets the neutral one. */

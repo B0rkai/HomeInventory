@@ -7,7 +7,7 @@ import { LevelName } from './LevelPicker'
 import { Named } from './Named'
 import { href } from './route'
 import { t } from './strings'
-import { bestLevel } from './tree'
+import { bestLevel, isShort, restockedStock, treeOrder } from './tree'
 import { byItem, fullName } from './variants'
 
 // The search and the group survive a visit to an item's page and back; the order is a
@@ -15,6 +15,7 @@ import { byItem, fullName } from './variants'
 const SEARCH_KEY = 'items-search'
 const GROUP_KEY = 'items-group'
 const ORDER_KEY = 'items-order'
+const SHORT_KEY = 'items-short'
 
 // A group tab: every group, one of them, or the items in none ("Egyéb").
 type Tab = 'all' | Category | 'none'
@@ -49,7 +50,8 @@ function fold(text: string): string {
 
 /**
  * The catalogue, each item with its best level anywhere, by level (most or least first)
- * and filtered by group and by a search; tap one for its page.
+ * and filtered by group and by a search; tap one for its page. "Csak hiány" keeps what's
+ * low or out somewhere (and kept stocked), with where, and where there's lots to fetch.
  */
 export function ItemsPage() {
   const { house } = useHouse()
@@ -58,8 +60,15 @@ export function ItemsPage() {
   const [order, setOrder] = useState(() =>
     load(() => localStorage, ORDER_KEY) === 'least' ? 'least' : ('most' as Order),
   )
+  const [shortOnly, setShortOnly] = useState(() => load(() => sessionStorage, SHORT_KEY) === '1')
   if (!house) return null
-  const { stock } = house
+  const { stock, locations } = house
+  // Only what's kept stocked: no ice cream isn't a shortage.
+  const placeOrder = new Map(treeOrder(locations).map((location, index) => [location.id, index]))
+  const short = restockedStock(stock, house.items)
+    .filter(isShort)
+    .sort((a, b) => (placeOrder.get(a.location_id) ?? 0) - (placeOrder.get(b.location_id) ?? 0))
+  const placeName = (id: number) => locations.find((l) => l.id === id)?.name ?? ''
 
   const groupOf = (item: ItemOut): Tab => categoryOf(item) ?? 'none'
   // Only the groups that have items, in list order.
@@ -77,6 +86,9 @@ export function ItemsPage() {
   )
   // Items kept nowhere come last either way: there's nothing to tell about them.
   const rank = (item: ItemOut) => {
+    // Short: out first, whatever the order.
+    if (shortOnly)
+      return short.some((row) => row.item_id === item.id && row.level === 'out') ? 1 : 0
     const level = levels.get(item.id)
     if (!level) return -Infinity
     return order === 'most' ? RANK[level] : -RANK[level]
@@ -85,7 +97,10 @@ export function ItemsPage() {
 
   const wanted = fold(search.trim())
   const items = house.items.filter(
-    (item) => fold(fullName(item)).includes(wanted) && (shown === 'all' || groupOf(item) === shown),
+    (item) =>
+      fold(fullName(item)).includes(wanted) &&
+      (shown === 'all' || groupOf(item) === shown) &&
+      (!shortOnly || short.some((row) => row.item_id === item.id)),
   )
 
   function changeSearch(text: string) {
@@ -96,6 +111,11 @@ export function ItemsPage() {
   function changeTab(next: Tab) {
     setTab(next)
     save(() => sessionStorage, GROUP_KEY, next)
+  }
+
+  function flipShort() {
+    setShortOnly(!shortOnly)
+    save(() => sessionStorage, SHORT_KEY, shortOnly ? '0' : '1')
   }
 
   function flipOrder() {
@@ -118,6 +138,14 @@ export function ItemsPage() {
               value={search}
               onChange={(event) => changeSearch(event.target.value)}
             />
+            <button
+              type="button"
+              className="secondary small-button order-button"
+              aria-pressed={shortOnly}
+              onClick={flipShort}
+            >
+              {t.items.shortOnly}
+            </button>
             <button
               type="button"
               className="secondary small-button order-button"
@@ -145,7 +173,13 @@ export function ItemsPage() {
       )}
       {items.length === 0 && (
         <div className="card">
-          <p>{house.items.length ? t.items.noMatch : t.items.empty}</p>
+          <p>
+            {!house.items.length
+              ? t.items.empty
+              : shortOnly && !wanted && shown === 'all'
+                ? t.items.noShortage
+                : t.items.noMatch}
+          </p>
         </div>
       )}
       {groupByCategory(items, byLevel).map(([category, groupItems]) => (
@@ -153,7 +187,14 @@ export function ItemsPage() {
           <h3>{categoryName(category)}</h3>
           <ul className="item-list">
             {groupItems.map((item) => {
-              const level = levels.get(item.id)
+              const shortRows = short.filter((row) => row.item_id === item.id)
+              // Short: the worst level, and where; else the best, and in how many places.
+              const level = shortOnly
+                ? shortRows.some((row) => row.level === 'out')
+                  ? 'out'
+                  : 'low'
+                : levels.get(item.id)
+              const lots = stock.filter((row) => row.item_id === item.id && row.level === 'lots')
               return (
                 <li key={item.id}>
                   <a className="item-row" href={href.item(item.id)}>
@@ -167,7 +208,12 @@ export function ItemsPage() {
                       {level && <LevelName level={level} />}
                       <span className="muted">
                         {level && ' · '}
-                        {t.items.places(stock.filter((row) => row.item_id === item.id).length)}
+                        {shortOnly
+                          ? shortRows.map((row) => placeName(row.location_id)).join(', ')
+                          : t.items.places(stock.filter((row) => row.item_id === item.id).length)}
+                        {shortOnly &&
+                          lots.length > 0 &&
+                          ` · ${t.items.lotsAt(lots.map((row) => placeName(row.location_id)).join(', '))}`}
                       </span>
                     </span>
                   </a>

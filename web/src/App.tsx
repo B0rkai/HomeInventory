@@ -9,11 +9,12 @@ import { IconArt } from './IconArt'
 import { ItemPage } from './ItemPage'
 import { ItemsPage } from './ItemsPage'
 import { LogPage } from './LogPage'
-import { MissingPage } from './MissingPage'
+import { MenuPage } from './MenuPage'
 import { NicknameForm } from './NicknameForm'
 import { PlacePage } from './PlacePage'
 import { refreshPush } from './push'
 import { PushSettings } from './PushSettings'
+import { RecipeEditPage, RecipePage } from './RecipePage'
 import { href, useRoute, type Route } from './route'
 import { t } from './strings'
 import { ago } from './time'
@@ -237,7 +238,9 @@ function Page() {
   if (route.page === 'place') return <PlacePage key={route.id} id={route.id} />
   if (route.page === 'items') return <ItemsPage />
   if (route.page === 'item') return <ItemPage key={route.id} id={route.id} />
-  if (route.page === 'missing') return <MissingPage view={route.view} />
+  if (route.page === 'menu') return <MenuPage />
+  if (route.page === 'recipe') return <RecipePage key={route.id} id={route.id} />
+  if (route.page === 'recipeEdit') return <RecipeEditPage key={route.id ?? 'new'} id={route.id} />
   if (route.page === 'todo') return <TodoPage view={route.view} />
   if (route.page === 'log') return <LogPage />
   return <Home />
@@ -246,7 +249,7 @@ function Page() {
 const TABS: { page: Route['page']; href: string; icon: string; label: string }[] = [
   { page: 'home', href: href.home, icon: 'home', label: t.nav.places },
   { page: 'todo', href: href.todo(), icon: 'list-check', label: t.nav.todo },
-  { page: 'missing', href: href.missing(), icon: 'shopping-cart', label: t.nav.missing },
+  { page: 'menu', href: href.menu, icon: 'chef-hat', label: t.nav.menu },
   { page: 'items', href: href.items, icon: 'clipboard-list', label: t.nav.items },
   { page: 'log', href: href.log, icon: 'history', label: t.nav.log },
 ]
@@ -257,7 +260,14 @@ function NavBar() {
   // Nobody's on these yet.
   const open = house?.requests.filter((r) => r.status === 'open').length ?? 0
   // A place's page belongs to the Places tab, an item's to the Items tab.
-  const current = route.page === 'place' ? 'home' : route.page === 'item' ? 'items' : route.page
+  const current =
+    route.page === 'place'
+      ? 'home'
+      : route.page === 'item'
+        ? 'items'
+        : route.page === 'recipe' || route.page === 'recipeEdit'
+          ? 'menu'
+          : route.page
 
   return (
     <nav className="tabbar">
