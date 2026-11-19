@@ -219,6 +219,57 @@ change is a single conditional update (see `CLAUDE.md`); losing a race is
 3. **Requests**: report, claim, done, cancel; the shopping list.
 4. **Notifications and live updates**: web push, the service worker, SSE.
 
+## Planned: admin pages *(planned, agreed 2026-11-19)*
+
+Desktop pages for what's awkward on a phone: seeing everything at once,
+setting things up, typing in recipes, moving items between places. Built
+before the meal planner, so recipes are typed in there.
+
+**Access.** The desktop that uses it isn't on the tailnet, so the admin
+pages are also served on the home LAN, over plain HTTP (the LAN is trusted,
+like the torrent box's apps):
+
+- A **second port** of the same server (same process, database and live
+  updates), bound to the server's LAN address only, never `0.0.0.0`. On
+  that port the Tailscale identity headers are **ignored**: every device on
+  the LAN (phones on the wifi included) can reach it and could forge them.
+- There, one can only act as the **Admin** user, after a password login
+  (set with a command on the server, stored hashed; tries rate-limited). The
+  session is an `HttpOnly`, `SameSite=Strict` cookie that lasts months, with
+  a log-out button. The Tailscale port never accepts it.
+- Admin is a third user: what is done there shows as "Admin" in the log and
+  in notifications, which then go to both users. Admin gets no
+  notifications and doesn't show in the phone app.
+- Over the tailnet the same pages open at `#/admin` under one's own name.
+
+Pages (wide tables, mouse and keyboard; not in the phone tab bar):
+
+1. **Items**: every item in a row (name, variant, group, icon, restocked,
+   any variant, shelf life, where and how much), sorted, filtered, edited
+   in place; several selected and changed at once.
+2. **Moving stock**: one item or several, from a place to another, level
+   included; an active request moves with it, claim and all; at a place
+   that already keeps the item the two merge, the higher level kept.
+   Logged ("Kamra → Konyha"). The phone gets it too: "Áthelyezés" on the
+   item's page, since things get moved standing next to them.
+3. **Places**: the whole tree; rename, icon, order, move a room to
+   another floor.
+4. **Chores**: every chore with its schedule; and **assigning** a request
+   or chore to a user (claimed for them; they're told "Admin rád osztotta",
+   and can hand it back like their own claim).
+5. **Recipes** (with the meal planner): a wide editor, and **pasting** an
+   ingredient list ("50 dkg liszt") split into lines, each matched to an
+   item to confirm or fix.
+6. **Log**: searchable, filtered by who, what, which item.
+7. **Users and devices**: nicknames; which devices get notifications, an
+   old one deletable.
+
+No export for now.
+
+Milestones: (A) the admin port, login and user, the items table, moving
+stock (on the phone too); (B) places, chores and assigning, users and
+devices, the log; then the meal planner, its recipe editor here.
+
 ## Planned: meal planner *(planned, agreed 2026-11-18)*
 
 Plan a cooking for a day; what it needs and the house lacks goes on the

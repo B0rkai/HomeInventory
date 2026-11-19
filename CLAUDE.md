@@ -85,6 +85,10 @@ setup, not code that exists yet.
 - A request with no identity header gets `401`, unless a `DEV_USER` setting
   stands in for the header (tests, or running without `tailscale serve` in
   front). `DEV_USER` is never set in the live deployment.
+- *(planned)* The one exception: the admin pages on a second port bound to
+  the server's LAN address (plain HTTP), where the identity headers are
+  ignored and only a password-logged-in Admin user acts (see "Planned:
+  admin pages" in `docs/features.md`).
 
 ## Development environment
 
