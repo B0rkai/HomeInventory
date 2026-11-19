@@ -1,12 +1,12 @@
-import type { ItemOut, RecipeCreate, RecipeOut } from './api'
+import type { ItemOut, RecipeCreate, RecipeKind, RecipeOut } from './api'
 import { ingredientFrom, recipeNamed } from './recipes'
 
 // Suggested recipes, offered on the Menu tab and the admin pages; only the ones picked are
-// added, and they're the household's own from then on. The base recipes ("Nokedli",
-// "Besamel") come first: the others take them whole.
+// added, and they're the household's own from then on. A main course takes no side dish:
+// that's picked when it's planned.
 
 export type StarterIngredient = { text: string; amount?: string; optional?: true; part?: true }
-export type Starter = { name: string; ingredients: StarterIngredient[] }
+export type Starter = { name: string; kind: RecipeKind; ingredients: StarterIngredient[] }
 
 const item = (text: string, amount?: string): StarterIngredient => ({ text, amount })
 const ifAny = (text: string, amount?: string): StarterIngredient => ({
@@ -17,13 +17,15 @@ const ifAny = (text: string, amount?: string): StarterIngredient => ({
 const part = (text: string, amount?: string): StarterIngredient => ({ text, amount, part: true })
 
 export const STARTER_RECIPES: Starter[] = [
-  // Base recipes.
+  // Base recipes and side dishes first: other recipes take them.
   {
     name: 'Nokedli',
+    kind: 'side',
     ingredients: [item('Liszt', '30 dkg'), item('Tojás', '2 db'), item('Só', '1 kk')],
   },
   {
     name: 'Besamel',
+    kind: 'base',
     ingredients: [
       item('Vaj', '5 dkg'),
       item('Liszt', '5 dkg'),
@@ -34,6 +36,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Paradicsomszósz',
+    kind: 'base',
     ingredients: [
       item('Passzírozott paradicsom', '500 g'),
       item('Hagyma', '1 fej'),
@@ -46,10 +49,12 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Panír',
+    kind: 'base',
     ingredients: [item('Liszt', '10 dkg'), item('Tojás', '2 db'), item('Zsemlemorzsa', '15 dkg')],
   },
   {
     name: 'Krumplipüré',
+    kind: 'side',
     ingredients: [
       item('Krumpli', '1 kg'),
       item('Tej', '2 dl'),
@@ -58,10 +63,43 @@ export const STARTER_RECIPES: Starter[] = [
       ifAny('Szerecsendió', 'csipet'),
     ],
   },
-  { name: 'Párolt rizs', ingredients: [item('Rizs', '25 dkg'), item('Olaj', '1 ek'), item('Só')] },
+  {
+    name: 'Párolt rizs',
+    kind: 'side',
+    ingredients: [item('Rizs', '25 dkg'), item('Olaj', '1 ek'), item('Só')],
+  },
+  {
+    name: 'Hasábburgonya',
+    kind: 'side',
+    ingredients: [item('Krumpli', '1 kg'), item('Olaj', '1 l'), item('Só')],
+  },
+  {
+    name: 'Petrezselymes krumpli',
+    kind: 'side',
+    ingredients: [
+      item('Krumpli', '1 kg'),
+      item('Vaj', '3 dkg'),
+      item('Petrezselyem', '1 csokor'),
+      item('Só'),
+    ],
+  },
+  {
+    name: 'Krémleves alap',
+    kind: 'base',
+    ingredients: [
+      item('Hagyma', '1 fej'),
+      item('Krumpli', '1 db'),
+      item('Vaj', '3 dkg'),
+      item('Tejszín', '2 dl'),
+      item('Só'),
+      item('Bors'),
+      ifAny('Szerecsendió', 'csipet'),
+    ],
+  },
   // Dishes.
   {
     name: 'Paprikás csirke',
+    kind: 'main',
     ingredients: [
       item('Csirkecomb', '1 kg'),
       item('Hagyma', '1 fej'),
@@ -72,11 +110,11 @@ export const STARTER_RECIPES: Starter[] = [
       item('Liszt', '1 ek'),
       item('Olaj', '2 ek'),
       item('Só'),
-      part('Nokedli'),
     ],
   },
   {
     name: 'Marhapörkölt',
+    kind: 'main',
     ingredients: [
       item('Marhahús', '1 kg'),
       item('Hagyma', '3 fej'),
@@ -87,11 +125,11 @@ export const STARTER_RECIPES: Starter[] = [
       item('Olaj', '3 ek'),
       item('Só'),
       ifAny('Köménymag', '1 kk'),
-      part('Nokedli'),
     ],
   },
   {
     name: 'Gombapaprikás',
+    kind: 'main',
     ingredients: [
       item('Gomba', '50 dkg'),
       item('Hagyma', '1 fej'),
@@ -100,11 +138,11 @@ export const STARTER_RECIPES: Starter[] = [
       item('Liszt', '1 ek'),
       item('Olaj', '2 ek'),
       item('Só'),
-      part('Nokedli'),
     ],
   },
   {
     name: 'Lecsó',
+    kind: 'whole',
     ingredients: [
       item('Paprika', '1 kg'),
       item('Paradicsom', '50 dkg'),
@@ -118,6 +156,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Rakott krumpli',
+    kind: 'whole',
     ingredients: [
       item('Krumpli', '1 kg'),
       item('Tojás', '6 db'),
@@ -129,6 +168,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Töltött káposzta',
+    kind: 'whole',
     ingredients: [
       item('Savanyú káposzta', '1 kg'),
       item('Darált hús', '50 dkg'),
@@ -145,6 +185,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Gulyásleves',
+    kind: 'whole',
     ingredients: [
       item('Marhahús', '50 dkg'),
       item('Krumpli', '50 dkg'),
@@ -162,6 +203,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Húsleves',
+    kind: 'whole',
     ingredients: [
       item('Leveshús', '1 kg'),
       item('Sárgarépa', '3 db'),
@@ -177,6 +219,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Paradicsomleves',
+    kind: 'whole',
     ingredients: [
       item('Passzírozott paradicsom', '700 g'),
       item('Cukor', '2 ek'),
@@ -188,6 +231,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Bolognai spagetti',
+    kind: 'whole',
     ingredients: [
       item('Tészta · spagetti', '50 dkg'),
       item('Darált hús', '50 dkg'),
@@ -199,6 +243,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Lasagne',
+    kind: 'whole',
     ingredients: [
       item('Tészta · lasagne', '25 dkg'),
       item('Darált hús', '50 dkg'),
@@ -210,6 +255,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Rántott hús',
+    kind: 'main',
     ingredients: [
       item('Sertéskaraj', '60 dkg'),
       item('Olaj', '5 dl'),
@@ -220,6 +266,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Tökfőzelék',
+    kind: 'whole',
     ingredients: [
       item('Főzőtök', '1 kg'),
       item('Tejföl', '2 dl'),
@@ -232,6 +279,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Krumplifőzelék',
+    kind: 'whole',
     ingredients: [
       item('Krumpli', '1 kg'),
       item('Hagyma', '1 fej'),
@@ -246,6 +294,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Lencsefőzelék',
+    kind: 'whole',
     ingredients: [
       item('Lencse', '50 dkg'),
       item('Hagyma', '1 fej'),
@@ -259,6 +308,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Túrós csusza',
+    kind: 'whole',
     ingredients: [
       item('Tészta · csusza', '50 dkg'),
       item('Túró', '50 dkg'),
@@ -269,6 +319,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Palacsinta',
+    kind: 'whole',
     ingredients: [
       item('Liszt', '25 dkg'),
       item('Tej', '5 dl'),
@@ -282,12 +333,50 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Rántotta',
+    kind: 'whole',
     ingredients: [
       item('Tojás', '4 db'),
       item('Vaj', '2 dkg'),
       item('Só'),
       ifAny('Hagyma', '1 fej'),
     ],
+  },
+  {
+    name: 'Fasírt',
+    kind: 'main',
+    ingredients: [
+      item('Darált hús', '50 dkg'),
+      item('Zsemle', '2 db'),
+      item('Tej', '1 dl'),
+      item('Tojás', '1 db'),
+      item('Hagyma', '1 fej'),
+      item('Fokhagyma', '2 gerezd'),
+      item('Zsemlemorzsa', '10 dkg'),
+      item('Olaj', '3 dl'),
+      item('Só'),
+      item('Bors'),
+      ifAny('Majoránna', '1 kk'),
+    ],
+  },
+  {
+    name: 'Brokkolikrémleves',
+    kind: 'whole',
+    ingredients: [item('Brokkoli', '50 dkg'), part('Krémleves alap')],
+  },
+  {
+    name: 'Sütőtökkrémleves',
+    kind: 'whole',
+    ingredients: [item('Sütőtök', '1 kg'), part('Krémleves alap'), ifAny('Gyömbér')],
+  },
+  {
+    name: 'Gombakrémleves',
+    kind: 'whole',
+    ingredients: [item('Gomba', '50 dkg'), part('Krémleves alap'), ifAny('Petrezselyem')],
+  },
+  {
+    name: 'Karfiolkrémleves',
+    kind: 'whole',
+    ingredients: [item('Karfiol', '1 fej'), part('Krémleves alap')],
   },
 ]
 
@@ -316,6 +405,7 @@ export function startersWithParts(picked: Starter[], recipes: RecipeOut[]): Star
 export function starterBody(starter: Starter, items: ItemOut[]): RecipeCreate {
   return {
     name: starter.name,
+    kind: starter.kind,
     ingredients: starter.ingredients.map((ingredient) =>
       ingredientFrom(ingredient.text, items, ingredient),
     ),

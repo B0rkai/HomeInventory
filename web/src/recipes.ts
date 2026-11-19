@@ -1,4 +1,12 @@
-import type { IngredientIn, IngredientOut, ItemOut, Level, RecipeOut, StockOut } from './api'
+import type {
+  IngredientIn,
+  IngredientOut,
+  ItemOut,
+  Level,
+  RecipeKind,
+  RecipeOut,
+  StockOut,
+} from './api'
 import { bestLevel } from './tree'
 import { fullName, parseFullName } from './variants'
 
@@ -6,6 +14,9 @@ import { fullName, parseFullName } from './variants'
 const AT_HOME: Level[] = ['plenty', 'lots']
 
 const fold = (text: string) => text.toLocaleLowerCase('hu')
+
+/** The kinds in list order. */
+export const RECIPE_KINDS: RecipeKind[] = ['main', 'whole', 'side', 'base']
 
 /** The items an ingredient stands for: the item, or every variant of its name. */
 export function ingredientItems(ingredient: IngredientOut, items: ItemOut[]): ItemOut[] {

@@ -60,6 +60,7 @@ export function RecipePage({ id }: { id: number }) {
           {t.edit}
         </button>
       </div>
+      <p className="small muted recipe-kind-line">{t.menu.kinds[recipe.kind]}</p>
       <section className="card">
         <h3>{t.menu.ingredients}</h3>
         {recipe.ingredients.length === 0 && <p className="muted">{t.menu.noIngredients}</p>}

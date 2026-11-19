@@ -112,7 +112,7 @@ def list_recipes(session: Session = Depends(get_session)) -> list[RecipeOut]:
 def create_recipe(new: RecipeCreate, session: Session = Depends(get_session)) -> RecipeOut:
     """Adds a recipe; ingredients the catalogue doesn't have yet are added to it."""
     _check_name(session, new.name)
-    recipe = Recipe(name=new.name, icon=new.icon, note=new.note, link=new.link)
+    recipe = Recipe(name=new.name, icon=new.icon, kind=new.kind, note=new.note, link=new.link)
     session.add(recipe)
     session.flush()
     _set_ingredients(session, recipe, new.ingredients)
@@ -130,6 +130,8 @@ def update_recipe(
     if update.name is not None:
         _check_name(session, update.name, recipe.id)
         recipe.name = update.name
+    if update.kind is not None:
+        recipe.kind = update.kind
     for field in ("icon", "note", "link"):
         if field in sent:
             setattr(recipe, field, getattr(update, field))

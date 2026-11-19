@@ -3,7 +3,7 @@ import type { RecipeOut } from './api'
 import { useHouse } from './house'
 import { iconOf } from './iconLookup'
 import { IconTile } from './Named'
-import { missingCount } from './recipes'
+import { missingCount, RECIPE_KINDS } from './recipes'
 import { href } from './route'
 import { StarterRecipes } from './StarterRecipes'
 import { t } from './strings'
@@ -27,7 +27,7 @@ export function RecipeName({ recipe }: { recipe: Pick<RecipeOut, 'name' | 'icon'
   )
 }
 
-/** The Menu tab: the recipes, each with whether everything it takes is at home. */
+/** The Menu tab: the recipes by kind, each with whether everything it takes is at home. */
 export function MenuPage() {
   const { house } = useHouse()
   const [search, setSearch] = useState(() => {
@@ -71,28 +71,34 @@ export function MenuPage() {
           <p>{recipes.length ? t.menu.noMatch : t.menu.noRecipes}</p>
         </div>
       ) : (
-        <section className="card">
-          <h3>{t.menu.recipes}</h3>
-          <ul className="item-list">
-            {found.map((recipe) => {
-              const missing = missingCount(recipe, recipes, items, stock)
-              return (
-                <li key={recipe.id}>
-                  <a className="item-row" href={href.recipe(recipe.id)}>
-                    <RecipeName recipe={recipe} />
-                    <span className="small">
-                      {missing ? (
-                        <span className="muted">{t.menu.missing(missing)}</span>
-                      ) : (
-                        <span className="all-there">{t.menu.allAtHome}</span>
-                      )}
-                    </span>
-                  </a>
-                </li>
-              )
-            })}
-          </ul>
-        </section>
+        RECIPE_KINDS.map((kind) => {
+          const ofKind = found.filter((recipe) => recipe.kind === kind)
+          if (!ofKind.length) return null
+          return (
+            <section key={kind} className="card">
+              <h3>{t.menu.kindGroups[kind]}</h3>
+              <ul className="item-list">
+                {ofKind.map((recipe) => {
+                  const missing = missingCount(recipe, recipes, items, stock)
+                  return (
+                    <li key={recipe.id}>
+                      <a className="item-row" href={href.recipe(recipe.id)}>
+                        <RecipeName recipe={recipe} />
+                        <span className="small">
+                          {missing ? (
+                            <span className="muted">{t.menu.missing(missing)}</span>
+                          ) : (
+                            <span className="all-there">{t.menu.allAtHome}</span>
+                          )}
+                        </span>
+                      </a>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
+          )
+        })
       )}
       <div className="actions one-off-toggle">
         <button

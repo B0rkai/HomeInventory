@@ -21,6 +21,7 @@ from homeinventory.models import (
     Action,
     Category,
     Level,
+    RecipeKind,
     RequestKind,
     RequestStatus,
 )
@@ -386,6 +387,7 @@ class RecipeOut(BaseModel):
     id: int
     name: str
     icon: str | None
+    kind: RecipeKind
     note: str | None
     link: str | None
     ingredients: list[IngredientOut]
@@ -394,6 +396,7 @@ class RecipeOut(BaseModel):
 class RecipeCreate(BaseModel):
     name: Name
     icon: Icon = None
+    kind: RecipeKind = RecipeKind.MAIN
     note: Note = None
     link: Link = None
     ingredients: list[IngredientIn] = Field(default=[], max_length=INGREDIENTS_MAX)
@@ -403,6 +406,7 @@ class RecipeUpdate(BaseModel):
     # Only the fields sent change; `ingredients`, sent, replaces them all.
     name: Name | None = None
     icon: Icon = None
+    kind: RecipeKind | None = None
     note: Note = None
     link: Link = None
     ingredients: list[IngredientIn] | None = Field(default=None, max_length=INGREDIENTS_MAX)

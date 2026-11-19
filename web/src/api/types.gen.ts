@@ -493,6 +493,7 @@ export type RecipeCreate = {
      * Icon
      */
     icon?: string | null;
+    kind?: RecipeKind;
     /**
      * Note
      */
@@ -506,6 +507,13 @@ export type RecipeCreate = {
      */
     ingredients?: Array<IngredientIn>;
 };
+
+/**
+ * RecipeKind
+ *
+ * What a recipe is on the table: whether a side dish goes with it when planned.
+ */
+export type RecipeKind = 'main' | 'whole' | 'side' | 'base';
 
 /**
  * RecipeOut
@@ -523,6 +531,7 @@ export type RecipeOut = {
      * Icon
      */
     icon: string | null;
+    kind: RecipeKind;
     /**
      * Note
      */
@@ -549,6 +558,7 @@ export type RecipeUpdate = {
      * Icon
      */
     icon?: string | null;
+    kind?: RecipeKind | null;
     /**
      * Note
      */

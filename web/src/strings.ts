@@ -135,6 +135,20 @@ export const t = {
     confirmDeletePart: (name: string, users: string) =>
       `Törlöd ezt a receptet: ${name}? Ezekből is kikerül: ${users}.`,
     partBadge: 'recept',
+    kind: 'Fajta',
+    kinds: { main: 'Fogás', whole: 'Egytál', side: 'Köret', base: 'Alap' },
+    kindHint: {
+      main: 'Köret mehet mellé, betervezéskor választható.',
+      whole: 'Önmagában is egész, köret nélkül; a levesek is.',
+      side: 'Fogás mellé.',
+      base: 'Csak más receptekben szerepel (besamel, panír).',
+    },
+    kindGroups: {
+      main: 'Fogások',
+      whole: 'Egytálételek, levesek',
+      side: 'Köretek',
+      base: 'Alapreceptek',
+    },
     loop: 'önmagát tartalmazná',
     usedIn: 'Ebben is szerepel',
     starters: 'Receptjavaslatok',

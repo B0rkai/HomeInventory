@@ -346,6 +346,19 @@ NOTE_MAX_LENGTH = 2000
 LINK_MAX_LENGTH = 500
 
 
+class RecipeKind(StrEnum):
+    """What a recipe is on the table: whether a side dish goes with it when planned."""
+
+    # A main course: a side dish can go with it (Rántott hús).
+    MAIN = "main"
+    # A dish on its own, soups too: nothing goes with it (Rakott krumpli, Gulyásleves).
+    WHOLE = "whole"
+    # Goes with a main course (Krumplipüré, Nokedli).
+    SIDE = "side"
+    # Only a part of other recipes (Besamel, Panír).
+    BASE = "base"
+
+
 class Recipe(Base):
     """A dish the household cooks: what it takes, for planning a cooking of it."""
 
@@ -356,6 +369,9 @@ class Recipe(Base):
     name: Mapped[str] = mapped_column(String(NAME_MAX_LENGTH))
     # Unset: the client guesses one from the name. Empty: no icon.
     icon: Mapped[str | None] = mapped_column(String(ICON_MAX_LENGTH))
+    kind: Mapped[RecipeKind] = mapped_column(
+        str_enum(RecipeKind, "kind"), default=RecipeKind.MAIN, server_default=RecipeKind.MAIN
+    )
     note: Mapped[str | None] = mapped_column(String(NOTE_MAX_LENGTH))
     # Where the recipe is written down in full (a web page).
     link: Mapped[str | None] = mapped_column(String(LINK_MAX_LENGTH))

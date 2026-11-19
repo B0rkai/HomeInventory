@@ -1585,3 +1585,14 @@ h2 .named .tile {
   display: block;
   margin-left: 2.2rem;
 }
+.recipe-kind {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.recipe-kind .segmented {
+  max-width: 28rem;
+}
+.recipe-kind-line {
+  margin: -0.5rem 0 0.75rem;
+}

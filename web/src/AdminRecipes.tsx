@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useHouse } from './house'
 import { RecipeName } from './MenuPage'
 import { RecipeEditor } from './RecipeEditor'
-import { ingredientText, missingCount } from './recipes'
+import { ingredientText, missingCount, RECIPE_KINDS } from './recipes'
 import { StarterRecipes } from './StarterRecipes'
 import { t } from './strings'
 
@@ -13,7 +13,11 @@ export function AdminRecipes() {
   const [editing, setEditing] = useState<number | 'new'>()
   if (!house) return null
   const { recipes, items, stock } = house
-  const sorted = [...recipes].sort((a, b) => a.name.localeCompare(b.name, 'hu'))
+  const sorted = [...recipes].sort(
+    (a, b) =>
+      RECIPE_KINDS.indexOf(a.kind) - RECIPE_KINDS.indexOf(b.kind) ||
+      a.name.localeCompare(b.name, 'hu'),
+  )
   const toggle = (id: number | 'new') => setEditing(editing === id ? undefined : id)
 
   return (
@@ -41,6 +45,7 @@ export function AdminRecipes() {
             <thead>
               <tr>
                 <th>{t.admin.name}</th>
+                <th>{t.menu.kind}</th>
                 <th>{t.menu.ingredients}</th>
                 <th>{t.admin.state}</th>
                 <th />
@@ -54,6 +59,7 @@ export function AdminRecipes() {
                     <td>
                       <RecipeName recipe={recipe} />
                     </td>
+                    <td className="small">{t.menu.kinds[recipe.kind]}</td>
                     <td className="small">
                       {recipe.ingredients
                         .map((ingredient) => ingredientText(ingredient, items, recipes))
@@ -78,7 +84,7 @@ export function AdminRecipes() {
                   </tr>,
                   editing === recipe.id && (
                     <tr key={`${recipe.id}-edit`} className="edit-row">
-                      <td colSpan={4}>
+                      <td colSpan={5}>
                         <RecipeEditor
                           recipe={recipe}
                           paste

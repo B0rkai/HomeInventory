@@ -7,6 +7,7 @@ import {
   ingredientText,
   knownIngredient,
   parseIngredients,
+  RECIPE_KINDS,
   recipeNamed,
   takenBy,
   takes,
@@ -48,6 +49,7 @@ export function RecipeEditor({
   const recipes = house?.recipes ?? []
   const [name, setName] = useState(recipe?.name ?? '')
   const [icon, setIcon] = useState(recipe?.icon ?? null)
+  const [kind, setKind] = useState(recipe?.kind ?? 'main')
   const [note, setNote] = useState(recipe?.note ?? '')
   const [link, setLink] = useState(recipe?.link ?? '')
   const [rows, setRows] = useState<Row[]>(
@@ -110,6 +112,7 @@ export function RecipeEditor({
     const body = {
       name: name.trim(),
       icon,
+      kind,
       note: note.trim() || null,
       link: link.trim() || null,
       ingredients: rows
@@ -148,6 +151,23 @@ export function RecipeEditor({
           required
         />
       </label>
+      <div className="recipe-kind">
+        <span className="small">{t.menu.kind}</span>
+        <div className="segmented" role="radiogroup" aria-label={t.menu.kind}>
+          {RECIPE_KINDS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              role="radio"
+              aria-checked={kind === option}
+              onClick={() => setKind(option)}
+            >
+              {t.menu.kinds[option]}
+            </button>
+          ))}
+        </div>
+        <span className="small muted">{t.menu.kindHint[kind]}</span>
+      </div>
       <fieldset className="ingredients">
         <legend>{t.menu.ingredients}</legend>
         {rows.length === 0 && <p className="small muted">{t.menu.noIngredients}</p>}

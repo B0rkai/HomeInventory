@@ -205,3 +205,16 @@ def test_a_deleted_part_leaves_the_recipes_taking_it(api) -> None:
     (left,) = api("GET", "/recipes").json()
     assert left["id"] == stew["id"]
     assert [i["part_id"] for i in left["ingredients"]] == [None]
+
+
+def test_a_recipe_is_a_main_course_unless_told(api) -> None:
+    schnitzel = api("POST", "/recipes", {"name": "Rántott hús"}).json()
+    assert schnitzel["kind"] == "main"
+    mash = api("POST", "/recipes", {"name": "Krumplipüré", "kind": "side"}).json()
+    assert mash["kind"] == "side"
+    changed = api("PATCH", f"/recipes/{schnitzel['id']}", {"kind": "whole"}).json()
+    assert changed["kind"] == "whole"
+    # Sending other fields leaves it.
+    renamed = api("PATCH", f"/recipes/{schnitzel['id']}", {"name": "Bécsi szelet"}).json()
+    assert renamed["kind"] == "whole"
+    assert api("POST", "/recipes", {"name": "Leves", "kind": "dessert"}).status_code == 422

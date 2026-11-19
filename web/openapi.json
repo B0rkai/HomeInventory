@@ -2669,6 +2669,10 @@
             ],
             "title": "Icon"
           },
+          "kind": {
+            "$ref": "#/components/schemas/RecipeKind",
+            "default": "main"
+          },
           "note": {
             "anyOf": [
               {
@@ -2709,6 +2713,17 @@
         ],
         "title": "RecipeCreate"
       },
+      "RecipeKind": {
+        "type": "string",
+        "enum": [
+          "main",
+          "whole",
+          "side",
+          "base"
+        ],
+        "title": "RecipeKind",
+        "description": "What a recipe is on the table: whether a side dish goes with it when planned."
+      },
       "RecipeOut": {
         "properties": {
           "id": {
@@ -2729,6 +2744,9 @@
               }
             ],
             "title": "Icon"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/RecipeKind"
           },
           "note": {
             "anyOf": [
@@ -2765,6 +2783,7 @@
           "id",
           "name",
           "icon",
+          "kind",
           "note",
           "link",
           "ingredients"
@@ -2797,6 +2816,16 @@
               }
             ],
             "title": "Icon"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecipeKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "note": {
             "anyOf": [

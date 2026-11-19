@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useHouse } from './house'
 import { RecipeName } from './MenuPage'
+import { RECIPE_KINDS } from './recipes'
 import { type Starter, startersLeft, startersWithParts, starterBody } from './starterRecipes'
 import { t } from './strings'
 
@@ -9,8 +10,13 @@ import { t } from './strings'
 export function StarterRecipes() {
   const { house, actions } = useHouse()
   const [adding, setAdding] = useState(false)
+  // Opened or closed by hand; until then, open while there are no recipes.
+  const [open, setOpen] = useState<boolean>()
   if (!house) return null
-  const left = startersLeft(house.recipes)
+  // By kind, in the Menu tab's order.
+  const left = startersLeft(house.recipes).sort(
+    (a, b) => RECIPE_KINDS.indexOf(a.kind) - RECIPE_KINDS.indexOf(b.kind),
+  )
   if (!left.length) return null
 
   async function add(picked: Starter[]) {
@@ -22,7 +28,11 @@ export function StarterRecipes() {
   }
 
   return (
-    <details className="card starters" open={house.recipes.length === 0}>
+    <details
+      className="card starters"
+      open={open ?? house.recipes.length === 0}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+    >
       <summary>
         {t.menu.starters} <span className="muted">({left.length})</span>
       </summary>
@@ -33,6 +43,7 @@ export function StarterRecipes() {
             <span>
               <RecipeName recipe={{ name: starter.name, icon: null }} />
               <span className="small muted starter-ingredients">
+                {t.menu.kinds[starter.kind]} ·{' '}
                 {starter.ingredients
                   .filter((ingredient) => !ingredient.optional)
                   .map((ingredient) => ingredient.text)
