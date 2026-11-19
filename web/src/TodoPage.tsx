@@ -13,7 +13,8 @@ import { bestLevel, placePath, treeOrder } from './tree'
 import { KeepForm } from './KeepForm'
 import { OneOffForm } from './OneOffForm'
 import { PushSettings } from './PushSettings'
-import { byItem, fullName, groupMembers, interchangeable, oneName } from './variants'
+import { iconOf } from './iconLookup'
+import { byItem, fullName, groupMembers, interchangeable, memberNames, oneName } from './variants'
 import { categoryName, groupByCategory } from './categories'
 
 /**
@@ -158,11 +159,17 @@ function Sections({ requests }: { requests: RequestOut[] }) {
   const toBuy: ItemOut[] = []
   for (const id of buying.keys()) {
     const first = itemsById.get(id)!
-    // Shown as the supply, not one kind of it; or as the family, its icon guessed from it.
+    // Shown as the supply, not one kind of it; or as the family, its icon guessed from its
+    // name, else its first member's (so it's grouped with them).
     const item = !variantsOf.has(id)
       ? first
       : first.family
-        ? { ...first, name: first.family, variant: null, icon: null }
+        ? {
+            ...first,
+            name: first.family,
+            variant: null,
+            icon: iconOf({ name: first.family, icon: null }, 'item') ? null : iconOf(first, 'item'),
+          }
         : { ...first, variant: null }
     if (lotsFor(id).length) {
       refills.push(item)
@@ -220,17 +227,16 @@ function Sections({ requests }: { requests: RequestOut[] }) {
     const levelAt = (locationId: number) =>
       bestLevel(stock.filter((row) => ids.includes(row.item_id) && row.location_id === locationId))
     const named = (
-      <>
-        <Named thing={item} kind="item" />
-        {variants && (
-          <span className="small muted any-kind">
-            {' · '}
-            {oneName(variants)
-              ? t.items.anyKind
-              : t.items.anyOf([...new Set(variants.map((member) => member.name))].join(', '))}
-          </span>
-        )}
-      </>
+      <Named
+        thing={item}
+        kind="item"
+        note={
+          variants &&
+          (oneName(variants)
+            ? t.items.anyKind
+            : t.items.anyOf(memberNames(variants, items).join(', ')))
+        }
+      />
     )
     return (
       <RequestRow

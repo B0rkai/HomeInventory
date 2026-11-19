@@ -52,6 +52,20 @@ export function groupMembers(item: ItemOut, items: ItemOut[]): ItemOut[] {
   return items.filter((other) => groupKey(other) === key).sort(byItem)
 }
 
+/** A family's members as the list names them: an item by its name when every variant of
+ * it is in ("Zsemle"), else each variant in by its whole name ("Kenyér · fehér"). */
+export function memberNames(members: ItemOut[], items: ItemOut[]): string[] {
+  const names: string[] = []
+  for (const member of [...members].sort(byItem)) {
+    const whole = items
+      .filter((item) => fold(item.name) === fold(member.name))
+      .every((item) => members.some((other) => other.id === item.id))
+    const name = whole ? member.name : fullName(member)
+    if (!names.includes(name)) names.push(name)
+  }
+  return names
+}
+
 /** The families in the catalogue, each once, in order. */
 export function familyNames(items: ItemOut[]): string[] {
   const names = new Map<string, string>()

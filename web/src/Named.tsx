@@ -30,8 +30,9 @@ export function IconTile({
   )
 }
 
-/** An item's or place's tile and name (and variant); tiles keep names in a list lined up. */
-export function Named({ thing, kind }: { thing: Thing; kind: IconKind }) {
+/** An item's or place's tile and name (and variant); tiles keep names in a list lined up.
+ * `note` follows the name, wrapping beside the tile, not under it. */
+export function Named({ thing, kind, note }: { thing: Thing; kind: IconKind; note?: string }) {
   return (
     <span className="named">
       <IconTile
@@ -43,6 +44,7 @@ export function Named({ thing, kind }: { thing: Thing; kind: IconKind }) {
       <span>
         {thing.name}
         {thing.variant && <span className="variant"> · {thing.variant}</span>}
+        {note && <span className="small muted any-kind"> · {note}</span>}
       </span>
     </span>
   )
