@@ -81,8 +81,9 @@ export function ItemPage({ id }: { id: number }) {
       <p className="small muted item-meta">
         {categoryName(categoryOf(item))}
         {!item.restock && ` · ${t.items.noRestock}`}
-        {item.any_variant && ` · ${t.items.anyVariantNote}`}
-        {item.family && ` · ${t.items.familyNote(item.family)}`}
+        {item.any_variant
+          ? ` · ${t.items.anyVariantNote}`
+          : item.family && ` · ${t.items.familyNote(item.family)}`}
         {level && (
           <>
             {' · '}

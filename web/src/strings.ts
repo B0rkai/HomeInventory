@@ -335,7 +335,7 @@ export const t = {
     noRestock: 'nem pótoljuk',
     anyVariant: 'Bármelyik fajta elég',
     anyVariantHint:
-      'Egy helyen csak akkor hiány, ha minden ott tartott fajta kevés vagy elfogyott; a listán egy sor. Minden fajtára érvényes.',
+      'A fajták egy, a termék nevével azonos alcsoportba kerülnek: egy helyen csak akkor hiány, ha minden ott tartott fajta kevés vagy elfogyott; a listán egy sor.',
     anyVariantNote: 'bármelyik fajta elég',
     substitutes: 'Helyettesítheti',
     substitutesHint:
@@ -347,7 +347,7 @@ export const t = {
     family: 'Alcsoport',
     familyPlaceholder: 'Például: Pékáru (nem kötelező)',
     familyHint:
-      'Különböző termékek, amelyek közül bármelyik megfelel (kenyér, zsemle, kifli). Egy helyen csak akkor hiány, ha mind kevés vagy elfogyott; a listán egy sor. Minden fajtára érvényes.',
+      'Különböző termékek, amelyek közül bármelyik megfelel (kenyér, zsemle, kifli). Egy helyen csak akkor hiány, ha mind kevés vagy elfogyott; a listán egy sor, az alcsoport nevén. Csak erre a fajtára érvényes.',
     familyNote: (family: string) => `${family} alcsoport`,
     whichBought: 'Melyiket vetted?',
     places: (count: number) => (count ? `${count} helyen` : 'sehol'),

@@ -157,14 +157,10 @@ class Item(Base):
     # Kept stocked: running low puts it on the shopping list. Off for what's only bought
     # now and then (ice cream, salmon): its level still says whether there's any.
     restock: Mapped[bool] = mapped_column(default=True, server_default=true())
-    # Any of its variants will do ("Pékáru": kenyér or zsemle): a place is short of it only
-    # once every variant kept there is low or out, and then it's one line on the list.
-    # Shared by all the items of the same name; the API keeps them alike.
-    any_variant: Mapped[bool] = mapped_column(default=False, server_default=false())
-    # A group of different items any of which will do ("Pékáru": Kenyér, Zsemle, Kifli), as
-    # `any_variant` is for the variants of one: short only once every member kept in a place
-    # is, one line on the list. Shared by the items of the same name; the API keeps them
-    # alike, and one spelling per group.
+    # A group of items any of which will do ("Pékáru": Kenyér, Zsemle, Kifli): short in a
+    # place only once every member kept there is, one line on the list, named after it. Any
+    # of an item's variants will do when they're a family named after the item ("Konzerv").
+    # Set per item; the API spells each family one way.
     family: Mapped[str | None] = mapped_column(String(NAME_MAX_LENGTH))
     # Unset: the client guesses one from the name. Empty: no icon.
     icon: Mapped[str | None] = mapped_column(String(ICON_MAX_LENGTH))
@@ -179,6 +175,11 @@ class Item(Base):
         order_by="Item.id",
         lazy="selectin",
     )
+
+    @property
+    def any_variant(self) -> bool:
+        """Whether its family is its own name: any of its variants will do."""
+        return self.family is not None and self.family.casefold() == self.name.casefold()
 
     @property
     def substitute_ids(self) -> list[int]:

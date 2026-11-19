@@ -13,7 +13,7 @@ import { bestLevel, placePath, treeOrder } from './tree'
 import { KeepForm } from './KeepForm'
 import { OneOffForm } from './OneOffForm'
 import { PushSettings } from './PushSettings'
-import { byItem, fullName, groupMembers, interchangeable } from './variants'
+import { byItem, fullName, groupMembers, interchangeable, oneName } from './variants'
 import { categoryName, groupByCategory } from './categories'
 
 /**
@@ -225,9 +225,9 @@ function Sections({ requests }: { requests: RequestOut[] }) {
         {variants && (
           <span className="small muted any-kind">
             {' · '}
-            {variants[0].family
-              ? t.items.anyOf([...new Set(variants.map((member) => member.name))].join(', '))
-              : t.items.anyKind}
+            {oneName(variants)
+              ? t.items.anyKind
+              : t.items.anyOf([...new Set(variants.map((member) => member.name))].join(', '))}
           </span>
         )}
       </>
@@ -571,8 +571,8 @@ function RequestRow({
                   actions.act('done', ids(requests), variant.id)
                 }}
               >
-                {/* A family's members by their whole name. */}
-                {variants[0].family ? fullName(variant) : (variant.variant ?? t.items.noVariant)}
+                {/* A family of several names: its members by their whole name. */}
+                {oneName(variants) ? (variant.variant ?? t.items.noVariant) : fullName(variant)}
               </button>
             ))}
           </div>

@@ -69,8 +69,9 @@ export function ItemForm({
       category,
       icon,
       restock,
-      any_variant: anyVariant,
-      family,
+      // Only what changed: "any variant" reaches the item's other variants.
+      ...(anyVariant !== item.any_variant && { any_variant: anyVariant }),
+      ...(family.trim() !== (item.family ?? '') && { family }),
       substitutes: substitutes.map((text) => parseFullName(text)),
     })
     setSaving(false)
@@ -128,7 +129,15 @@ export function ItemForm({
           <input
             type="checkbox"
             checked={anyVariant}
-            onChange={(e) => setAnyVariant(e.target.checked)}
+            onChange={(e) => {
+              // It's a family named after the item.
+              setAnyVariant(e.target.checked)
+              if (e.target.checked) setFamily(name.trim())
+              else if (
+                family.trim().toLocaleLowerCase('hu') === name.trim().toLocaleLowerCase('hu')
+              )
+                setFamily('')
+            }}
           />
           <span>
             {t.items.anyVariant}

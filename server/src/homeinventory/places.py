@@ -221,12 +221,16 @@ def find_or_make_item(
     # Kept nowhere, so not restocked (as an item taken off its last place).
     item = Item(name=same_name[0].name if same_name else name, variant=variant)
     item.restock = False
-    item.any_variant = any(other.any_variant for other in same_name)
-    item.family = next((other.family for other in same_name if other.family), None)
+    item.family = _name_family(same_name)
     session.add(item)
     session.flush()
     items.append(item)
     return item
+
+
+def _name_family(same_name: list[Item]) -> str | None:
+    """The family named after these variants' name, if they're in it: any of them will do."""
+    return next((other.family for other in same_name if other.any_variant), None)
 
 
 @router.get("/items")
@@ -244,11 +248,8 @@ def create_item(new: ItemCreate, session: Session = Depends(get_session)) -> Ite
         icon=new.icon,
         restock=new.restock,
     )
-    # A new variant goes along with the others on whether any of them will do, and joins
-    # their family.
-    same_name = variants_of(session, item)
-    item.any_variant = any(other.any_variant for other in same_name)
-    item.family = next((other.family for other in same_name if other.family), None)
+    # Where any variant will do, a new one will too.
+    item.family = _name_family(variants_of(session, item))
     session.add(item)
     session.commit()
     return ItemOut.model_validate(item)
@@ -263,9 +264,10 @@ def update_item(
     notifier: Notifier = Depends(get_notifier),
 ) -> ItemOut:
     """Renames or regroups an item. Turning `restock` off takes it off the shopping list;
-    turning it on puts it on wherever it's already low or out. `any_variant` and `family`
-    apply to every item of the same name; renamed into another name's group, an item takes
-    theirs. A family is spelled as it already is."""
+    turning it on puts it on wherever it's already low or out. `family` is the item's own;
+    `any_variant` puts every item of the same name into the family named after it (or, off,
+    takes them out of it). Renamed, an item leaves the family of its old name and joins its
+    new name's. A family is spelled as it already is."""
     item = get_or_404(session, Item, item_id)
     # What would do instead of it so far: the members left behind are listed anew.
     before = group_of(session, item)
@@ -273,12 +275,24 @@ def update_item(
     variant = update.variant if "variant" in update.model_fields_set else item.variant
     _check_item_name(session, name, variant, own_id=item.id)
     renamed = name.casefold() != item.name.casefold()
-    item.name, item.variant = name, variant
+    # The items whose family changes.
+    changed: list[Item] = []
+
+    def set_family(other: Item, family: str | None) -> None:
+        if other.family != family:
+            other.family = family
+            if other not in changed:
+                changed.append(other)
+
     if renamed:
-        others = [other for other in variants_of(session, item) if other.id != item.id]
-        if others:
-            item.any_variant = others[0].any_variant
-            item.family = others[0].family
+        # Where any of its old name's variants would do, it leaves that family; where any of
+        # the new name's will, it joins theirs.
+        was_any = item.any_variant
+        item.name, item.variant = name, variant
+        joined = _name_family([other for other in variants_of(session, item) if other is not item])
+        if was_any or joined:
+            set_family(item, joined)
+    item.name, item.variant = name, variant
     if "category" in update.model_fields_set:
         item.category = update.category
     if "icon" in update.model_fields_set:
@@ -302,19 +316,15 @@ def update_item(
                 other.substitutes.remove(item)
         item.substitutes = wanted
     group = variants_of(session, item)
-    regrouped = renamed or (
-        update.any_variant is not None
-        and any(other.any_variant != update.any_variant for other in group)
-    )
     if update.any_variant is not None:
         for other in group:
-            other.any_variant = update.any_variant
+            if update.any_variant:
+                set_family(other, _family_spelling(session, item.name))
+            elif other.any_variant:
+                set_family(other, None)
     if "family" in update.model_fields_set:
-        family = _family_spelling(session, update.family)
-        if any(other.family != family for other in group):
-            regrouped = True
-            for other in group:
-                other.family = family
+        set_family(item, _family_spelling(session, update.family))
+    regrouped = bool(changed)
     restocked = update.restock is not None and update.restock != item.restock
     if restocked:
         item.restock = update.restock
@@ -332,8 +342,8 @@ def update_item(
             )[0]:
                 opened.append((item.id, location_id, Level.OUT))
     elif regrouped or restocked:
-        # Each variant on its own again (or restocked or not): as its levels say.
-        for other in group if regrouped else [item]:
+        # Each item on its own again (or restocked or not): as its levels say.
+        for other in [other for other in changed if not interchangeable(other)] or [item]:
             short = session.scalars(
                 select(Stock).where(Stock.item_id == other.id, Stock.level.in_(SHORT))
             )

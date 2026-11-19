@@ -401,13 +401,13 @@ export type ItemOut = {
      */
     restock: boolean;
     /**
-     * Any Variant
-     */
-    any_variant: boolean;
-    /**
      * Family
      */
     family: string | null;
+    /**
+     * Any Variant
+     */
+    any_variant: boolean;
     /**
      * Substitute Ids
      */

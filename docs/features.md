@@ -145,12 +145,12 @@ Activity (tables `users`, `locations`, `items`, `stock`, `chores`,
   An optional `variant` tells apart kinds kept of the same supply
   ("Konzerv" kukorica / vörösbab / borsó, "Szemeteszsák" 35 l / 60 l);
   items sharing a name show as one group, each variant with its own stock.
-  `any_variant` ("Bármelyik fajta elég", shared by every item of the name;
-  a new variant takes it on): any variant will do ("Pékáru": kenyér or
-  zsemle). A place is short of it only once every variant kept there is low
+  "Bármelyik fajta elég": any variant will do ("Konzerv"), stored as the
+  variants' family named after the item (see Families; `any_variant` is
+  derived from it). A place is short of it only once every variant kept there is low
   or out (`sync_variants_at` in `requests.py`; the client's
   `restockedStock` agrees, for the badges and the shortages view), and then
-  it's one request, one row on the list ("Pékáru · bármelyik fajta"); one
+  it's one request, one row on the list ("Konzerv · bármelyik fajta"); one
   variant back takes it off. Done asks which variant was bought
   (`POST /requests/{id}/done` with `item_id`): that one goes to *plenty*
   there, kept there from then on if it wasn't. Turning it on merges a
@@ -336,7 +336,11 @@ Decisions:
   is for the kinds of one item: a place is short only once every member
   kept there is, one line on the list named after the family ("Pékáru ·
   bármelyik: Kenyér, Kifli, Zsemle"), and buying asks which. Set on the item
-  (phone and admin, a column there), shared by its variants, spelled once.
+  (phone and admin, a column there), each variant its own *(2026-11-19:
+  "Kenyér · fehér" can be Pékáru while "Kenyér · rozs" isn't)*, spelled
+  once. "Any variant will do" is the same thing: a family named after the
+  item ("Konzerv"), which ticking the box puts every variant into (a new
+  variant joins it); one variant can still move to another family.
   Products keep their own names (Zsemle, not Pékáru · zsemle), so recipes
   and suggestions find them.
 - **Substitutes**: an item names what a recipe can use instead of it

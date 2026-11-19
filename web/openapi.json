@@ -353,7 +353,7 @@
     "/api/v1/items/{item_id}": {
       "patch": {
         "summary": "Update Item",
-        "description": "Renames or regroups an item. Turning `restock` off takes it off the shopping list;\nturning it on puts it on wherever it's already low or out. `any_variant` and `family`\napply to every item of the same name; renamed into another name's group, an item takes\ntheirs. A family is spelled as it already is.",
+        "description": "Renames or regroups an item. Turning `restock` off takes it off the shopping list;\nturning it on puts it on wherever it's already low or out. `family` is the item's own;\n`any_variant` puts every item of the same name into the family named after it (or, off,\ntakes them out of it). Renamed, an item leaves the family of its old name and joins its\nnew name's. A family is spelled as it already is.",
         "operationId": "update_item",
         "parameters": [
           {
@@ -2679,10 +2679,6 @@
             "type": "boolean",
             "title": "Restock"
           },
-          "any_variant": {
-            "type": "boolean",
-            "title": "Any Variant"
-          },
           "family": {
             "anyOf": [
               {
@@ -2693,6 +2689,10 @@
               }
             ],
             "title": "Family"
+          },
+          "any_variant": {
+            "type": "boolean",
+            "title": "Any Variant"
           },
           "substitute_ids": {
             "items": {
@@ -2710,8 +2710,8 @@
           "category",
           "icon",
           "restock",
-          "any_variant",
           "family",
+          "any_variant",
           "substitute_ids"
         ],
         "title": "ItemOut"

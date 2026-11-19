@@ -2,7 +2,8 @@ import type { ItemOut } from './api'
 
 // Items sharing a name are kinds of one supply ("Konzerv" + "kukorica"); the UI shows them
 // as one group with the variants under it. A family ("Pékáru": Kenyér, Zsemle, Kifli) is a
-// group of different items any of which will do.
+// group of items any of which will do, each item's own; where any variant of an item will
+// do, its variants are a family named after it ("Konzerv").
 
 const SEPARATOR = ' · '
 const fold = (text: string) => text.toLocaleLowerCase('hu')
@@ -29,15 +30,20 @@ export function firstVariant(items: ItemOut[], name: string): ItemOut | undefine
   return items.filter((item) => fold(item.name) === fold(name)).sort(byItem)[0]
 }
 
-/** Whether others will do instead of it: its family's members, or its variants. */
+/** Whether others will do instead of it: its family's members. */
 export function interchangeable(item: ItemOut): boolean {
-  return item.family != null || item.any_variant
+  return item.family != null
 }
 
 /** The same for the items that will do instead of each other, and only for them. */
 export function groupKey(item: ItemOut): string {
-  if (item.family != null) return `family:${fold(item.family)}`
-  return item.any_variant ? `name:${fold(item.name)}` : `item:${item.id}`
+  return item.family != null ? `family:${fold(item.family)}` : `item:${item.id}`
+}
+
+/** Whether a family's members are all kinds of one item ("Konzerv"): named by their
+ * variant, not their whole name. */
+export function oneName(members: ItemOut[]): boolean {
+  return new Set(members.map((member) => fold(member.name))).size === 1
 }
 
 /** What will do instead of the item, itself included, in list order. */

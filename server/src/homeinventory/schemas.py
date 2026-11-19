@@ -121,10 +121,10 @@ class ItemOut(BaseModel):
     icon: str | None
     # Running low puts it on the shopping list.
     restock: bool
-    # Any variant will do: shared by every item of the same name.
-    any_variant: bool
-    # Any member of this family will do instead ("Pékáru"); shared like `any_variant`.
+    # Any member of this family will do instead ("Pékáru"); the item's own.
     family: str | None
+    # Its family is named after it: any of its variants will do.
+    any_variant: bool
     # What a recipe can use instead.
     substitute_ids: list[int]
 
@@ -157,9 +157,10 @@ class ItemUpdate(BaseModel):
     category: Category | None = None
     icon: Icon = None
     restock: bool | None = None
-    # Applies to every item of the same name.
+    # On: every item of the same name joins the family named after it; off: those in it
+    # leave it.
     any_variant: bool | None = None
-    # Applies to every item of the same name, as `any_variant`; null takes it out of one.
+    # This item's alone; null takes it out of one.
     family: Family = None
     # Replaces them all.
     substitutes: list[ItemRef] | None = Field(default=None, max_length=SUBSTITUTES_MAX)

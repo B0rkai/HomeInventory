@@ -120,21 +120,21 @@ def variants_of(session: Session, item: Item) -> list[Item]:
 
 
 def interchangeable(item: Item) -> bool:
-    """Whether others will do instead of it: its family's members, or its variants."""
-    return item.family is not None or item.any_variant
+    """Whether others will do instead of it: its family's members (its variants, where the
+    family is named after it)."""
+    return item.family is not None
 
 
 def group_of(session: Session, item: Item) -> list[Item]:
-    """What will do instead of the item, itself included: its family, else its variants
-    where any will do, else just the item."""
-    if item.family is not None:
-        folded = item.family.casefold()
-        return [
-            i
-            for i in session.scalars(select(Item).order_by(Item.id))
-            if i.family is not None and i.family.casefold() == folded
-        ]
-    return variants_of(session, item) if item.any_variant else [item]
+    """What will do instead of the item, itself included: its family, else just the item."""
+    if item.family is None:
+        return [item]
+    folded = item.family.casefold()
+    return [
+        i
+        for i in session.scalars(select(Item).order_by(Item.id))
+        if i.family is not None and i.family.casefold() == folded
+    ]
 
 
 def sync_variants_at(
