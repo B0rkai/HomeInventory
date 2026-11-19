@@ -894,11 +894,14 @@ h2 .tile .icon-art {
   color: var(--accent);
 }
 .category-head {
-  margin: 0.75rem 0 0;
+  margin: 0;
   font-size: 0.95rem;
 }
-.category-head:first-child {
-  margin-top: 0;
+/* Between the shop's groups a stronger line than between items. */
+.category-group + .category-group {
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 2px solid color-mix(in srgb, var(--muted) 45%, transparent);
 }
 .lots-note {
   color: var(--lots);

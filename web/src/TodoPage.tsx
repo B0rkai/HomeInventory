@@ -348,7 +348,7 @@ function Sections({ requests }: { requests: RequestOut[] }) {
             </span>
           </div>
           {shopping.map(([category, list]) => (
-            <div key={category ?? ''}>
+            <div key={category ?? ''} className="category-group">
               {headed && (
                 <div className="section-head category-head">
                   <h4>{categoryName(category)}</h4>
