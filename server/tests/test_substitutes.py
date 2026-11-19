@@ -17,8 +17,9 @@ def test_an_item_gets_substitutes_by_name(api) -> None:
     # A known one, whatever its case; a new one joins the catalogue kept nowhere.
     assert first == marg["id"]
     assert (items[second]["name"], items[second]["restock"]) == ("Olaj", False)
-    # One way only.
-    assert items[marg["id"]]["substitute_ids"] == []
+    # Both ways.
+    assert items[marg["id"]]["substitute_ids"] == [butter["id"]]
+    assert items[second]["substitute_ids"] == [butter["id"]]
 
 
 def test_substitutes_are_replaced_and_left_alone(api) -> None:
@@ -29,6 +30,17 @@ def test_substitutes_are_replaced_and_left_alone(api) -> None:
     assert len(renamed["substitute_ids"]) == 1
     cleared = api("PATCH", f"/items/{butter['id']}", {"substitutes": []}).json()
     assert cleared["substitute_ids"] == []
+    assert all(item["substitute_ids"] == [] for item in api("GET", "/items").json())
+
+
+def test_taken_off_from_the_other_side(api) -> None:
+    butter = post_item(api, "Vaj")
+    api("PATCH", f"/items/{butter['id']}", {"substitutes": [{"name": "Margarin"}]})
+    marg = next(item for item in api("GET", "/items").json() if item["name"] == "Margarin")
+    api("PATCH", f"/items/{marg['id']}", {"substitutes": [{"name": "Olaj"}]})
+    items = {item["name"]: item for item in api("GET", "/items").json()}
+    assert items["Vaj"]["substitute_ids"] == []
+    assert items["Olaj"]["substitute_ids"] == [marg["id"]]
 
 
 def test_not_itself_and_each_once(api) -> None:

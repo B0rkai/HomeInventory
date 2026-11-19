@@ -285,10 +285,9 @@ export const t = {
     anyVariantNote: 'bármelyik fajta elég',
     substitutes: 'Helyettesítheti',
     substitutesHint:
-      'Receptekben ez is jó helyette, ha ez nincs itthon. A bevásárlólistát nem érinti.',
+      'Receptekben egymás helyett használhatók, ha az egyik nincs itthon. A bevásárlólistát nem érinti.',
     substitutePlaceholder: 'Például: Margarin · sütő',
     removeSubstitute: (name: string) => `${name} törlése`,
-    standsInFor: 'Ezt helyettesíti',
     anyKind: 'bármelyik fajta',
     whichBought: 'Melyiket vetted?',
     places: (count: number) => (count ? `${count} helyen` : 'sehol'),

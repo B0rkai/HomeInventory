@@ -37,7 +37,6 @@ export function ItemPage({ id }: { id: number }) {
     .sort(byItem)
   const level = bestLevel(rows)
   const substitutes = items.filter((other) => item.substitute_ids.includes(other.id))
-  const standsInFor = items.filter((other) => other.substitute_ids.includes(item.id))
   const links = (list: typeof items) =>
     list.map((other, index) => (
       <span key={other.id}>
@@ -85,21 +84,10 @@ export function ItemPage({ id }: { id: number }) {
           </>
         )}
       </p>
-      {(substitutes.length > 0 || standsInFor.length > 0) && (
+      {substitutes.length > 0 && (
         <p className="small item-meta">
-          {substitutes.length > 0 && (
-            <>
-              <span className="muted">{t.items.substitutes}: </span>
-              {links(substitutes)}
-            </>
-          )}
-          {substitutes.length > 0 && standsInFor.length > 0 && <span className="muted"> · </span>}
-          {standsInFor.length > 0 && (
-            <>
-              <span className="muted">{t.items.standsInFor}: </span>
-              {links(standsInFor)}
-            </>
-          )}
+          <span className="muted">{t.items.substitutes}: </span>
+          {links(substitutes)}
         </p>
       )}
 

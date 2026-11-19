@@ -164,7 +164,8 @@ class Item(Base):
     icon: Mapped[str | None] = mapped_column(String(ICON_MAX_LENGTH))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
-    # What a recipe can use instead of it ("Vaj": "Margarin · sütő"); one way only.
+    # What a recipe can use instead of it ("Vaj": "Margarin · sütő"); always both ways, the
+    # API keeps the pair.
     substitutes: Mapped[list["Item"]] = relationship(
         secondary="item_substitutes",
         primaryjoin="Item.id == ItemSubstitute.item_id",
@@ -179,8 +180,8 @@ class Item(Base):
 
 
 class ItemSubstitute(Base):
-    """An item a recipe can use when the one it names isn't at home. Only recipes look at
-    it: the item still goes on the shopping list as it would."""
+    """An item a recipe can use when the one it names isn't at home, one row each way. Only
+    recipes look at it: the item still goes on the shopping list as it would."""
 
     __tablename__ = "item_substitutes"
     __table_args__ = (CheckConstraint("item_id != substitute_id", name="not_itself"),)

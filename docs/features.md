@@ -332,8 +332,9 @@ Decisions:
   main course and no side dish asks for one the same way, and one that
   names a side dish keeps it.
 - **Substitutes**: an item names what a recipe can use instead of it
-  ("Vaj": "Margarin · sütő"; "Olaj": "Zsír"), one way only, set on the
-  item (phone and admin). A recipe's ingredient counts as at home when a
+  ("Vaj": "Margarin · sütő"; "Olaj": "Zsír"), set on either item (phone
+  and admin) and always both ways: a pair, since nearly every one stands in
+  the other way too. A recipe's ingredient counts as at home when a
   substitute is ("helyette: Margarin"). The shopping list ignores them: an
   item restocked still goes on it. Kinds of one thing stay variants with
   "any variant will do" (Darált hús, Pirospaprika); substitutes are

@@ -276,8 +276,14 @@ def update_item(
             raise HTTPException(
                 status.HTTP_422_UNPROCESSABLE_CONTENT, "An item can't stand in for itself"
             )
-        # Each once, in the order sent.
-        item.substitutes = list(dict.fromkeys(substitutes))
+        # Each once, in the order sent; both ways (vaj for margarin too).
+        wanted = list(dict.fromkeys(substitutes))
+        for other in catalogue:
+            if other in wanted and item not in other.substitutes:
+                other.substitutes.append(item)
+            elif other not in wanted and item in other.substitutes:
+                other.substitutes.remove(item)
+        item.substitutes = wanted
     group = variants_of(session, item)
     regrouped = renamed or (
         update.any_variant is not None
