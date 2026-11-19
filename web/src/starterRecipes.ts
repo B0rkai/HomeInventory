@@ -185,7 +185,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Gulyásleves',
-    kind: 'whole',
+    kind: 'soup',
     ingredients: [
       item('Marhahús', '50 dkg'),
       item('Krumpli', '50 dkg'),
@@ -203,7 +203,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Húsleves',
-    kind: 'whole',
+    kind: 'soup',
     ingredients: [
       item('Leveshús', '1 kg'),
       item('Sárgarépa', '3 db'),
@@ -219,7 +219,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Paradicsomleves',
-    kind: 'whole',
+    kind: 'soup',
     ingredients: [
       item('Passzírozott paradicsom', '700 g'),
       item('Cukor', '2 ek'),
@@ -319,7 +319,7 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Palacsinta',
-    kind: 'whole',
+    kind: 'dessert',
     ingredients: [
       item('Liszt', '25 dkg'),
       item('Tej', '5 dl'),
@@ -360,22 +360,22 @@ export const STARTER_RECIPES: Starter[] = [
   },
   {
     name: 'Brokkolikrémleves',
-    kind: 'whole',
+    kind: 'soup',
     ingredients: [item('Brokkoli', '50 dkg'), part('Krémleves alap')],
   },
   {
     name: 'Sütőtökkrémleves',
-    kind: 'whole',
+    kind: 'soup',
     ingredients: [item('Sütőtök', '1 kg'), part('Krémleves alap'), ifAny('Gyömbér')],
   },
   {
     name: 'Gombakrémleves',
-    kind: 'whole',
+    kind: 'soup',
     ingredients: [item('Gomba', '50 dkg'), part('Krémleves alap'), ifAny('Petrezselyem')],
   },
   {
     name: 'Karfiolkrémleves',
-    kind: 'whole',
+    kind: 'soup',
     ingredients: [item('Karfiol', '1 fej'), part('Krémleves alap')],
   },
 ]

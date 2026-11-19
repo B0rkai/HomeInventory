@@ -66,24 +66,32 @@ export function RecipeEditor({
   const [pasted, setPasted] = useState('')
   const [saving, setSaving] = useState(false)
 
+  // What can be a part: any recipe but a menu.
+  const parts = recipes.filter((other) => other.kind !== 'menu')
   // A name kept in variants alone means any of them; or one variant; or a recipe, but not
-  // this one or one taking it.
+  // this one or one taking it. A menu takes recipes: only those are offered.
   const suggestions = [
     ...new Set([
-      ...items.filter((item) => item.variant).map((item) => item.name),
-      ...[...items].sort(byItem).map(fullName),
-      ...recipes
+      ...(kind === 'menu'
+        ? []
+        : [
+            ...items.filter((item) => item.variant).map((item) => item.name),
+            ...[...items].sort(byItem).map(fullName),
+          ]),
+      ...parts
         .filter((other) => !recipe || !takes(other, recipe.id, recipes))
         .map((other) => other.name)
         .sort((a, b) => a.localeCompare(b, 'hu')),
     ]),
   ]
-  const isPart = (text: string) => recipeNamed(text, recipes) !== undefined
+  const isPart = (text: string) => recipeNamed(text, parts) !== undefined
   // A part that would have the recipe take itself; the server refuses it.
   const loops = (row: Row) => {
-    const part = row.part && recipe ? recipeNamed(row.text, recipes) : undefined
+    const part = row.part && recipe ? recipeNamed(row.text, parts) : undefined
     return part !== undefined && takes(part, recipe!.id, recipes)
   }
+  // A recipe other recipes take can't become a menu.
+  const taken = recipe !== undefined && takenBy(recipe, recipes).length > 0
   const change = (key: number, fields: Partial<Row>) =>
     setRows(rows.map((row) => (row.key === key ? { ...row, ...fields } : row)))
   const addRows = (added: { text: string; amount: string }[]) =>
@@ -153,13 +161,15 @@ export function RecipeEditor({
       </label>
       <div className="recipe-kind">
         <span className="small">{t.menu.kind}</span>
-        <div className="segmented" role="radiogroup" aria-label={t.menu.kind}>
+        <div className="chips kind-chips" role="radiogroup" aria-label={t.menu.kind}>
           {RECIPE_KINDS.map((option) => (
             <button
               key={option}
               type="button"
+              className="chip"
               role="radio"
               aria-checked={kind === option}
+              disabled={option === 'menu' && taken}
               onClick={() => setKind(option)}
             >
               {t.menu.kinds[option]}
@@ -169,7 +179,7 @@ export function RecipeEditor({
         <span className="small muted">{t.menu.kindHint[kind]}</span>
       </div>
       <fieldset className="ingredients">
-        <legend>{t.menu.ingredients}</legend>
+        <legend>{kind === 'menu' ? t.menu.courses : t.menu.ingredients}</legend>
         {rows.length === 0 && <p className="small muted">{t.menu.noIngredients}</p>}
         <ul>
           {rows.map((row) => (
@@ -226,7 +236,9 @@ export function RecipeEditor({
         <div className="row">
           <input
             aria-label={t.menu.ingredient}
-            placeholder={t.menu.ingredientPlaceholder}
+            placeholder={
+              kind === 'menu' ? t.menu.menuIngredientPlaceholder : t.menu.ingredientPlaceholder
+            }
             value={adding}
             onChange={(event) => setAdding(event.target.value)}
             onKeyDown={addKeys}

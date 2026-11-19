@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from homeinventory.common import NO_CONTENT, announce_changes, conflict, get_or_404
 from homeinventory.db import get_session
 from homeinventory.identity import current_user
-from homeinventory.models import Item, Recipe, RecipeIngredient
+from homeinventory.models import Item, Recipe, RecipeIngredient, RecipeKind
 from homeinventory.schemas import IngredientIn, RecipeCreate, RecipeOut, RecipeUpdate
 
 router = APIRouter(dependencies=[Depends(current_user), Depends(announce_changes)])
@@ -70,6 +70,8 @@ def _part_for(session: Session, recipe: Recipe, wanted: IngredientIn) -> Recipe:
     )
     if part is None:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "No such recipe")
+    if part.kind == RecipeKind.MENU:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "A menu is no ingredient")
     if _takes(part, recipe.id):
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "A recipe can't take itself")
     return part
@@ -131,6 +133,10 @@ def update_recipe(
         _check_name(session, update.name, recipe.id)
         recipe.name = update.name
     if update.kind is not None:
+        if update.kind == RecipeKind.MENU and session.scalar(
+            select(RecipeIngredient.id).where(RecipeIngredient.part_id == recipe.id).limit(1)
+        ):
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "A menu is no ingredient")
         recipe.kind = update.kind
     for field in ("icon", "note", "link"):
         if field in sent:

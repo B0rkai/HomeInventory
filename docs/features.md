@@ -320,11 +320,15 @@ Decisions:
   (`web/src/starterRecipes.ts`). Nothing is added until picked: one tap adds
   one (with the base recipes it takes), or all at once; from then on they are
   the household's own. A suggestion shows while no recipe has its name.
-- **A recipe's kind**: *fogás* (a main course: planning offers a side dish
-  with it), *egytál* (whole on its own, soups too: no side dish), *köret* (a
-  side dish), *alap* (only a part of others: Besamel, Panír). New recipes are
-  main courses. A side dish is picked when a main course is planned, not
-  written into its recipe.
+- **A recipe's kind**: *főétel* (a main course: planning offers a side
+  dish with it), *egytál* (whole on its own: no side dish), *leves*,
+  *köret*, *desszert*, *alap* (only a part of others: Besamel, Panír), and
+  *menü*: a favourite combination, whose ingredients are the recipes it
+  serves (a soup, a main course and its side dish, a dessert), so a two or
+  three course meal is planned at once. A menu is never an ingredient
+  itself; no menus are suggested. New recipes are main courses. A side
+  dish is picked when a main course is planned, not written into its
+  recipe.
 - **Recipes take recipes**: a base recipe ("Nokedli", "Besamel") is an
   ingredient of others, whole. What a recipe takes counts its parts' items
   too, each once (optional only if optional everywhere; an optional part's

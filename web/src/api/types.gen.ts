@@ -511,9 +511,9 @@ export type RecipeCreate = {
 /**
  * RecipeKind
  *
- * What a recipe is on the table: whether a side dish goes with it when planned.
+ * What a recipe is on the table: what goes with it when it's planned.
  */
-export type RecipeKind = 'main' | 'whole' | 'side' | 'base';
+export type RecipeKind = 'main' | 'whole' | 'soup' | 'side' | 'dessert' | 'menu' | 'base';
 
 /**
  * RecipeOut

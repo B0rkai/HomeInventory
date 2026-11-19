@@ -62,7 +62,7 @@ export function RecipePage({ id }: { id: number }) {
       </div>
       <p className="small muted recipe-kind-line">{t.menu.kinds[recipe.kind]}</p>
       <section className="card">
-        <h3>{t.menu.ingredients}</h3>
+        <h3>{recipe.kind === 'menu' ? t.menu.courses : t.menu.ingredients}</h3>
         {recipe.ingredients.length === 0 && <p className="muted">{t.menu.noIngredients}</p>}
         <ul className="item-list">
           {recipe.ingredients.map((ingredient) => {
@@ -74,7 +74,7 @@ export function RecipePage({ id }: { id: number }) {
                   <a className="item-row" href={href.recipe(part.id)}>
                     <span>
                       <RecipeName recipe={part} />
-                      <span className="small muted"> · {t.menu.partBadge}</span>
+                      <span className="small muted"> · {t.menu.kinds[part.kind]}</span>
                       {ingredient.amount && (
                         <span className="small muted"> · {ingredient.amount}</span>
                       )}

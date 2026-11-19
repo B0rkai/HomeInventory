@@ -2718,11 +2718,14 @@
         "enum": [
           "main",
           "whole",
+          "soup",
           "side",
+          "dessert",
+          "menu",
           "base"
         ],
         "title": "RecipeKind",
-        "description": "What a recipe is on the table: whether a side dish goes with it when planned."
+        "description": "What a recipe is on the table: what goes with it when it's planned."
       },
       "RecipeOut": {
         "properties": {

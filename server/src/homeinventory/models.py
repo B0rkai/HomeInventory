@@ -347,14 +347,19 @@ LINK_MAX_LENGTH = 500
 
 
 class RecipeKind(StrEnum):
-    """What a recipe is on the table: whether a side dish goes with it when planned."""
+    """What a recipe is on the table: what goes with it when it's planned."""
 
     # A main course: a side dish can go with it (Rántott hús).
     MAIN = "main"
-    # A dish on its own, soups too: nothing goes with it (Rakott krumpli, Gulyásleves).
+    # A dish on its own: nothing goes with it (Rakott krumpli, főzelék).
     WHOLE = "whole"
+    SOUP = "soup"
     # Goes with a main course (Krumplipüré, Nokedli).
     SIDE = "side"
+    DESSERT = "dessert"
+    # A favourite combination: its ingredients are the recipes it serves (a soup, a main
+    # course and its side dish, a dessert).
+    MENU = "menu"
     # Only a part of other recipes (Besamel, Panír).
     BASE = "base"
 

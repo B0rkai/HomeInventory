@@ -1,8 +1,8 @@
 """recipe kind
 
-Revision ID: 5dec4334a1ea
+Revision ID: 21e71099170f
 Revises: 64cc499d3d28
-Create Date: 2026-11-19 12:52:24.657678
+Create Date: 2026-11-19 13:02:26.402038
 
 """
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "5dec4334a1ea"
+revision: str = "21e71099170f"
 down_revision: str | Sequence[str] | None = "64cc499d3d28"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
@@ -28,7 +28,10 @@ def upgrade() -> None:
                 sa.Enum(
                     "main",
                     "whole",
+                    "soup",
                     "side",
+                    "dessert",
+                    "menu",
                     "base",
                     name="kind",
                     native_enum=False,

@@ -217,4 +217,18 @@ def test_a_recipe_is_a_main_course_unless_told(api) -> None:
     # Sending other fields leaves it.
     renamed = api("PATCH", f"/recipes/{schnitzel['id']}", {"name": "Bécsi szelet"}).json()
     assert renamed["kind"] == "whole"
-    assert api("POST", "/recipes", {"name": "Leves", "kind": "dessert"}).status_code == 422
+    assert api("POST", "/recipes", {"name": "Leves", "kind": "starter"}).status_code == 422
+
+
+def test_a_menu_serves_recipes_but_is_none(api) -> None:
+    for name, kind in [("Húsleves", "soup"), ("Rántott hús", "main"), ("Krumplipüré", "side")]:
+        api("POST", "/recipes", {"name": name, "kind": kind})
+    parts = [{"name": name, "recipe": True} for name in ("Húsleves", "Rántott hús", "Krumplipüré")]
+    sunday = api("POST", "/recipes", {"name": "Vasárnapi", "kind": "menu", "ingredients": parts})
+    assert sunday.status_code == 201, sunday.text
+    assert len(sunday.json()["ingredients"]) == 3
+    # A menu isn't an ingredient of anything, nor becomes one while it's taken.
+    in_menu = {"name": "Kettő", "ingredients": [{"name": "Vasárnapi", "recipe": True}]}
+    assert api("POST", "/recipes", in_menu).status_code == 422
+    soup = next(r for r in api("GET", "/recipes").json() if r["name"] == "Húsleves")
+    assert api("PATCH", f"/recipes/{soup['id']}", {"kind": "menu"}).status_code == 422

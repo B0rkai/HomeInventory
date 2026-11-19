@@ -1590,9 +1590,24 @@ h2 .named .tile {
   flex-direction: column;
   gap: 0.3rem;
 }
-.recipe-kind .segmented {
-  max-width: 28rem;
-}
 .recipe-kind-line {
   margin: -0.5rem 0 0.75rem;
+}
+.kind-chips .chip {
+  min-height: 2.1rem;
+  padding: 0.2rem 0.7rem;
+}
+.kind-chips .chip[aria-checked='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.kind-chips .chip {
+  min-height: 2.1rem;
+  padding: 0.2rem 0.7rem;
+}
+.kind-chips .chip[aria-checked='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
 }

@@ -16,7 +16,15 @@ const AT_HOME: Level[] = ['plenty', 'lots']
 const fold = (text: string) => text.toLocaleLowerCase('hu')
 
 /** The kinds in list order. */
-export const RECIPE_KINDS: RecipeKind[] = ['main', 'whole', 'side', 'base']
+export const RECIPE_KINDS: RecipeKind[] = [
+  'menu',
+  'soup',
+  'main',
+  'whole',
+  'side',
+  'dessert',
+  'base',
+]
 
 /** The items an ingredient stands for: the item, or every variant of its name. */
 export function ingredientItems(ingredient: IngredientOut, items: ItemOut[]): ItemOut[] {
