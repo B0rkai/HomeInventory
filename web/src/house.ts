@@ -18,6 +18,7 @@ import {
   listLocations,
   listRequests,
   listStock,
+  moveStock,
   removeStock,
   requestStock,
   reportChore,
@@ -442,6 +443,27 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
         // Any-variant or restocking changes reach the item's other variants and the list.
         if (item) await reload()
         return item
+      },
+      /** Several items changed alike (the admin table's group or restocking), then reloaded. */
+      async updateItems(ids: number[], body: ItemUpdate) {
+        let ok = true
+        for (const id of ids) {
+          ok = Boolean(await change(updateItem({ path: { item_id: id }, body }))) && ok
+          if (!ok) break
+        }
+        await reload()
+        return ok
+      },
+      /** Moves items kept in one place to another; levels and their requests go along. */
+      async moveStock(itemIds: number[], fromId: number, toId: number) {
+        const ok = await change(
+          moveStock({
+            body: { item_ids: itemIds, from_location_id: fromId, to_location_id: toId },
+          }),
+        )
+        // Rows merge and requests move: fetch it all.
+        if (ok) await reload()
+        return Boolean(ok)
       },
       async deleteItem(id: number) {
         const ok = await change(deleteItem({ path: { item_id: id } }))

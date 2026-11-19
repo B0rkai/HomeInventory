@@ -36,6 +36,12 @@ class UserOut(BaseModel):
     nickname: str | None
     # The nickname if set, else the full name: what the UI shows.
     display_name: str
+    # The Admin user of the LAN admin pages, not a person.
+    admin: bool
+
+
+class AdminLogin(BaseModel):
+    password: str = Field(max_length=200)
 
 
 def _blank_to_none(value: str | None) -> str | None:
@@ -141,6 +147,14 @@ class StockSet(BaseModel):
     level: Level
 
 
+class StockMove(BaseModel):
+    """Items kept in one place, to be kept in another instead."""
+
+    item_ids: list[int] = Field(min_length=1, max_length=500)
+    from_location_id: int
+    to_location_id: int
+
+
 class ChoreOut(BaseModel):
     id: int
     # Unset for a chore of the whole house.
@@ -228,6 +242,8 @@ class ActivityOut(BaseModel):
     name: str
     variant: str | None
     location_id: int | None
+    # Where it went, for "moved".
+    to_location_id: int | None
     level: Level | None
 
 

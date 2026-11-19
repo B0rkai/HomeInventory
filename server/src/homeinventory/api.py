@@ -3,6 +3,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from homeinventory.activity import router as activity_router
+from homeinventory.admin import router as admin_router
 from homeinventory.db import get_session
 from homeinventory.identity import current_user
 from homeinventory.models import User
@@ -41,3 +42,4 @@ router.include_router(places_router)
 router.include_router(requests_router)
 router.include_router(push_router)
 router.include_router(activity_router)
+router.include_router(admin_router)

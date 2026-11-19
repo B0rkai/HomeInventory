@@ -1,6 +1,6 @@
 """Devices subscribing to notifications, and the live update stream."""
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import delete
 from sqlalchemy.dialects.sqlite import insert
@@ -30,6 +30,9 @@ def subscribe(
     session: Session = Depends(get_session),
 ) -> None:
     """Sends this user's notifications to a device; sending one again refreshes it."""
+    if user.admin:
+        # Admin is the LAN pages, not a person: nothing to tell it.
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Admin gets no notifications")
     values = {"user_id": user.id, "p256dh": new.keys.p256dh, "auth": new.keys.auth}
     session.execute(
         insert(PushSubscription)

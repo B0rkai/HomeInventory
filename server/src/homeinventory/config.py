@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     # Who runs this server, for the push services (a mailto: or https: URL). The VAPID
     # key pair itself is made on first use and kept in the data directory.
     vapid_subject: str = "https://spajz.tail61796b.ts.net"
+    # The admin pages' port, served on the home LAN (see serve.py). Requests arriving on
+    # it ignore the Tailscale headers, which any device there could forge, and act only as
+    # the password-logged-in Admin user. Unset: no such port.
+    admin_port: int | None = None
 
     @property
     def vapid_key_path(self) -> Path:

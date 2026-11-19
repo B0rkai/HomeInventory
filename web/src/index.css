@@ -1233,3 +1233,141 @@ a.item-row {
 .any-kind {
   font-weight: 400;
 }
+/* The desktop admin pages: wide, tables */
+.app.admin {
+  max-width: 90rem;
+  padding-bottom: 2rem;
+}
+.admin-login {
+  max-width: 24rem;
+  margin: 2rem auto 0;
+}
+.out-text {
+  color: var(--out);
+}
+.admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.admin-filters .search {
+  flex: 1 1 16rem;
+  width: auto;
+  margin: 0;
+}
+.admin-filters select {
+  width: auto;
+  background: var(--surface);
+}
+.bulk-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  border-color: var(--accent);
+}
+.bulk-bar select {
+  width: auto;
+}
+.bulk-move {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+.table-wrap {
+  margin-top: 0.6rem;
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.admin-table th {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.admin-table td {
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.admin-table tbody tr:hover {
+  background: var(--bg);
+}
+.admin-table tr.selected {
+  background: var(--place-bg);
+}
+.admin-table select {
+  width: auto;
+  min-height: 2.1rem;
+  padding: 0.2rem 0.4rem;
+  background: transparent;
+}
+.sort-button {
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+.check-cell {
+  width: 2.5rem;
+  text-align: center !important;
+}
+.check-cell input {
+  width: 1.1rem;
+  min-height: 1.1rem;
+}
+.name-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 14rem;
+}
+.cell-input {
+  min-height: 2.1rem;
+  padding: 0.2rem 0.4rem;
+  border-color: transparent;
+  background: transparent;
+  font-weight: 500;
+}
+.cell-input:hover {
+  border-color: var(--border);
+}
+.where-cell {
+  min-width: 12rem;
+}
+.where-chip {
+  display: inline-block;
+  margin: 0.1rem 0.5rem 0.1rem 0;
+  white-space: nowrap;
+}
+.edit-cell {
+  width: 1%;
+  white-space: nowrap;
+}
+.edit-row td {
+  background: var(--bg);
+}
+.move-form {
+  margin-top: 0.6rem;
+}

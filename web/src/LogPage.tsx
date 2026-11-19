@@ -31,6 +31,7 @@ function byDay(entries: ActivityOut[]): [string, Row[]][] {
       last.first.name === entry.name &&
       last.first.variant === entry.variant &&
       last.first.level === entry.level &&
+      last.first.to_location_id === entry.to_location_id &&
       new Date(last.first.at).getTime() - at.getTime() < SAME_ROW_MS
     if (same && last) {
       if (!last.places.includes(entry.location_id)) last.places.push(entry.location_id)
@@ -119,7 +120,11 @@ export function LogPage() {
                 const where =
                   first.kind === 'buy' && first.location_id === null
                     ? []
-                    : places.map(place).filter((p) => p !== null)
+                    : first.action === 'moved'
+                      ? [
+                          `${place(first.location_id) ?? '?'} → ${place(first.to_location_id) ?? '?'}`,
+                        ]
+                      : places.map(place).filter((p) => p !== null)
                 return (
                   <li key={first.id}>
                     {item ? (

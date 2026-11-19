@@ -9,7 +9,7 @@ export type ClientOptions = {
  *
  * What someone did, as the activity log records it.
  */
-export type Action = 'level' | 'removed' | 'listed' | 'reported' | 'claimed' | 'unclaimed' | 'done' | 'fetched' | 'cancelled' | 'reminded';
+export type Action = 'level' | 'removed' | 'listed' | 'reported' | 'claimed' | 'unclaimed' | 'done' | 'fetched' | 'cancelled' | 'reminded' | 'moved';
 
 /**
  * ActivityOut
@@ -49,7 +49,21 @@ export type ActivityOut = {
      * Location Id
      */
     location_id: number | null;
+    /**
+     * To Location Id
+     */
+    to_location_id: number | null;
     level: Level | null;
+};
+
+/**
+ * AdminLogin
+ */
+export type AdminLogin = {
+    /**
+     * Password
+     */
+    password: string;
 };
 
 /**
@@ -472,6 +486,26 @@ export type RequestOut = {
 export type RequestStatus = 'open' | 'claimed' | 'done' | 'cancelled';
 
 /**
+ * StockMove
+ *
+ * Items kept in one place, to be kept in another instead.
+ */
+export type StockMove = {
+    /**
+     * Item Ids
+     */
+    item_ids: Array<number>;
+    /**
+     * From Location Id
+     */
+    from_location_id: number;
+    /**
+     * To Location Id
+     */
+    to_location_id: number;
+};
+
+/**
  * StockOut
  */
 export type StockOut = {
@@ -525,6 +559,10 @@ export type UserOut = {
      * Display Name
      */
     display_name: string;
+    /**
+     * Admin
+     */
+    admin: boolean;
 };
 
 /**
@@ -947,6 +985,33 @@ export type RequestStockResponses = {
 };
 
 export type RequestStockResponse = RequestStockResponses[keyof RequestStockResponses];
+
+export type MoveStockData = {
+    body: StockMove;
+    path?: never;
+    query?: never;
+    url: '/api/v1/stock/move';
+};
+
+export type MoveStockErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type MoveStockError = MoveStockErrors[keyof MoveStockErrors];
+
+export type MoveStockResponses = {
+    /**
+     * Response Move Stock
+     *
+     * Successful Response
+     */
+    200: Array<StockOut>;
+};
+
+export type MoveStockResponse = MoveStockResponses[keyof MoveStockResponses];
 
 export type ListChoresData = {
     body?: never;
@@ -1453,3 +1518,44 @@ export type ListActivityResponses = {
 };
 
 export type ListActivityResponse = ListActivityResponses[keyof ListActivityResponses];
+
+export type LogInData = {
+    body: AdminLogin;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/login';
+};
+
+export type LogInErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type LogInError = LogInErrors[keyof LogInErrors];
+
+export type LogInResponses = {
+    /**
+     * Successful Response
+     */
+    200: UserOut;
+};
+
+export type LogInResponse = LogInResponses[keyof LogInResponses];
+
+export type LogOutData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/logout';
+};
+
+export type LogOutResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type LogOutResponse = LogOutResponses[keyof LogOutResponses];

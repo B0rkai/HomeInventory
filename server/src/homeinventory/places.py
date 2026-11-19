@@ -39,6 +39,7 @@ from homeinventory.schemas import (
     LocationOut,
     LocationUpdate,
     RequestOut,
+    StockMove,
     StockOut,
     StockSet,
 )
@@ -370,6 +371,84 @@ def _announce_opened(
     notifier.send(
         session, user.id, message_for(session, request, "reported", user.display_name, level)
     )
+
+
+# Fuller first, for keeping the fuller of two rows merged by a move.
+FULLNESS = {Level.LOTS: 3, Level.PLENTY: 2, Level.LOW: 1, Level.OUT: 0}
+
+
+@router.post("/stock/move")
+def move_stock(
+    move: StockMove,
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+) -> list[StockOut]:
+    """Moves items from one place to another, as when they get put away elsewhere: the
+    level goes along, and so does a request to buy one there, claim and all. Where the
+    other place keeps the item already, the two merge, the fuller level kept. All or
+    nothing. The moved rows, as they end up."""
+    if move.from_location_id == move.to_location_id:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Same place")
+    get_or_404(session, Location, move.from_location_id)
+    get_or_404(session, Location, move.to_location_id)
+    source, target = move.from_location_id, move.to_location_id
+    item_ids = list(dict.fromkeys(move.item_ids))
+    groups: dict[str, list[Item]] = {}
+    for item_id in item_ids:
+        item = get_or_404(session, Item, item_id)
+        moving = session.scalar(
+            select(Stock).where(Stock.item_id == item_id, Stock.location_id == source)
+        )
+        if moving is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Stock not found")
+        there = session.scalar(
+            select(Stock).where(Stock.item_id == item_id, Stock.location_id == target)
+        )
+        asked = _active_request(session, [item_id], source)
+        if there is None:
+            moving.location_id = target
+            level = moving.level
+        else:
+            if FULLNESS[moving.level] > FULLNESS[there.level]:
+                there.level = moving.level
+                there.updated_by_id = moving.updated_by_id
+                there.updated_at = moving.updated_at
+            level = there.level
+            session.delete(moving)
+        if asked:
+            waiting = _active_request(session, [item_id], target)
+            # One active request per item and place: a claim beats an open one.
+            if waiting and not (asked.claimed_by_id and not waiting.claimed_by_id):
+                asked, waiting = waiting, asked
+            if waiting:
+                waiting.status = RequestStatus.CANCELLED
+                waiting.closed_by_id = user.id
+                waiting.closed_at = utcnow()
+                session.flush()
+            asked.location_id = target
+        session.flush()
+        if item.any_variant:
+            groups[item.name.casefold()] = variants_of(session, item)
+        elif level in SHORT:
+            if item.restock:
+                open_buy_request(session, item_id, target, user)
+        elif item.restock:
+            # Merged into a full row: the move filled it up, nobody bought anything.
+            close_buy_requests(session, item_id, target, user, RequestStatus.CANCELLED)
+        record(session, user, Action.MOVED, item=item, location_id=source, to_location_id=target)
+    for group in groups.values():
+        merge_variant_requests(session, group, user)
+        for location_id in (source, target):
+            sync_variants_at(session, group, location_id, user, closed=RequestStatus.CANCELLED)
+    session.commit()
+    return [
+        StockOut.model_validate(row)
+        for row in session.scalars(
+            select(Stock)
+            .where(Stock.item_id.in_(item_ids), Stock.location_id == target)
+            .execution_options(populate_existing=True)
+        )
+    ]
 
 
 @router.delete("/locations/{location_id}/stock/{item_id}", **NO_CONTENT)

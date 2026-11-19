@@ -6,9 +6,12 @@ services:
     image: homeinventory:live
     # Runs as the server's user, so the data and backups stay owned by them.
     user: "${HOMEINVENTORY_UID:?}:${HOMEINVENTORY_GID:?}"
-    # Only `tailscale serve` (svc:spajz) may reach it: its identity headers are trusted.
+    # 8100: only `tailscale serve` (svc:spajz) may reach it, as its identity headers are
+    # trusted there. 8200: the admin pages on the home LAN (the server's LAN address only,
+    # never 0.0.0.0), where those headers are ignored and Admin logs in with a password.
     ports:
       - "127.0.0.1:8100:8100"
+      - "${HOMEINVENTORY_LAN_ADDRESS:?}:8200:8200"
     volumes:
       - "${HOMEINVENTORY_DATA:?}:/data"
     restart: unless-stopped

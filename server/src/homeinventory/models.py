@@ -70,11 +70,35 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(255))
     # What the app calls them ("Ákos"); chosen by the user, unset until then.
     nickname: Mapped[str | None] = mapped_column(String(NICKNAME_MAX_LENGTH))
+    # Only the Admin user has one (scrypt, see admin.py): it logs in on the LAN port.
+    password_hash: Mapped[str | None] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
     @property
     def display_name(self) -> str:
         return self.nickname or self.name
+
+    @property
+    def admin(self) -> bool:
+        return self.login == ADMIN_LOGIN
+
+
+# The Admin user's login; a Tailscale login is an email address, so never this.
+ADMIN_LOGIN = "admin"
+
+
+class AdminSession(Base):
+    """A browser logged in as Admin on the LAN port, by its cookie."""
+
+    __tablename__ = "admin_sessions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    # SHA-256 of the cookie's token, so the database alone can't log anyone in.
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
+    # Sessions not used for a while expire (admin.SESSION_DAYS).
+    used_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
 
 class Location(Base):
@@ -325,6 +349,8 @@ class Action(StrEnum):
     CANCELLED = "cancelled"
     # Asked whoever claimed a request when it'll be done.
     REMINDED = "reminded"
+    # Moved an item from one place to another, its level along.
+    MOVED = "moved"
 
 
 class Activity(Base):
@@ -346,6 +372,10 @@ class Activity(Base):
     variant: Mapped[str | None] = mapped_column(String(VARIANT_MAX_LENGTH))
     # Unset for a chore of the whole house, or once the place is deleted.
     location_id: Mapped[int | None] = mapped_column(ForeignKey("locations.id", ondelete="SET NULL"))
+    # Where it went, for MOVED (location_id is where from).
+    to_location_id: Mapped[int | None] = mapped_column(
+        ForeignKey("locations.id", ondelete="SET NULL")
+    )
     # The level set, for LEVEL.
     level: Mapped[Level | None] = mapped_column(str_enum(Level, "level"))
 

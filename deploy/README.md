@@ -10,7 +10,8 @@ serves the built web client. Phones reach it as the Tailscale Service `svc:spajz
 | Database | `~/.local/share/homeinventory/homeinventory.db` |
 | Push key (VAPID, made on first use) | `~/.local/share/homeinventory/vapid-private.pem` |
 | Backups (other disk) | `/mnt/storage/backups/homeinventory/` |
-| Container port | `127.0.0.1:8100` |
+| Container port (tailnet, behind `tailscale serve`) | `127.0.0.1:8100` |
+| Admin pages on the home LAN (plain HTTP, Admin's password) | `http://192.168.1.100:8200` |
 
 ## Deploy
 
@@ -40,6 +41,20 @@ systemctl --user enable --now homeinventory-backup.timer
 ```
 
 The container restarts on its own after a reboot (`restart: unless-stopped`).
+
+## Admin pages
+
+The desktop admin pages are on the LAN at `http://192.168.1.100:8200` (set by
+`HOMEINVENTORY_LAN_ADDRESS` in `deploy.sh`; the address needs a DHCP reservation, or
+the container can't start). Requests there act only as the Admin user, who logs in
+with a password. Set or change it (this logs every browser out):
+
+```bash
+docker compose -f ~/homeinventory-live/deploy/docker-compose.yml exec app python -m homeinventory.admin
+```
+
+Over the tailnet the same pages are at `https://spajz.tail61796b.ts.net/#/admin`, as
+oneself.
 
 ## Backups
 

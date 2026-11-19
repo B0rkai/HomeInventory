@@ -13,6 +13,7 @@ export type Route =
   | { page: 'todo'; view: TodoView }
   | { page: 'missing'; view: MissingView }
   | { page: 'log' }
+  | { page: 'admin' }
 
 export const href = {
   home: '#/',
@@ -21,6 +22,7 @@ export const href = {
   item: (id: number) => `#/items/${id}`,
   todo: (view: TodoView = 'open') => (view === 'open' ? '#/todo' : '#/todo/mine'),
   log: '#/log',
+  admin: '#/admin',
   missing: (view: MissingView = 'items') => (view === 'items' ? '#/missing' : '#/missing/places'),
 }
 
@@ -35,6 +37,7 @@ function parse(hash: string): Route {
   if (hash === href.missing('items')) return { page: 'missing', view: 'items' }
   if (hash === href.missing('places')) return { page: 'missing', view: 'places' }
   if (hash === href.log) return { page: 'log' }
+  if (hash === href.admin) return { page: 'admin' }
   return { page: 'home' }
 }
 

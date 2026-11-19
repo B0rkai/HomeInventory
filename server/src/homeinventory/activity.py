@@ -27,6 +27,7 @@ def record(
     chore: Chore | None = None,
     name: str | None = None,
     location_id: int | None = None,
+    to_location_id: int | None = None,
     level: Level | None = None,
 ) -> None:
     """Adds an entry about an item, a chore or something to buy by `name`; the caller
@@ -44,6 +45,7 @@ def record(
             name=name,
             variant=item and item.variant,
             location_id=location_id,
+            to_location_id=to_location_id,
             level=level,
         )
     )

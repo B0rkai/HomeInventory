@@ -529,6 +529,49 @@
         }
       }
     },
+    "/api/v1/stock/move": {
+      "post": {
+        "summary": "Move Stock",
+        "description": "Moves items from one place to another, as when they get put away elsewhere: the\nlevel goes along, and so does a request to buy one there, claim and all. Where the\nother place keeps the item already, the two merge, the fuller level kept. All or\nnothing. The moved rows, as they end up.",
+        "operationId": "move_stock",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockMove"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StockOut"
+                  },
+                  "type": "array",
+                  "title": "Response Move Stock"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/chores": {
       "get": {
         "summary": "List Chores",
@@ -1215,6 +1258,57 @@
           }
         }
       }
+    },
+    "/api/v1/admin/login": {
+      "post": {
+        "summary": "Log In",
+        "description": "Logs this browser in as Admin, by a long-lived cookie. Only on the admin port.",
+        "operationId": "log_in",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminLogin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/logout": {
+      "post": {
+        "summary": "Log Out",
+        "description": "Ends this browser's Admin session.",
+        "operationId": "log_out",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1231,7 +1325,8 @@
           "done",
           "fetched",
           "cancelled",
-          "reminded"
+          "reminded",
+          "moved"
         ],
         "title": "Action",
         "description": "What someone did, as the activity log records it."
@@ -1312,6 +1407,17 @@
             ],
             "title": "Location Id"
           },
+          "to_location_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Location Id"
+          },
           "level": {
             "anyOf": [
               {
@@ -1335,9 +1441,24 @@
           "name",
           "variant",
           "location_id",
+          "to_location_id",
           "level"
         ],
         "title": "ActivityOut"
+      },
+      "AdminLogin": {
+        "properties": {
+          "password": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "title": "AdminLogin"
       },
       "Category": {
         "type": "string",
@@ -2223,6 +2344,35 @@
         ],
         "title": "RequestStatus"
       },
+      "StockMove": {
+        "properties": {
+          "item_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Item Ids"
+          },
+          "from_location_id": {
+            "type": "integer",
+            "title": "From Location Id"
+          },
+          "to_location_id": {
+            "type": "integer",
+            "title": "To Location Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_ids",
+          "from_location_id",
+          "to_location_id"
+        ],
+        "title": "StockMove",
+        "description": "Items kept in one place, to be kept in another instead."
+      },
       "StockOut": {
         "properties": {
           "item_id": {
@@ -2296,6 +2446,10 @@
           "display_name": {
             "type": "string",
             "title": "Display Name"
+          },
+          "admin": {
+            "type": "boolean",
+            "title": "Admin"
           }
         },
         "type": "object",
@@ -2304,7 +2458,8 @@
           "login",
           "name",
           "nickname",
-          "display_name"
+          "display_name",
+          "admin"
         ],
         "title": "UserOut"
       },

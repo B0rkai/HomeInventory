@@ -30,8 +30,10 @@ first use in the data directory) and live updates over SSE (`live.py`,
 `/api/v1/events`); and the web pages for them (home tree, place page, to-do
 list with the shopping list, shortages view, item catalogue, activity log
 (`activity.py`), a bottom tab bar; hash routes in `web/src/route.ts`, shared
-data in `web/src/house.ts`, where changes also wait a few seconds to be undone).
-Next: the later ideas in `docs/features.md`, as the users ask. Anything marked *(planned)* describes intended
+data in `web/src/house.ts`, where changes also wait a few seconds to be undone);
+desktop admin pages (`#/admin`, and the LAN port as Admin): the item table and
+moving stock.
+Next: the admin pages' milestone B, then the meal planner (`docs/features.md`). Anything marked *(planned)* describes intended
 setup, not code that exists yet.
 
 ## Tech stack
@@ -85,10 +87,12 @@ setup, not code that exists yet.
 - A request with no identity header gets `401`, unless a `DEV_USER` setting
   stands in for the header (tests, or running without `tailscale serve` in
   front). `DEV_USER` is never set in the live deployment.
-- *(planned)* The one exception: the admin pages on a second port bound to
-  the server's LAN address (plain HTTP), where the identity headers are
-  ignored and only a password-logged-in Admin user acts (see "Planned:
-  admin pages" in `docs/features.md`).
+- The one exception: the admin pages' second port (`ADMIN_PORT`, published
+  only on the server's LAN address, plain HTTP). There the identity headers
+  are **ignored** (any LAN device could forge them) and only the Admin user
+  acts, logged in by password (`admin.py`). The app tells the ports apart by
+  the socket a request arrived on (`identity.on_admin_port`), never by a
+  header; `serve.py` runs both in one process.
 
 ## Development environment
 
@@ -113,7 +117,8 @@ development and the live app apart:
   don't start a second copy.
 - **Ports** (checked against the torrent box's ports and `tailscale serve
   status`): dev API `127.0.0.1:8000`, dev Vite `127.0.0.1:5173`, dev HTTPS
-  `:8443`, live app `127.0.0.1:8100`. The server's tailnet name is
+  `:8443`, live app `127.0.0.1:8100`, live admin pages `192.168.1.100:8200`
+  (LAN). The server's tailnet name is
   `borkai-server.tail61796b.ts.net`; its `:443` is the torrent box's start
   page. The live app's own name is the Tailscale Service `svc:spajz`
   (`spajz.tail61796b.ts.net`; borkai-server is tagged `tag:server`, which
@@ -163,6 +168,8 @@ tailscale serve --bg --https=8443 http://127.0.0.1:5173
 
 # live (only when asked): deploys origin/main, see deploy/README.md
 deploy/deploy.sh
+# the Admin password (LAN admin pages), in the live container
+docker compose -f ~/homeinventory-live/deploy/docker-compose.yml exec app python -m homeinventory.admin
 ```
 
 ## Deployment

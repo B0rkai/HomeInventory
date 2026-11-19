@@ -219,7 +219,7 @@ change is a single conditional update (see `CLAUDE.md`); losing a race is
 3. **Requests**: report, claim, done, cancel; the shopping list.
 4. **Notifications and live updates**: web push, the service worker, SSE.
 
-## Planned: admin pages *(planned, agreed 2026-11-19)*
+## Admin pages *(A done 2026-11-19; B planned)*
 
 Desktop pages for what's awkward on a phone: seeing everything at once,
 setting things up, typing in recipes, moving items between places. Built
@@ -266,8 +266,8 @@ Pages (wide tables, mouse and keyboard; not in the phone tab bar):
 
 No export for now.
 
-Milestones: (A) the admin port, login and user, the items table, moving
-stock (on the phone too); (B) places, chores and assigning, users and
+Milestones: (A, done) the admin port, login and user, the items table, moving
+stock (on the phone too: "Áthelyezés" under the item's places); (B) places, chores and assigning, users and
 devices, the log; then the meal planner, its recipe editor here.
 
 ## Planned: meal planner *(planned, agreed 2026-11-18)*

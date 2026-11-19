@@ -10,6 +10,9 @@ set -euo pipefail
 LIVE_DIR=${HOMEINVENTORY_LIVE_DIR:-$HOME/homeinventory-live}
 REPO=https://github.com/B0rkai/HomeInventory.git
 export HOMEINVENTORY_DATA=${HOMEINVENTORY_DATA:-$HOME/.local/share/homeinventory}
+# The server's address on the home LAN, for the admin pages (it must stay put: a DHCP
+# reservation in the router). Docker can't start the container without it.
+export HOMEINVENTORY_LAN_ADDRESS=${HOMEINVENTORY_LAN_ADDRESS:-192.168.1.100}
 HOMEINVENTORY_UID=$(id -u)
 HOMEINVENTORY_GID=$(id -g)
 export HOMEINVENTORY_UID HOMEINVENTORY_GID

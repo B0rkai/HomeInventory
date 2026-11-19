@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getCurrentUser, type UserOut } from './api'
+import { getCurrentUser, logOut, type UserOut } from './api'
+import { AdminItems } from './AdminItems'
+import { AdminLogin } from './AdminLogin'
 import { Home } from './Home'
 import { useHouse } from './house'
 import { HouseProvider } from './HouseProvider'
@@ -19,7 +21,14 @@ import { TodoPage } from './TodoPage'
 import { UndoBar } from './UndoBar'
 
 type State =
-  { kind: 'loading' } | { kind: 'ready'; user: UserOut } | { kind: 'error'; message: string }
+  | { kind: 'loading' }
+  | { kind: 'ready'; user: UserOut }
+  | { kind: 'error'; message: string }
+  // The admin pages' LAN port, not logged in.
+  | { kind: 'login' }
+
+// The server's 401 detail on the admin port.
+const LOG_IN = 'Log in as Admin'
 
 // Who used the app on this device last, so it opens offline too (with the saved house).
 const USER_KEY = 'me'
@@ -63,10 +72,14 @@ export default function App() {
 
   useEffect(() => {
     getCurrentUser().then(
-      ({ data, response }) => {
+      ({ data, error, response }) => {
         if (data) {
           rememberUser(data)
           setState({ kind: 'ready', user: data })
+          return
+        }
+        if (response?.status === 401 && (error as { detail?: unknown })?.detail === LOG_IN) {
+          setState({ kind: 'login' })
           return
         }
         // Out of reach (no answer at all): carry on as who was here last, offline.
@@ -101,14 +114,40 @@ export default function App() {
   }
 
   const user = state.kind === 'ready' ? state.user : undefined
+  const route = useRoute()
+  // Admin only ever sees the admin pages; people open them at #/admin.
+  const adminView = state.kind === 'login' || user?.admin || route.page === 'admin'
+
+  async function leave() {
+    await logOut().catch(() => undefined)
+    try {
+      localStorage.removeItem(USER_KEY)
+    } catch {
+      // Only a convenience.
+    }
+    setState({ kind: 'login' })
+  }
 
   return (
-    <div className="app">
+    <div className={adminView ? 'app admin' : 'app'}>
       <header className="app-header">
         <h1>
-          <a href={href.home}>{t.appName}</a>
+          <a href={adminView ? href.admin : href.home}>
+            {t.appName}
+            {adminView && <span className="muted"> · {t.admin.title}</span>}
+          </a>
         </h1>
-        {user?.nickname && (
+        {adminView && user?.admin && (
+          <button type="button" className="user" onClick={() => void leave()}>
+            {t.admin.logOut}
+          </button>
+        )}
+        {adminView && user && !user.admin && (
+          <a className="user" href={href.home}>
+            {t.admin.phoneView}
+          </a>
+        )}
+        {!adminView && user?.nickname && (
           <button
             type="button"
             className="user"
@@ -133,7 +172,21 @@ export default function App() {
             <PushSettings />
           </>
         )}
-        {user?.nickname && !editingNickname && (
+        {state.kind === 'login' && (
+          <AdminLogin
+            onLoggedIn={(admin) => {
+              rememberUser(admin)
+              setState({ kind: 'ready', user: admin })
+            }}
+          />
+        )}
+        {user?.nickname && !editingNickname && adminView && (
+          <HouseProvider me={user} onError={showError}>
+            <AdminItems />
+            <UndoBar />
+          </HouseProvider>
+        )}
+        {user?.nickname && !editingNickname && !adminView && (
           <HouseProvider me={user} onError={showError}>
             <Pages />
             <UndoBar />

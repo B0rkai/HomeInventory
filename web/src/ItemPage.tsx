@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { type FormEvent, useState } from 'react'
 import { categoryName, categoryOf } from './categories'
 import { claimText } from './claims'
 import { useHouse } from './house'
@@ -115,6 +115,7 @@ export function ItemPage({ id }: { id: number }) {
             )
           })}
         </ul>
+        {rows.length > 0 && <MoveForm itemId={id} from={rows.map((row) => row.location_id)} />}
       </section>
 
       {variants.length > 1 && (
@@ -140,5 +141,90 @@ export function ItemPage({ id }: { id: number }) {
         </section>
       )}
     </>
+  )
+}
+
+/** Moves the item to another place, as when it gets put away elsewhere. Folded into a
+ * button until needed. */
+function MoveForm({ itemId, from }: { itemId: number; from: number[] }) {
+  const { house, actions } = useHouse()
+  const [open, setOpen] = useState(false)
+  const [source, setSource] = useState('')
+  const [target, setTarget] = useState('')
+  const [saving, setSaving] = useState(false)
+  if (!house) return null
+  const ordered = treeOrder(house.locations)
+  const sourceId = from.length === 1 ? from[0] : Number(source) || undefined
+  if (!open) {
+    return (
+      <div className="actions one-off-toggle">
+        <button type="button" className="secondary small-button" onClick={() => setOpen(true)}>
+          {t.item.move}
+        </button>
+      </div>
+    )
+  }
+
+  async function move(event: FormEvent) {
+    event.preventDefault()
+    if (!sourceId || !target) return
+    setSaving(true)
+    const moved = await actions.moveStock([itemId], sourceId, Number(target))
+    setSaving(false)
+    if (moved) {
+      setOpen(false)
+      setSource('')
+      setTarget('')
+    }
+  }
+
+  return (
+    <form className="add-form move-form" onSubmit={move}>
+      <p className="small muted">{t.item.moveHint}</p>
+      {from.length > 1 && (
+        <select
+          aria-label={t.item.moveFrom}
+          value={source}
+          onChange={(event) => setSource(event.target.value)}
+          required
+        >
+          <option value="">
+            {t.item.moveFrom}: {t.item.movePick}
+          </option>
+          {ordered
+            .filter((location) => from.includes(location.id))
+            .map((location) => (
+              <option key={location.id} value={location.id}>
+                {placePath(house.locations, location.id)}
+              </option>
+            ))}
+        </select>
+      )}
+      <div className="row">
+        <select
+          aria-label={t.item.moveTo}
+          value={target}
+          onChange={(event) => setTarget(event.target.value)}
+          required
+        >
+          <option value="">
+            {t.item.moveTo}: {t.item.movePick}
+          </option>
+          {ordered
+            .filter((location) => location.id !== sourceId)
+            .map((location) => (
+              <option key={location.id} value={location.id}>
+                {placePath(house.locations, location.id)}
+              </option>
+            ))}
+        </select>
+        <button type="submit" disabled={saving || !sourceId || !target}>
+          {t.item.moveButton}
+        </button>
+      </div>
+      <button type="button" className="secondary" onClick={() => setOpen(false)}>
+        {t.cancel}
+      </button>
+    </form>
   )
 }

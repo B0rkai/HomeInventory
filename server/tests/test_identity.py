@@ -21,6 +21,7 @@ def test_first_request_creates_user(client: TestClient) -> None:
         "name": "Anna",
         "nickname": None,
         "display_name": "Anna",
+        "admin": False,
     }
 
 
