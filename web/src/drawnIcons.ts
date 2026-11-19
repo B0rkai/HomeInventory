@@ -15,6 +15,14 @@ export const DRAWN_ICONS: Record<string, string> = {
     '<path d="M12 4c-3 3 -7 5 -7 10a7 6 0 0 0 14 0c0 -5 -4 -7 -7 -10"/><path d="M12 4v-1"/><path d="M12 8c-1.5 2 -3 4 -3 7"/><path d="M12 8c1.5 2 3 4 3 7"/><path d="M10 21h4"/>',
   tomato:
     '<path d="M5 13a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"/><path d="M9 6.5l3 1.5l3 -1.5"/><path d="M12 8v-4"/>',
+  // Three florets on a short stem; cauliflower too.
+  broccoli:
+    '<path d="M6 13a2.5 2.5 0 0 1 0 -5a2.5 2.5 0 0 1 3.5 -2.5a2.5 2.5 0 0 1 5 0a2.5 2.5 0 0 1 3.5 2.5a2.5 2.5 0 0 1 0 5z"/><path d="M10 13v6a1 1 0 0 0 1 1h2a1 1 0 0 0 1 -1v-6"/><path d="M12 13v3"/>',
+  pumpkin:
+    '<path d="M12 7c-5 0 -8 3 -8 6.5s3 6.5 8 6.5s8 -3 8 -6.5s-3 -6.5 -8 -6.5z"/><path d="M12 7c-2 1.5 -3 4 -3 6.5s1 5 3 6.5"/><path d="M12 7c2 1.5 3 4 3 6.5s-1 5 -3 6.5"/><path d="M12 7v-3l2 -1"/>',
+  // A head with its veins fanning out from the stalk.
+  cabbage:
+    '<path d="M4 12a8 8 0 1 0 16 0a8 8 0 1 0 -16 0"/><path d="M12 20c-2.5 -2 -4 -5 -4 -8s1.5 -5.5 4 -8"/><path d="M12 20c2.5 -2 4 -5 4 -8s-1.5 -5.5 -4 -8"/><path d="M12 20v-9"/>',
   soap: '<path d="M5 12h12a3 3 0 0 1 3 3v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-2a3 3 0 0 1 3 -3z"/><path d="M7 7a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M14 5.5a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0"/><path d="M17 9a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/>',
   sponge:
     '<rect x="3" y="7" width="18" height="11" rx="2"/><path d="M3 11h18"/><path d="M8 14.5v.01"/><path d="M12 15.5v.01"/><path d="M16 14v.01"/>',
