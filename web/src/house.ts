@@ -149,6 +149,8 @@ function readCache(userId: number): Cached | undefined {
     const cached = JSON.parse(text) as Cached
     // Saved before there were recipes.
     cached.house.recipes ??= []
+    // Before there were substitutes.
+    for (const item of cached.house.items) item.substitute_ids ??= []
     return cached
   } catch {
     return undefined

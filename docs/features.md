@@ -331,6 +331,13 @@ Decisions:
   recipe, so it can change without changing the recipe; a menu with a
   main course and no side dish asks for one the same way, and one that
   names a side dish keeps it.
+- **Substitutes**: an item names what a recipe can use instead of it
+  ("Vaj": "Margarin · főző/sütő"; "Olaj": "Zsír"), one way only, set on the
+  item (phone and admin). A recipe's ingredient counts as at home when a
+  substitute is ("helyette: Margarin"). The shopping list ignores them: an
+  item restocked still goes on it. Kinds of one thing stay variants with
+  "any variant will do" (Darált hús, Pirospaprika); substitutes are
+  different products.
 - **Recipes take recipes**: a base recipe ("Nokedli", "Besamel") is an
   ingredient of others, whole. What a recipe takes counts its parts' items
   too, each once (optional only if optional everywhere; an optional part's
@@ -378,7 +385,7 @@ Features:
 5. **Notifications**: the other planned a cooking; a trip is today; a
    fresh line's window opens with no trip in it.
 
-Data model additions: **Recipe** (name unique ignoring case, icon, kind, note,
+Data model additions: **ItemSubstitute** (item, substitute); **Recipe** (name unique ignoring case, icon, kind, note,
 link: http(s) only); **RecipeIngredient** (recipe, item or part (another
 recipe), `any_variant`, amount note, optional, position; one row per item
 or part in a recipe, so "any Konzerv" and "Konzerv · borsó" can't both be

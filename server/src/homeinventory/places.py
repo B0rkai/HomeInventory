@@ -194,6 +194,37 @@ def _check_item_name(
         raise conflict("An item with this name and variant already exists")
 
 
+def find_or_make_item(
+    session: Session,
+    items: list[Item],
+    name: str,
+    variant: str | None,
+    any_variant: bool = False,
+) -> Item:
+    """The catalogue item of this name and variant, from `items` (the whole catalogue); a
+    new one, added to `items`, if there's none. For any variant, the name's item without a
+    variant, else its first variant."""
+    folded = name.casefold()
+    same_name = sorted(
+        (item for item in items if item.name.casefold() == folded),
+        key=lambda item: (item.variant is not None, (item.variant or "").casefold()),
+    )
+    if any_variant and same_name:
+        return same_name[0]
+    variant = None if any_variant else variant
+    for item in same_name:
+        if (item.variant or "").casefold() == (variant or "").casefold():
+            return item
+    # Kept nowhere, so not restocked (as an item taken off its last place).
+    item = Item(name=same_name[0].name if same_name else name, variant=variant)
+    item.restock = False
+    item.any_variant = any(other.any_variant for other in same_name)
+    session.add(item)
+    session.flush()
+    items.append(item)
+    return item
+
+
 @router.get("/items")
 def list_items(session: Session = Depends(get_session)) -> list[ItemOut]:
     return [ItemOut.model_validate(item) for item in session.scalars(select(Item))]
@@ -235,6 +266,18 @@ def update_item(
         item.category = update.category
     if "icon" in update.model_fields_set:
         item.icon = update.icon
+    if update.substitutes is not None:
+        catalogue = list(session.scalars(select(Item)))
+        substitutes = [
+            find_or_make_item(session, catalogue, ref.name, ref.variant)
+            for ref in update.substitutes
+        ]
+        if item in substitutes:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_CONTENT, "An item can't stand in for itself"
+            )
+        # Each once, in the order sent.
+        item.substitutes = list(dict.fromkeys(substitutes))
     group = variants_of(session, item)
     regrouped = renamed or (
         update.any_variant is not None

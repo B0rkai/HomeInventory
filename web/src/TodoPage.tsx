@@ -126,6 +126,7 @@ function Sections({ requests }: { requests: RequestOut[] }) {
         icon: null,
         restock: false,
         any_variant: false,
+        substitute_ids: [],
       })
       buying.set(-request.id, [request])
       continue

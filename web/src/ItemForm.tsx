@@ -1,12 +1,13 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, type KeyboardEvent, useId, useState } from 'react'
 import type { Category, ItemOut } from './api'
 import { CATEGORIES, categoryName, iconCategory } from './categories'
 import { useHouse } from './house'
 import { IconPicker } from './IconPicker'
 import { t } from './strings'
-import { fullName } from './variants'
+import { byItem, fullName, parseFullName } from './variants'
 
-/** An item's details: name, variant, group, restocking, icon; or delete it. */
+/** An item's details: name, variant, group, restocking, what recipes can use instead, icon;
+ * or delete it. */
 export function ItemForm({
   item,
   onDone,
@@ -23,6 +24,34 @@ export function ItemForm({
   const [icon, setIcon] = useState(item.icon)
   const [restock, setRestock] = useState(item.restock)
   const [anyVariant, setAnyVariant] = useState(item.any_variant)
+  const id = useId()
+  const items = house?.items ?? []
+  // By name: one not in the catalogue yet joins it on saving.
+  const [substitutes, setSubstitutes] = useState(() =>
+    item.substitute_ids.flatMap((sid) => {
+      const other = items.find((i) => i.id === sid)
+      return other ? [fullName(other)] : []
+    }),
+  )
+  const [adding, setAdding] = useState('')
+  const fold = (text: string) => text.trim().toLocaleLowerCase('hu')
+  function addSubstitute() {
+    const text = adding.trim()
+    if (
+      text &&
+      fold(text) !== fold(fullName(item)) &&
+      !substitutes.some((s) => fold(s) === fold(text))
+    )
+      setSubstitutes([...substitutes, text])
+    setAdding('')
+  }
+  function addKeys(event: KeyboardEvent<HTMLInputElement>) {
+    // Enter adds it, it doesn't save the item.
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      addSubstitute()
+    }
+  }
   // Only a supply kept in kinds has variants to choose between.
   const hasVariants =
     variant.trim() !== '' ||
@@ -40,6 +69,7 @@ export function ItemForm({
       icon,
       restock,
       any_variant: anyVariant,
+      substitutes: substitutes.map((text) => parseFullName(text)),
     })
     setSaving(false)
     if (saved) onDone()
@@ -104,6 +134,55 @@ export function ItemForm({
           </span>
         </label>
       )}
+      <fieldset className="substitutes">
+        <legend>{t.items.substitutes}</legend>
+        <p className="small muted">{t.items.substitutesHint}</p>
+        {substitutes.length > 0 && (
+          <ul className="chips">
+            {substitutes.map((text) => (
+              <li key={text} className="chip">
+                {text}
+                <button
+                  type="button"
+                  className="icon"
+                  aria-label={t.items.removeSubstitute(text)}
+                  onClick={() => setSubstitutes(substitutes.filter((s) => s !== text))}
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="row">
+          <input
+            aria-label={t.items.substitutes}
+            placeholder={t.items.substitutePlaceholder}
+            value={adding}
+            onChange={(event) => setAdding(event.target.value)}
+            onKeyDown={addKeys}
+            list={`${id}-items`}
+            maxLength={103}
+            autoComplete="off"
+          />
+          <button
+            type="button"
+            className="secondary"
+            disabled={!adding.trim()}
+            onClick={addSubstitute}
+          >
+            {t.add}
+          </button>
+        </div>
+        <datalist id={`${id}-items`}>
+          {[...items]
+            .filter((other) => other.id !== item.id)
+            .sort(byItem)
+            .map((other) => (
+              <option key={other.id} value={fullName(other)} />
+            ))}
+        </datalist>
+      </fieldset>
       <IconPicker kind="item" name={name} value={icon} onChange={setIcon} />
       <div className="actions spread">
         <button type="button" className="danger" onClick={remove} disabled={saving}>

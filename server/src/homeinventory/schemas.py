@@ -117,6 +117,8 @@ class ItemOut(BaseModel):
     restock: bool
     # Any variant will do: shared by every item of the same name.
     any_variant: bool
+    # What a recipe can use instead.
+    substitute_ids: list[int]
 
 
 class ItemCreate(BaseModel):
@@ -126,6 +128,17 @@ class ItemCreate(BaseModel):
     category: Category | None = None
     icon: Icon = None
     restock: bool = True
+
+
+# More than anything has; a bound on what one request can add to the catalogue.
+SUBSTITUTES_MAX = 10
+
+
+class ItemRef(BaseModel):
+    """An item by name and variant; made (kept nowhere) if the catalogue hasn't one."""
+
+    name: Name
+    variant: Variant = None
 
 
 class ItemUpdate(BaseModel):
@@ -138,6 +151,8 @@ class ItemUpdate(BaseModel):
     restock: bool | None = None
     # Applies to every item of the same name.
     any_variant: bool | None = None
+    # Replaces them all.
+    substitutes: list[ItemRef] | None = Field(default=None, max_length=SUBSTITUTES_MAX)
 
 
 class StockOut(BaseModel):

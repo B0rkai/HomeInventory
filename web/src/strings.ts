@@ -165,6 +165,7 @@ export const t = {
     },
     menuIngredientPlaceholder: 'Például: Húsleves',
     courses: 'Fogások',
+    instead: (name: string) => `helyette: ${name}`,
     loop: 'önmagát tartalmazná',
     usedIn: 'Ebben is szerepel',
     starters: 'Receptjavaslatok',
@@ -282,6 +283,12 @@ export const t = {
     anyVariantHint:
       'Egy helyen csak akkor hiány, ha minden ott tartott fajta kevés vagy elfogyott; a listán egy sor. Minden fajtára érvényes.',
     anyVariantNote: 'bármelyik fajta elég',
+    substitutes: 'Helyettesítheti',
+    substitutesHint:
+      'Receptekben ez is jó helyette, ha ez nincs itthon. A bevásárlólistát nem érinti.',
+    substitutePlaceholder: 'Például: Margarin',
+    removeSubstitute: (name: string) => `${name} törlése`,
+    standsInFor: 'Ezt helyettesíti',
     anyKind: 'bármelyik fajta',
     whichBought: 'Melyiket vetted?',
     places: (count: number) => (count ? `${count} helyen` : 'sehol'),

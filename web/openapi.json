@@ -2301,6 +2301,13 @@
           "any_variant": {
             "type": "boolean",
             "title": "Any Variant"
+          },
+          "substitute_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Substitute Ids"
           }
         },
         "type": "object",
@@ -2311,9 +2318,38 @@
           "category",
           "icon",
           "restock",
-          "any_variant"
+          "any_variant",
+          "substitute_ids"
         ],
         "title": "ItemOut"
+      },
+      "ItemRef": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "variant": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variant"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "ItemRef",
+        "description": "An item by name and variant; made (kept nowhere) if the catalogue hasn't one."
       },
       "ItemUpdate": {
         "properties": {
@@ -2385,6 +2421,21 @@
               }
             ],
             "title": "Any Variant"
+          },
+          "substitutes": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ItemRef"
+                },
+                "type": "array",
+                "maxItems": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Substitutes"
           }
         },
         "type": "object",

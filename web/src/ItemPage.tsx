@@ -8,7 +8,7 @@ import { Named } from './Named'
 import { href } from './route'
 import { t } from './strings'
 import { bestLevel, placePath, treeOrder } from './tree'
-import { byItem } from './variants'
+import { byItem, fullName } from './variants'
 
 /** One item: where it's kept and how much there is, its other variants, and editing it. */
 export function ItemPage({ id }: { id: number }) {
@@ -36,6 +36,17 @@ export function ItemPage({ id }: { id: number }) {
     .filter((i) => i.name.toLocaleLowerCase('hu') === item.name.toLocaleLowerCase('hu'))
     .sort(byItem)
   const level = bestLevel(rows)
+  const substitutes = items.filter((other) => item.substitute_ids.includes(other.id))
+  const standsInFor = items.filter((other) => other.substitute_ids.includes(item.id))
+  const links = (list: typeof items) =>
+    list.map((other, index) => (
+      <span key={other.id}>
+        {index > 0 && ', '}
+        <a className="link" href={href.item(other.id)}>
+          {fullName(other)}
+        </a>
+      </span>
+    ))
 
   return (
     <>
@@ -74,6 +85,23 @@ export function ItemPage({ id }: { id: number }) {
           </>
         )}
       </p>
+      {(substitutes.length > 0 || standsInFor.length > 0) && (
+        <p className="small item-meta">
+          {substitutes.length > 0 && (
+            <>
+              <span className="muted">{t.items.substitutes}: </span>
+              {links(substitutes)}
+            </>
+          )}
+          {substitutes.length > 0 && standsInFor.length > 0 && <span className="muted"> · </span>}
+          {standsInFor.length > 0 && (
+            <>
+              <span className="muted">{t.items.standsInFor}: </span>
+              {links(standsInFor)}
+            </>
+          )}
+        </p>
+      )}
 
       {editing && (
         <div className="card">

@@ -312,6 +312,26 @@ export type ItemOut = {
      * Any Variant
      */
     any_variant: boolean;
+    /**
+     * Substitute Ids
+     */
+    substitute_ids: Array<number>;
+};
+
+/**
+ * ItemRef
+ *
+ * An item by name and variant; made (kept nowhere) if the catalogue hasn't one.
+ */
+export type ItemRef = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Variant
+     */
+    variant?: string | null;
 };
 
 /**
@@ -339,6 +359,10 @@ export type ItemUpdate = {
      * Any Variant
      */
     any_variant?: boolean | null;
+    /**
+     * Substitutes
+     */
+    substitutes?: Array<ItemRef> | null;
 };
 
 /**

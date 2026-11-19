@@ -1626,3 +1626,29 @@ h2 .named .tile {
   background: var(--accent);
   color: var(--on-accent);
 }
+.item-form fieldset.substitutes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.substitutes legend {
+  margin-bottom: 0.2rem;
+}
+.substitutes p {
+  margin: 0;
+}
+.substitutes ul.chips {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.substitutes .chip {
+  padding-left: 0.75rem;
+}
+.substitutes .chip button.icon {
+  min-height: 0;
+  padding: 0 0.2rem;
+}

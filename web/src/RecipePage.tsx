@@ -3,9 +3,10 @@ import { LevelName } from './LevelPicker'
 import { RecipeName } from './MenuPage'
 import { Named } from './Named'
 import { RecipeEditor } from './RecipeEditor'
-import { ingredientItems, ingredientLevel, missingCount, takenBy } from './recipes'
+import { ingredientItems, ingredientLevel, missingCount, standIn, takenBy } from './recipes'
 import { href } from './route'
 import { t } from './strings'
+import { fullName } from './variants'
 
 function Crumbs() {
   return (
@@ -95,6 +96,7 @@ export function RecipePage({ id }: { id: number }) {
             const [first] = ingredientItems(ingredient, items)
             if (!first) return null
             const level = ingredientLevel(ingredient, items, stock)
+            const instead = standIn(ingredient, items, stock)
             return (
               <li key={ingredient.item_id}>
                 <a className="item-row" href={href.item(first.id)}>
@@ -113,6 +115,11 @@ export function RecipePage({ id }: { id: number }) {
                   <span className="small">
                     {ingredient.optional ? (
                       <span className="muted">{t.menu.ifAny}</span>
+                    ) : instead ? (
+                      <>
+                        <span className="muted">{t.menu.instead(fullName(instead.item))} · </span>
+                        <LevelName level={instead.level} />
+                      </>
                     ) : level ? (
                       <LevelName level={level} />
                     ) : (

@@ -48,6 +48,33 @@ export function atHome(level: Level | undefined): boolean {
   return level !== undefined && AT_HOME.includes(level)
 }
 
+/** What a recipe can use instead of the ingredient: its items' substitutes. */
+export function substitutesOf(ingredient: IngredientOut, items: ItemOut[]): ItemOut[] {
+  const own = ingredientItems(ingredient, items)
+  const ids = new Set(own.flatMap((item) => item.substitute_ids))
+  for (const item of own) ids.delete(item.id)
+  return items.filter((item) => ids.has(item.id))
+}
+
+/** A substitute at home, with its level, when the ingredient itself isn't. */
+export function standIn(
+  ingredient: IngredientOut,
+  items: ItemOut[],
+  stock: StockOut[],
+): { item: ItemOut; level: Level } | undefined {
+  if (atHome(ingredientLevel(ingredient, items, stock))) return undefined
+  for (const item of substitutesOf(ingredient, items)) {
+    const level = bestLevel(stock.filter((row) => row.item_id === item.id))
+    if (level && atHome(level)) return { item, level }
+  }
+  return undefined
+}
+
+/** Whether the ingredient, or something to use instead, is at home. */
+export function covered(ingredient: IngredientOut, items: ItemOut[], stock: StockOut[]): boolean {
+  return atHome(ingredientLevel(ingredient, items, stock)) || !!standIn(ingredient, items, stock)
+}
+
 /**
  * The items a recipe takes, its parts' included ("Nokedli" in "Paprikás csirke"), each
  * once: optional only if it's optional everywhere (an optional part's are all optional).
@@ -79,7 +106,8 @@ export function flatIngredients(
   return [...flat.values()]
 }
 
-/** How many of the items it needs (not the optional ones, its parts' too) aren't at home. */
+/** How many of the items it needs (not the optional ones, its parts' too) aren't at home,
+ * nor anything to use instead. */
 export function missingCount(
   recipe: RecipeOut,
   recipes: RecipeOut[],
@@ -87,7 +115,7 @@ export function missingCount(
   stock: StockOut[],
 ): number {
   return flatIngredients(recipe, recipes).filter(
-    (ingredient) => !ingredient.optional && !atHome(ingredientLevel(ingredient, items, stock)),
+    (ingredient) => !ingredient.optional && !covered(ingredient, items, stock),
   ).length
 }
 

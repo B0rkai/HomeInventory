@@ -164,6 +164,34 @@ class Item(Base):
     icon: Mapped[str | None] = mapped_column(String(ICON_MAX_LENGTH))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
+    # What a recipe can use instead of it ("Vaj": "Margarin · főző"); one way only.
+    substitutes: Mapped[list["Item"]] = relationship(
+        secondary="item_substitutes",
+        primaryjoin="Item.id == ItemSubstitute.item_id",
+        secondaryjoin="Item.id == ItemSubstitute.substitute_id",
+        order_by="Item.id",
+        lazy="selectin",
+    )
+
+    @property
+    def substitute_ids(self) -> list[int]:
+        return [item.id for item in self.substitutes]
+
+
+class ItemSubstitute(Base):
+    """An item a recipe can use when the one it names isn't at home. Only recipes look at
+    it: the item still goes on the shopping list as it would."""
+
+    __tablename__ = "item_substitutes"
+    __table_args__ = (CheckConstraint("item_id != substitute_id", name="not_itself"),)
+
+    item_id: Mapped[int] = mapped_column(
+        ForeignKey("items.id", ondelete="CASCADE"), primary_key=True
+    )
+    substitute_id: Mapped[int] = mapped_column(
+        ForeignKey("items.id", ondelete="CASCADE"), primary_key=True, index=True
+    )
+
 
 class Level(StrEnum):
     # Stocked up for weeks, e.g. a 20-pack of toilet paper in the basement.

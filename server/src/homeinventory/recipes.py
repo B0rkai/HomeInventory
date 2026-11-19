@@ -14,6 +14,7 @@ from homeinventory.common import NO_CONTENT, announce_changes, conflict, get_or_
 from homeinventory.db import get_session
 from homeinventory.identity import current_user
 from homeinventory.models import Item, Recipe, RecipeIngredient, RecipeKind
+from homeinventory.places import find_or_make_item
 from homeinventory.schemas import IngredientIn, RecipeCreate, RecipeOut, RecipeUpdate
 
 router = APIRouter(dependencies=[Depends(current_user), Depends(announce_changes)])
@@ -26,30 +27,6 @@ def _check_name(session: Session, name: str, own_id: int | None = None) -> None:
         for recipe in session.scalars(select(Recipe))
     ):
         raise conflict("A recipe with this name already exists")
-
-
-def _item_for(session: Session, items: list[Item], wanted: IngredientIn) -> Item:
-    """The catalogue item an ingredient names; a new one if there's none. For any variant,
-    the name's item without a variant, else its first variant."""
-    name = wanted.name.casefold()
-    same_name = sorted(
-        (item for item in items if item.name.casefold() == name),
-        key=lambda item: (item.variant is not None, (item.variant or "").casefold()),
-    )
-    if wanted.any_variant and same_name:
-        return same_name[0]
-    variant = None if wanted.any_variant else wanted.variant
-    for item in same_name:
-        if (item.variant or "").casefold() == (variant or "").casefold():
-            return item
-    # Kept nowhere, so not restocked (as an item taken off its last place).
-    item = Item(name=same_name[0].name if same_name else wanted.name, variant=variant)
-    item.restock = False
-    item.any_variant = any(other.any_variant for other in same_name)
-    session.add(item)
-    session.flush()
-    items.append(item)
-    return item
 
 
 def _takes(part: Recipe, recipe_id: int) -> bool:
@@ -84,7 +61,10 @@ def _set_ingredients(session: Session, recipe: Recipe, wanted: list[IngredientIn
         if ingredient.recipe:
             target = {"part_id": _part_for(session, recipe, ingredient).id}
         else:
-            target = {"item_id": _item_for(session, items, ingredient).id}
+            item = find_or_make_item(
+                session, items, ingredient.name, ingredient.variant, ingredient.any_variant
+            )
+            target = {"item_id": item.id}
         if any(
             (i.item_id, i.part_id) == (target.get("item_id"), target.get("part_id"))
             for i in ingredients
