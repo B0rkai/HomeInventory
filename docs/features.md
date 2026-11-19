@@ -219,11 +219,16 @@ change is a single conditional update (see `CLAUDE.md`); losing a race is
 3. **Requests**: report, claim, done, cancel; the shopping list.
 4. **Notifications and live updates**: web push, the service worker, SSE.
 
-## Admin pages *(done 2026-11-19)*
+## Admin pages *(A and B done 2026-11-19; C planned)*
 
 Desktop pages for what's awkward on a phone: seeing everything at once,
 setting things up, typing in recipes, moving items between places. Built
 before the meal planner, so recipes are typed in there.
+
+**The rule: everything the phone can do, the admin pages can do too**, and
+more on top (bulk changes, moving, assigning, wide editors). Admin is the
+only way in from the desktop, so a gap there is a thing that can't be done
+at all from it. A new phone feature gets its admin side in the same change.
 
 **Access.** The desktop that uses it isn't on the tailnet, so the admin
 pages are also served on the home LAN, over plain HTTP (the LAN is trusted,
@@ -266,9 +271,24 @@ Pages (wide tables, mouse and keyboard; not in the phone tab bar):
 
 No export for now.
 
+What the phone does that A and B left out, for milestone C:
+
+- **Items**: add a new item (name, variant, group, optionally a place to
+  keep it at, "plenty"); its suggestions as on the phone.
+- **Stock**: keep an item at another place, drop it from one, set a level
+  ("out" and "low" report it like the phone, restocked items onto the list);
+  all from the items table's "where and how much", and "+ item" on a place's
+  row.
+- **Shopping list**: add a free line ("elem a listára") or an item; mark
+  bought; keep or drop an out-of-stock item's request ("nem pótoljuk").
+- **Chores**: add one (per place or the whole house, with its schedule);
+  mark one done.
+- **Undo**: the same few seconds to undo as on the phone.
+
 Milestones: (A, done) the admin port, login and user, the items table, moving
 stock (on the phone too: "Áthelyezés" under the item's places); (B, done) places, chores and assigning, users and
-devices, the log; then the meal planner, its recipe editor here.
+devices, the log; (C) the phone's actions above, so nothing needs the phone;
+then the meal planner, its recipe editor here.
 
 ## Planned: meal planner *(planned, agreed 2026-11-18)*
 

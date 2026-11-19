@@ -33,7 +33,8 @@ list with the shopping list, shortages view, item catalogue, activity log
 data in `web/src/house.ts`, where changes also wait a few seconds to be undone);
 desktop admin pages (`#/admin/...`, and the LAN port as Admin): items, places,
 to-dos with assigning, the log, people and their devices; moving stock.
-Next: the meal planner (`docs/features.md`). Anything marked *(planned)* describes intended
+Next: admin milestone C (the phone's remaining actions on the admin pages), then
+the meal planner (`docs/features.md`). Anything marked *(planned)* describes intended
 setup, not code that exists yet.
 
 ## Tech stack
@@ -199,6 +200,8 @@ docker exec -it homeinventory-app-1 python -m homeinventory.admin
   every request and response.
 - UI: every common action (report, claim, mark done) is one or two taps on a
   phone. If a flow needs typing, it needs a reason.
+- The admin pages can do everything the phone can, and more: a new phone
+  feature gets its admin side in the same change.
 - UI language: **Hungarian only**, every user-facing text in
   `web/src/strings.ts` (no hard-coded strings in components). Code, comments,
   commits, docs and API error details stay in English. "HomeInventory" is the
