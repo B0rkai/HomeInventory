@@ -1590,8 +1590,23 @@ h2 .named .tile {
   flex-direction: column;
   gap: 0.3rem;
 }
-.recipe-kind-line {
-  margin: -0.5rem 0 0.75rem;
+/* A name with notes after it ("· 1 kg"), the notes centred on the tile, wrapping below. */
+.recipe-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.35rem;
+  min-width: 0;
+}
+/* The kind under the name, lined up with it past the tile. */
+.recipe-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.recipe-title .small {
+  padding-left: 2.55rem;
+  font-weight: normal;
 }
 .kind-chips .chip {
   min-height: 2.1rem;

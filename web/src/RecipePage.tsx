@@ -49,8 +49,9 @@ export function RecipePage({ id }: { id: number }) {
     <>
       <Crumbs />
       <div className="title-row">
-        <h2>
+        <h2 className="recipe-title">
           <RecipeName recipe={recipe} />
+          <span className="small muted">{t.menu.kinds[recipe.kind]}</span>
         </h2>
         <button
           type="button"
@@ -60,7 +61,6 @@ export function RecipePage({ id }: { id: number }) {
           {t.edit}
         </button>
       </div>
-      <p className="small muted recipe-kind-line">{t.menu.kinds[recipe.kind]}</p>
       <section className="card">
         <h3>{recipe.kind === 'menu' ? t.menu.courses : t.menu.ingredients}</h3>
         {recipe.ingredients.length === 0 && <p className="muted">{t.menu.noIngredients}</p>}
@@ -72,11 +72,11 @@ export function RecipePage({ id }: { id: number }) {
               return (
                 <li key={`part-${part.id}`}>
                   <a className="item-row" href={href.recipe(part.id)}>
-                    <span>
+                    <span className="recipe-line">
                       <RecipeName recipe={part} />
-                      <span className="small muted"> · {t.menu.kinds[part.kind]}</span>
+                      <span className="small muted">· {t.menu.kinds[part.kind]}</span>
                       {ingredient.amount && (
-                        <span className="small muted"> · {ingredient.amount}</span>
+                        <span className="small muted">· {ingredient.amount}</span>
                       )}
                     </span>
                     <span className="small">
@@ -98,16 +98,16 @@ export function RecipePage({ id }: { id: number }) {
             return (
               <li key={ingredient.item_id}>
                 <a className="item-row" href={href.item(first.id)}>
-                  <span>
+                  <span className="recipe-line">
                     <Named
                       thing={ingredient.any_variant ? { ...first, variant: null } : first}
                       kind="item"
                     />
                     {ingredient.any_variant && (
-                      <span className="small muted"> · {t.menu.anyVariant}</span>
+                      <span className="small muted">· {t.menu.anyVariant}</span>
                     )}
                     {ingredient.amount && (
-                      <span className="small muted"> · {ingredient.amount}</span>
+                      <span className="small muted">· {ingredient.amount}</span>
                     )}
                   </span>
                   <span className="small">
