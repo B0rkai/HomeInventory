@@ -1,5 +1,5 @@
-# HomeInventory dev web client: Vite on 127.0.0.1:5173, from the dev checkout. Phones reach
-# it through `tailscale serve` on HTTPS :8443. User unit; install with deploy/dev/README.md.
+# HomeInventory dev web client: Vite on 127.0.0.1:5173, from the dev checkout, reachable
+# from the server only. User unit; install with deploy/dev/README.md.
 [Unit]
 Description=HomeInventory dev web client (Vite, 127.0.0.1:5173)
 After=network-online.target homeinventory-dev-api.service

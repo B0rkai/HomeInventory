@@ -116,16 +116,15 @@ development and the live app apart:
   pushed commit by `deploy/deploy.sh`, never served from the dev checkout.
   Deploy only when the user asks: it is what both of them use day to day.
 - **Dev servers** bind to `127.0.0.1`: Uvicorn for the API, Vite for the
-  web client (proxying `/api` to Uvicorn). Vite is exposed on `:8443` of the
-  server's name, so the dev build opens on a phone with real Tailscale
-  identity, push and camera. Its `server.allowedHosts` must include the
-  `*.ts.net` names. Both run as systemd user services
+  web client (proxying `/api` to Uvicorn). They are reachable only from the
+  server itself (no `tailscale serve`, since 2026-11-20): check the dev build
+  with the headless browser (below), never by exposing it. Both run as
+  systemd user services
   (`homeinventory-dev-api`, `homeinventory-dev-web`, see
   `deploy/dev/README.md`) and reload on code changes: check or restart them,
   don't start a second copy.
 - **Ports** (checked against the torrent box's ports and `tailscale serve
-  status`): dev API `127.0.0.1:8000`, dev Vite `127.0.0.1:5173`, dev HTTPS
-  `:8443`, live app `127.0.0.1:8100`, live admin pages `192.168.1.100:8200`
+  status`): dev API `127.0.0.1:8000`, dev Vite `127.0.0.1:5173`, live app `127.0.0.1:8100`, live admin pages `192.168.1.100:8200`
   (LAN). The server's tailnet name is
   `borkai-server.tail61796b.ts.net`; its `:443` is the torrent box's start
   page. The live app's own name is the Tailscale Service `svc:spajz`
@@ -133,7 +132,7 @@ development and the live app apart:
   the tailnet policy auto-approves to host it).
 - Because borkai-server is a tagged device, requests made **from the server
   itself** through either name carry no user identity and get `401`. Test
-  identity with real headers against `127.0.0.1`, or from a phone.
+  identity with real headers against `127.0.0.1`.
 - **Screenshots and UI checks**: Playwright with a headless Chromium is
   installed outside the repo (`~/.local/lib/playwright`; run scripts with
   `NODE_PATH=~/.local/lib/playwright/node_modules node x.js`), against the
@@ -176,9 +175,6 @@ npm run build && npm run lint
 npm run generate-api    # after any API change: re-exports openapi.json, regenerates src/api
 npm run generate-icons  # after adding a Tabler icon to src/icons.ts
 
-# phone access to the dev build (once; persists across reboots)
-tailscale serve --bg --https=8443 http://127.0.0.1:5173
-
 # live (only when asked): deploys origin/main, see deploy/README.md
 deploy/deploy.sh
 # the Admin password (LAN admin pages), in the live container
@@ -194,7 +190,7 @@ docker exec -it homeinventory-app-1 python -m homeinventory.admin
   client (`WEB_DIR`) and migrates the database on start. The SQLite file
   lives in a bind-mounted data directory on the host, never inside the image.
 - `tailscale serve` publishes the live app as the Tailscale Service
-  `svc:spajz` and the dev Vite server on 8443 (ports above). MagicDNS and
+  `svc:spajz` (ports above); the dev servers aren't published. MagicDNS and
   HTTPS certificates are enabled in the tailnet admin console.
 - Backups: `deploy/backup.sh` (daily user timer, and before every deploy)
   takes SQLite's online backup to `/mnt/storage/backups/homeinventory`

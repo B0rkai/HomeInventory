@@ -11,12 +11,13 @@ need no root: the user's lingering is on, so user services start at boot.
 cd ~/HomeInventory
 systemctl --user link "$PWD"/deploy/dev/homeinventory-dev-*.service
 systemctl --user enable --now homeinventory-dev-api homeinventory-dev-web
-tailscale serve --bg --https=8443 http://127.0.0.1:5173
 ```
 
-The dev build is at `https://borkai-server.tail61796b.ts.net:8443`. The app's
-own address, `svc:spajz` (`https://spajz.tail61796b.ts.net`), is the live app
-(`../README.md`); don't point it at the dev servers.
+The dev build is at `http://127.0.0.1:5173`, on the server only: nothing publishes
+it on the tailnet. Open it with a headless browser sending the identity headers
+(`docs/dev-setup.md`, section 10). The app's own address, `svc:spajz`
+(`https://spajz.tail61796b.ts.net`), is the live app (`../README.md`); don't point
+it at the dev servers.
 
 `link` points systemd at the files in the repo, so a `git pull` that changes a
 unit only needs `systemctl --user daemon-reload` and a restart.

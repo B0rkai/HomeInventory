@@ -41,11 +41,10 @@ export default defineConfig({
     }),
   ],
   server: {
-    // Only reachable through `tailscale serve` (HTTPS :8443), never on the network.
+    // Reachable from the server itself only, never on the network.
     host: '127.0.0.1',
     port: 5173,
     strictPort: true,
-    allowedHosts: ['borkai-server.tail61796b.ts.net', 'spajz.tail61796b.ts.net'],
     proxy: { '/api': 'http://127.0.0.1:8000' },
   },
 })
