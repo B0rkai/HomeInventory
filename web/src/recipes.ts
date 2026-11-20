@@ -119,6 +119,21 @@ export function missingCount(
   ).length
 }
 
+/** The recipes taking this item itself, or any variant of its name ("Konzerv" in a recipe
+ * takes "Konzerv · borsó"), by name. */
+export function recipesUsing(item: ItemOut, recipes: RecipeOut[], items: ItemOut[]): RecipeOut[] {
+  return recipes
+    .filter((recipe) =>
+      recipe.ingredients.some(
+        (ingredient) =>
+          ingredient.item_id === item.id ||
+          (ingredient.any_variant &&
+            ingredientItems(ingredient, items).some((other) => other.id === item.id)),
+      ),
+    )
+    .sort((a, b) => a.name.localeCompare(b.name, 'hu'))
+}
+
 /** How an ingredient reads: "Konzerv · borsó", just "Konzerv" when any will do, or a
  * part's name. */
 export function ingredientText(

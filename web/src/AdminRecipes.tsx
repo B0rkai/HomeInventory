@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { RecipeOut } from './api'
 import { useHouse } from './house'
 import { RecipeName } from './Named'
 import { RecipeEditor } from './RecipeEditor'
@@ -6,19 +7,48 @@ import { ingredientText, missingCount, RECIPE_KINDS } from './recipes'
 import { StarterRecipes } from './StarterRecipes'
 import { t } from './strings'
 
-/** Every recipe in a table, edited below its row; a new one, with a pasted list, on top. */
+type SortKey = 'name' | 'kind' | 'missing'
+
+/** Every recipe in a table, edited below its row; a new one, with a pasted list, on top.
+ * Those with nothing missing first, then fewest missing; or by name or kind. */
 export function AdminRecipes() {
   const { house } = useHouse()
   // A recipe's id, or 'new'.
   const [editing, setEditing] = useState<number | 'new'>()
+  const [sort, setSort] = useState<{ key: SortKey; down: boolean }>({
+    key: 'missing',
+    down: false,
+  })
   if (!house) return null
   const { recipes, items, stock } = house
-  const sorted = [...recipes].sort(
-    (a, b) =>
-      RECIPE_KINDS.indexOf(a.kind) - RECIPE_KINDS.indexOf(b.kind) ||
-      a.name.localeCompare(b.name, 'hu'),
+  const missing = new Map(
+    recipes.map((recipe) => [recipe.id, missingCount(recipe, recipes, items, stock)]),
   )
+  const missingOf = (id: number) => missing.get(id) ?? 0
+  const byKind = (a: RecipeOut, b: RecipeOut) =>
+    RECIPE_KINDS.indexOf(a.kind) - RECIPE_KINDS.indexOf(b.kind)
+  const byName = (a: RecipeOut, b: RecipeOut) => a.name.localeCompare(b.name, 'hu')
+  const sorted = [...recipes].sort((a, b) => {
+    const by =
+      sort.key === 'missing'
+        ? missingOf(a.id) - missingOf(b.id)
+        : sort.key === 'kind'
+          ? byKind(a, b)
+          : byName(a, b)
+    return (sort.down ? -by : by) || byKind(a, b) || byName(a, b)
+  })
   const toggle = (id: number | 'new') => setEditing(editing === id ? undefined : id)
+  const header = (key: SortKey, label: string) => (
+    <th aria-sort={sort.key === key ? (sort.down ? 'descending' : 'ascending') : undefined}>
+      <button
+        type="button"
+        className="sort-button"
+        onClick={() => setSort({ key, down: sort.key === key && !sort.down })}
+      >
+        {label} {sort.key === key ? (sort.down ? '↓' : '↑') : ''}
+      </button>
+    </th>
+  )
 
   return (
     <>
@@ -44,16 +74,16 @@ export function AdminRecipes() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>{t.admin.name}</th>
-                <th>{t.menu.kind}</th>
+                {header('name', t.admin.name)}
+                {header('kind', t.menu.kind)}
                 <th>{t.menu.ingredients}</th>
-                <th>{t.admin.state}</th>
+                {header('missing', t.admin.state)}
                 <th />
               </tr>
             </thead>
             <tbody>
               {sorted.map((recipe) => {
-                const missing = missingCount(recipe, recipes, items, stock)
+                const missing = missingOf(recipe.id)
                 return [
                   <tr key={recipe.id}>
                     <td>

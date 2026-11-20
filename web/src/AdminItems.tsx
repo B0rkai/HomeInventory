@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useState } from 'react'
+import { type FormEvent, type KeyboardEvent, useState } from 'react'
 import type { Category, ItemOut, StockOut } from './api'
 import { AdminAddItem } from './AdminAddItem'
 import { CATEGORIES, categoryName, categoryOf, iconCategory } from './categories'
@@ -8,9 +8,10 @@ import { iconOf } from './iconLookup'
 import { ItemForm } from './ItemForm'
 import { LevelName, LevelPicker } from './LevelPicker'
 import { IconTile } from './Named'
+import { recipesUsing } from './recipes'
 import { t } from './strings'
 import { bestLevel, placePath, treeOrder } from './tree'
-import { byItem, familyNames, fullName } from './variants'
+import { byItem, familyNames, findItem, fullName } from './variants'
 
 type SortKey = 'name' | 'group' | 'level'
 const FULLNESS = { lots: 3, plenty: 2, low: 1, out: 0 }
@@ -309,6 +310,8 @@ function ItemRow({
           <td colSpan={8}>
             <ItemForm item={item} onDone={onEdit} onDeleted={onEdit} />
             <StockEditor item={item} rows={rows} />
+            <UsedIn item={item} />
+            <NewVariant item={item} />
           </td>
         </tr>
       )}
@@ -389,6 +392,81 @@ function StockEditor({ item, rows }: { item: ItemOut; rows: StockOut[] }) {
           ))}
       </select>
     </div>
+  )
+}
+
+/** The recipes taking the item, or any variant of its name. */
+function UsedIn({ item }: { item: ItemOut }) {
+  const { house } = useHouse()
+  if (!house) return null
+  const recipes = recipesUsing(item, house.recipes, house.items)
+  return (
+    <div className="stock-editor">
+      <h4>{t.admin.usedIn}</h4>
+      <p className="small">
+        {recipes.length ? (
+          recipes.map((recipe) => recipe.name).join(', ')
+        ) : (
+          <span className="muted">{t.admin.notInRecipes}</span>
+        )}
+      </p>
+    </div>
+  )
+}
+
+/** Another variant of the item's name, with its group and icon, kept nowhere or at a place. */
+function NewVariant({ item }: { item: ItemOut }) {
+  const { house, actions } = useHouse()
+  const [variant, setVariant] = useState('')
+  const [place, setPlace] = useState('')
+  const [saving, setSaving] = useState(false)
+  if (!house) return null
+  const { items, locations } = house
+  const text = variant.trim()
+  const exists = text !== '' && findItem(items, item.name, text) !== undefined
+
+  async function add(event: FormEvent) {
+    event.preventDefault()
+    setSaving(true)
+    const added = await actions.keepItem(item.name, text, place ? Number(place) : null)
+    setSaving(false)
+    if (added) setVariant('')
+  }
+
+  return (
+    <form className="stock-editor" onSubmit={add}>
+      <h4>{t.admin.newVariant}</h4>
+      <p className="small muted">
+        {t.admin.newVariantHint}
+        {!item.variant && <> {t.admin.nameThisVariant}</>}
+      </p>
+      <div className="admin-filters">
+        <input
+          aria-label={t.admin.newVariant}
+          placeholder={t.admin.newVariantPlaceholder}
+          value={variant}
+          onChange={(event) => setVariant(event.target.value)}
+          maxLength={40}
+          autoComplete="off"
+        />
+        <select
+          aria-label={t.admin.keepAt}
+          value={place}
+          onChange={(event) => setPlace(event.target.value)}
+        >
+          <option value="">{t.admin.keepNowhere}</option>
+          {treeOrder(locations).map((location) => (
+            <option key={location.id} value={location.id}>
+              {placePath(locations, location.id)}
+            </option>
+          ))}
+        </select>
+        <button type="submit" disabled={saving || !text || exists}>
+          + {t.add}
+        </button>
+        {exists && <span className="small muted">{t.admin.variantExists}</span>}
+      </div>
+    </form>
   )
 }
 

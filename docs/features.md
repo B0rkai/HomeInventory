@@ -252,7 +252,10 @@ Pages (wide tables, mouse and keyboard; not in the phone tab bar):
 
 1. **Items**: every item in a row (name, variant, group, icon, restocked,
    any variant, shelf life, where and how much), sorted, filtered, edited
-   in place; several selected and changed at once.
+   in place; several selected and changed at once. The edit row also shows
+   the recipes taking it or any variant of its name, and adds another
+   variant of the name ("Új fajta", with its group and icon, kept nowhere
+   or at a place).
 2. **Moving stock**: one item or several, from a place to another, level
    included; an active request moves with it, claim and all; at a place
    that already keeps the item the two merge, the higher level kept.
@@ -445,7 +448,10 @@ UI (agreed 2026-11-19 on the prototype):
   on top with one "Felvesz" button, only while there is one. Below: "+
   Főzés", "+ Bevásárlás" (day chips).
 - **Menü, "Receptek"**: search and a list grouped by kind, each with "minden megvan" or
-  "N hiányzik"; "+ Új recept"; below, "Receptjavaslatok" (open while there
+  "N hiányzik", within a kind those with nothing missing first, then fewest
+  missing ("↑ Hiány", or "↑ ABC", remembered); "Megvan" keeps only those
+  with nothing missing (the admin table sorts by
+  its columns, by default the same way); "+ Új recept"; below, "Receptjavaslatok" (open while there
   are no recipes), each with "+ Felvesz", and "Mindet felveszem".
 - **Planning**: "+ Főzés" → pick a recipe (search) → day chips (Ma,
   Holnap, weekdays, ten days) → for a main course, "+ Köret" (the side
