@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from 'react'
-import type { Category, ItemOut, RequestOut } from './api'
+import type { ItemOut, RequestOut } from './api'
 import { cookingName } from './cookings'
 import { dayFor } from './days'
 import { type House, useHouse } from './house'
@@ -22,7 +22,7 @@ import {
   memberNames,
   oneName,
 } from './variants'
-import { categoryName, groupByCategory } from './categories'
+import { groupName, sectionByGroup, subheaded, type GroupSection } from './groups'
 
 /**
  * What needs doing, in two lists: the pool (open requests nobody has taken yet, then what
@@ -95,8 +95,8 @@ export function TodoPage({ view }: { view: TodoView }) {
 
 /**
  * Some requests as the chores, the refills (items running low where another place has
- * lots: fetch, don't buy) and the shopping list (the rest, grouped by category for the
- * shop). An item is one row however many of the places that want it are listed.
+ * lots: fetch, don't buy) and the shopping list (the rest, grouped by group and
+ * subgroup for the shop). An item is one row however many of the places that want it are listed.
  */
 function Sections({ requests }: { requests: RequestOut[] }) {
   const { house, actions } = useHouse()
@@ -131,7 +131,7 @@ function Sections({ requests }: { requests: RequestOut[] }) {
         id: -request.id,
         name: request.name,
         variant: null,
-        category: null,
+        group_id: null,
         icon: null,
         restock: false,
         any_variant: false,
@@ -162,7 +162,7 @@ function Sections({ requests }: { requests: RequestOut[] }) {
       .sort(byPlace)
   }
   const refills: ItemOut[] = []
-  // The rest is the shopping list, by category.
+  // The rest is the shopping list, by group and subgroup.
   const toBuy: ItemOut[] = []
   for (const id of buying.keys()) {
     const first = itemsById.get(id)!
@@ -176,9 +176,9 @@ function Sections({ requests }: { requests: RequestOut[] }) {
     toBuy.push(item)
   }
   refills.sort(byItem)
-  const shopping = groupByCategory(toBuy, byItem)
-  // A list of only uncategorised items needs no group headings.
-  const headed = shopping.length > 1 || shopping[0]?.[0] != null
+  const shopping = sectionByGroup(toBuy, (item) => item, house.groups, byItem)
+  // A list of only ungrouped items needs no group headings.
+  const headed = shopping.length > 1 || shopping[0]?.group !== undefined
 
   const choreRequests = requests
     .filter((request) => request.chore_id !== null && choresById.has(request.chore_id))
@@ -345,15 +345,22 @@ function Sections({ requests }: { requests: RequestOut[] }) {
               <ShareButton text={shoppingText(shopping, buying, house, headed)} />
             </span>
           </div>
-          {shopping.map(([category, list]) => (
-            <div key={category ?? ''} className="category-group">
+          {shopping.map((section) => (
+            <div key={section.group?.id ?? ''} className="category-group">
               {headed && (
                 <div className="section-head category-head">
-                  <h4>{categoryName(category)}</h4>
-                  {claimAll(list)}
+                  <h4>{groupName(section.group)}</h4>
+                  {claimAll(section.subs.flatMap(({ list }) => list))}
                 </div>
               )}
-              <ul className="requests">{list.map(itemRow)}</ul>
+              {section.subs.map(({ sub, list }) => (
+                <div key={sub?.id ?? ''} className="subgroup">
+                  {subheaded(section) && (
+                    <h5 className="subgroup-head">{sub ? sub.name : t.items.groupItself}</h5>
+                  )}
+                  <ul className="requests">{list.map(itemRow)}</ul>
+                </div>
+              ))}
             </div>
           ))}
         </section>
@@ -362,26 +369,30 @@ function Sections({ requests }: { requests: RequestOut[] }) {
   )
 }
 
-/** The shopping list as plain text, by group, each item with the places that want it. */
+/** The shopping list as plain text, by group and subgroup, each item with the places that
+ * want it. */
 function shoppingText(
-  shopping: [Category | null, ItemOut[]][],
+  shopping: GroupSection<ItemOut>[],
   buying: Map<number, RequestOut[]>,
   house: House,
   headed: boolean,
 ): string {
   const lines = [t.todo.shopping]
-  for (const [category, list] of shopping) {
+  for (const section of shopping) {
     lines.push('')
-    if (headed) lines.push(categoryName(category))
-    for (const item of list) {
-      const requests = buying.get(item.id)!
-      const why = [
-        ...requests
-          .filter((request) => request.location_id !== null)
-          .map((request) => placePath(house.locations, request.location_id!)),
-        ...forCookings(house, requests),
-      ]
-      lines.push(why.length ? `- ${fullName(item)} (${why.join(', ')})` : `- ${fullName(item)}`)
+    if (headed) lines.push(groupName(section.group))
+    for (const { sub, list } of section.subs) {
+      if (subheaded(section)) lines.push(`${sub ? sub.name : t.items.groupItself}:`)
+      for (const item of list) {
+        const requests = buying.get(item.id)!
+        const why = [
+          ...requests
+            .filter((request) => request.location_id !== null)
+            .map((request) => placePath(house.locations, request.location_id!)),
+          ...forCookings(house, requests),
+        ]
+        lines.push(why.length ? `- ${fullName(item)} (${why.join(', ')})` : `- ${fullName(item)}`)
+      }
     }
   }
   return lines.join('\n')

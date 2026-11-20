@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from 'react'
-import { categoryName, categoryOf } from './categories'
+import { groupOf, groupPath } from './groups'
 import { claimText } from './claims'
 import { cookingName, reservations } from './cookings'
 import { dayFor } from './days'
@@ -79,7 +79,7 @@ export function ItemPage({ id }: { id: number }) {
         )}
       </div>
       <p className="small muted item-meta">
-        {categoryName(categoryOf(item))}
+        {groupPath(groupOf(item, house.groups), house.groups)}
         {!item.restock && ` · ${t.items.noRestock}`}
         {item.any_variant
           ? ` · ${t.items.anyVariantNote}`

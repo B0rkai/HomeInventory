@@ -2,6 +2,7 @@ from datetime import UTC, date, datetime
 from enum import StrEnum
 
 from sqlalchemy import (
+    JSON,
     CheckConstraint,
     Date,
     DateTime,
@@ -25,6 +26,8 @@ VARIANT_MAX_LENGTH = 40
 ICON_MAX_LENGTH = 32
 # Floor -> room -> spot.
 LOCATION_MAX_DEPTH = 3
+# The icons that suggest a subgroup.
+GROUP_ICONS_MAX = 50
 
 
 def utcnow() -> datetime:
@@ -129,14 +132,34 @@ def str_enum(enum: type[StrEnum], name: str) -> Enum:
     )
 
 
-class Category(StrEnum):
-    """A fixed set of item groups, one per icon colour in the web client."""
+class Hue(StrEnum):
+    """A group's tile colour, from the web client's fixed palette (one per icon colour)."""
 
     FOOD = "food"
     DRINK = "drink"
     CLEAN = "clean"
     BODY = "body"
     HOME = "home"
+
+
+class ItemGroup(Base):
+    """What sorts the catalogue, a place's page and the shopping list: a group ("Élelmiszer")
+    or one of its subgroups ("Fűszer"); two levels, no deeper. Only for finding things:
+    what's short is a family's business."""
+
+    __tablename__ = "item_groups"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    # A subgroup's group; unset for a group. The API refuses to delete a group with
+    # subgroups, so no cascade here.
+    parent_id: Mapped[int | None] = mapped_column(ForeignKey("item_groups.id"), index=True)
+    name: Mapped[str] = mapped_column(String(NAME_MAX_LENGTH))
+    # Order among its siblings, 0 first: the order lists show them in.
+    position: Mapped[int] = mapped_column(default=0)
+    # A group's tile colour; a subgroup wears its group's, and has none.
+    hue: Mapped[Hue | None] = mapped_column(str_enum(Hue, "hue"))
+    # The icons that suggest it for an item with no group chosen (bread: Pékáru).
+    icons: Mapped[list[str]] = mapped_column(JSON, default=list, server_default="[]")
 
 
 class Item(Base):
@@ -151,9 +174,11 @@ class Item(Base):
     # Tells apart kinds kept of the same item ("35 l", "60 l"); items sharing a name
     # are shown as one group. Unset for an item with no variants.
     variant: Mapped[str | None] = mapped_column(String(VARIANT_MAX_LENGTH))
-    # Groups the catalogue and the shopping list. Unset: the client takes it from the
-    # item's icon, whose colour already says the same.
-    category: Mapped[Category | None] = mapped_column(str_enum(Category, "category"))
+    # Its group or subgroup. Unset: the client takes it from the item's icon. A deleted
+    # subgroup's items move up to its group (the API); SET NULL is the fallback.
+    group_id: Mapped[int | None] = mapped_column(
+        ForeignKey("item_groups.id", ondelete="SET NULL"), index=True
+    )
     # Kept stocked: running low puts it on the shopping list. Off for what's only bought
     # now and then (ice cream, salmon): its level still says whether there's any.
     restock: Mapped[bool] = mapped_column(default=True, server_default=true())

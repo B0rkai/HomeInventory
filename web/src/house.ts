@@ -56,7 +56,13 @@ import {
   type RequestOut,
   type StockOut,
   type UserOut,
-  type Category,
+  createGroup,
+  deleteGroup,
+  listGroups,
+  updateGroup,
+  type GroupCreate,
+  type GroupOut,
+  type GroupUpdate,
 } from './api'
 import { t } from './strings'
 import { findItem, fullName } from './variants'
@@ -64,6 +70,8 @@ import { findItem, fullName } from './variants'
 export type House = {
   locations: LocationOut[]
   items: ItemOut[]
+  // Item groups and their subgroups (groups.ts).
+  groups: GroupOut[]
   stock: StockOut[]
   chores: ChoreOut[]
   // The open and claimed ones.
@@ -163,6 +171,9 @@ function readCache(userId: number): Cached | undefined {
     cached.house.cookings ??= []
     // Before there were substitutes.
     for (const item of cached.house.items) item.substitute_ids ??= []
+    // Before groups were data.
+    cached.house.groups ??= []
+    for (const item of cached.house.items) item.group_id ??= null
     return cached
   } catch {
     return undefined
@@ -202,18 +213,21 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
   }, [house])
 
   const reload = useCallback(async () => {
-    const [locations, items, stock, chores, requests, recipes, cookings] = await Promise.all([
-      listLocations(),
-      listItems(),
-      listStock(),
-      listChores(),
-      listRequests(),
-      listRecipes(),
-      listCookings(),
-    ]).catch(() => [])
+    const [locations, items, groups, stock, chores, requests, recipes, cookings] =
+      await Promise.all([
+        listLocations(),
+        listItems(),
+        listGroups(),
+        listStock(),
+        listChores(),
+        listRequests(),
+        listRecipes(),
+        listCookings(),
+      ]).catch(() => [])
     if (
       locations?.data &&
       items?.data &&
+      groups?.data &&
       stock?.data &&
       chores?.data &&
       requests?.data &&
@@ -223,6 +237,7 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
       const loaded = {
         locations: locations.data,
         items: items.data,
+        groups: groups.data,
         stock: stock.data,
         chores: chores.data,
         requests: requests.data,
@@ -605,6 +620,29 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
         if (recipe) await reload()
         return recipe
       },
+      async addGroup(body: GroupCreate) {
+        const group = (await change(createGroup({ body }), { 409: t.errors.duplicateGroup }))?.data
+        if (group) setHouse((h) => h && { ...h, groups: [...h.groups, group] })
+        return group
+      },
+      async updateGroup(id: number, body: GroupUpdate) {
+        const group = (
+          await change(updateGroup({ path: { group_id: id }, body }), {
+            409: t.errors.duplicateGroup,
+          })
+        )?.data
+        // Moving renumbers the siblings too, so fetch them all.
+        if (group) await reload()
+        return group
+      },
+      async deleteGroup(id: number) {
+        const ok = await change(deleteGroup({ path: { group_id: id } }), {
+          409: t.errors.groupNotEmpty,
+        })
+        // A subgroup's items moved up to its group.
+        if (ok) await reload()
+        return Boolean(ok)
+      },
       async deleteRecipe(id: number) {
         const ok = await change(deleteRecipe({ path: { recipe_id: id } }))
         // Its planned cookings went with it, and their lines.
@@ -792,7 +830,7 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
         name: string,
         variant: string | null,
         locationId: number | null,
-        category?: Category | null,
+        groupId?: number | null,
       ) {
         const items = known.current?.items ?? []
         const sibling = items.find(
@@ -803,7 +841,7 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
           (await send.addItem({
             name: sibling?.name ?? name,
             variant,
-            category: category === undefined ? sibling?.category : category,
+            group_id: groupId === undefined ? sibling?.group_id : groupId,
             icon: sibling?.icon,
           }))
         if (!item) return undefined

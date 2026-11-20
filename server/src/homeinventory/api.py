@@ -7,6 +7,7 @@ from homeinventory.admin import router as admin_router
 from homeinventory.common import get_or_404
 from homeinventory.cookings import router as cookings_router
 from homeinventory.db import get_session
+from homeinventory.groups import router as groups_router
 from homeinventory.identity import current_user
 from homeinventory.models import ADMIN_LOGIN, User
 from homeinventory.places import router as places_router
@@ -65,6 +66,7 @@ def update_user(
 
 
 router.include_router(places_router)
+router.include_router(groups_router)
 router.include_router(requests_router)
 router.include_router(push_router)
 router.include_router(recipes_router)

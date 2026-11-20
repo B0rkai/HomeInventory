@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AssignRequestData, AssignRequestErrors, AssignRequestResponses, CancelRequestData, CancelRequestErrors, CancelRequestResponses, ClaimRequestData, ClaimRequestErrors, ClaimRequestResponses, CompleteChoreData, CompleteChoreErrors, CompleteChoreResponses, CompleteCookingData, CompleteCookingErrors, CompleteCookingResponses, CompleteRequestData, CompleteRequestErrors, CompleteRequestResponses, CreateChoreData, CreateChoreErrors, CreateChoreResponses, CreateCookingData, CreateCookingErrors, CreateCookingResponses, CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, CreateRequestData, CreateRequestErrors, CreateRequestResponses, DeleteChoreData, DeleteChoreErrors, DeleteChoreResponses, DeleteCookingData, DeleteCookingErrors, DeleteCookingResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, DeleteSubscriptionData, DeleteSubscriptionErrors, DeleteSubscriptionResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, GetPushKeyData, GetPushKeyResponses, KeepRequestData, KeepRequestErrors, KeepRequestResponses, ListActivityData, ListActivityErrors, ListActivityResponses, ListChoresData, ListChoresResponses, ListCookingsData, ListCookingsResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListRecipesData, ListRecipesResponses, ListRequestsData, ListRequestsResponses, ListStockData, ListStockResponses, ListSubscriptionsData, ListSubscriptionsResponses, ListUsersData, ListUsersResponses, LogInData, LogInErrors, LogInResponses, LogOutData, LogOutResponses, MoveStockData, MoveStockErrors, MoveStockResponses, RemindRequestData, RemindRequestErrors, RemindRequestResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, ReportChoreData, ReportChoreErrors, ReportChoreResponses, RequestStockData, RequestStockErrors, RequestStockResponses, SetStockData, SetStockErrors, SetStockResponses, StreamEventsData, StreamEventsResponses, SubscribeData, SubscribeErrors, SubscribeResponses, UnclaimRequestData, UnclaimRequestErrors, UnclaimRequestResponses, UnsubscribeData, UnsubscribeErrors, UnsubscribeResponses, UpdateChoreData, UpdateChoreErrors, UpdateChoreResponses, UpdateCookingData, UpdateCookingErrors, UpdateCookingResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses } from './types.gen';
+import type { AssignRequestData, AssignRequestErrors, AssignRequestResponses, CancelRequestData, CancelRequestErrors, CancelRequestResponses, ClaimRequestData, ClaimRequestErrors, ClaimRequestResponses, CompleteChoreData, CompleteChoreErrors, CompleteChoreResponses, CompleteCookingData, CompleteCookingErrors, CompleteCookingResponses, CompleteRequestData, CompleteRequestErrors, CompleteRequestResponses, CreateChoreData, CreateChoreErrors, CreateChoreResponses, CreateCookingData, CreateCookingErrors, CreateCookingResponses, CreateGroupData, CreateGroupErrors, CreateGroupResponses, CreateItemData, CreateItemErrors, CreateItemResponses, CreateLocationData, CreateLocationErrors, CreateLocationResponses, CreateRecipeData, CreateRecipeErrors, CreateRecipeResponses, CreateRequestData, CreateRequestErrors, CreateRequestResponses, DeleteChoreData, DeleteChoreErrors, DeleteChoreResponses, DeleteCookingData, DeleteCookingErrors, DeleteCookingResponses, DeleteGroupData, DeleteGroupErrors, DeleteGroupResponses, DeleteItemData, DeleteItemErrors, DeleteItemResponses, DeleteLocationData, DeleteLocationErrors, DeleteLocationResponses, DeleteRecipeData, DeleteRecipeErrors, DeleteRecipeResponses, DeleteSubscriptionData, DeleteSubscriptionErrors, DeleteSubscriptionResponses, GetCurrentUserData, GetCurrentUserResponses, GetHealthData, GetHealthResponses, GetPushKeyData, GetPushKeyResponses, KeepRequestData, KeepRequestErrors, KeepRequestResponses, ListActivityData, ListActivityErrors, ListActivityResponses, ListChoresData, ListChoresResponses, ListCookingsData, ListCookingsResponses, ListGroupsData, ListGroupsResponses, ListItemsData, ListItemsResponses, ListLocationsData, ListLocationsResponses, ListRecipesData, ListRecipesResponses, ListRequestsData, ListRequestsResponses, ListStockData, ListStockResponses, ListSubscriptionsData, ListSubscriptionsResponses, ListUsersData, ListUsersResponses, LogInData, LogInErrors, LogInResponses, LogOutData, LogOutResponses, MoveStockData, MoveStockErrors, MoveStockResponses, RemindRequestData, RemindRequestErrors, RemindRequestResponses, RemoveStockData, RemoveStockErrors, RemoveStockResponses, ReportChoreData, ReportChoreErrors, ReportChoreResponses, RequestStockData, RequestStockErrors, RequestStockResponses, SetStockData, SetStockErrors, SetStockResponses, StreamEventsData, StreamEventsResponses, SubscribeData, SubscribeErrors, SubscribeResponses, UnclaimRequestData, UnclaimRequestErrors, UnclaimRequestResponses, UnsubscribeData, UnsubscribeErrors, UnsubscribeResponses, UpdateChoreData, UpdateChoreErrors, UpdateChoreResponses, UpdateCookingData, UpdateCookingErrors, UpdateCookingResponses, UpdateCurrentUserData, UpdateCurrentUserErrors, UpdateCurrentUserResponses, UpdateGroupData, UpdateGroupErrors, UpdateGroupResponses, UpdateItemData, UpdateItemErrors, UpdateItemResponses, UpdateLocationData, UpdateLocationErrors, UpdateLocationResponses, UpdateRecipeData, UpdateRecipeErrors, UpdateRecipeResponses, UpdateUserData, UpdateUserErrors, UpdateUserResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -197,6 +197,51 @@ export const requestStock = <ThrowOnError extends boolean = false>(options: Opti
  */
 export const moveStock = <ThrowOnError extends boolean = false>(options: Options<MoveStockData, ThrowOnError>): RequestResult<MoveStockResponses, MoveStockErrors, ThrowOnError> => (options.client ?? client).post<MoveStockResponses, MoveStockErrors, ThrowOnError>({
     url: '/api/v1/stock/move',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * List Groups
+ *
+ * Every group and subgroup, ordered by parent, then position; the client nests them.
+ */
+export const listGroups = <ThrowOnError extends boolean = false>(options?: Options<ListGroupsData, ThrowOnError>): RequestResult<ListGroupsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListGroupsResponses, unknown, ThrowOnError>({ url: '/api/v1/groups', ...options });
+
+/**
+ * Create Group
+ *
+ * Adds a group (with a colour) or a subgroup (wearing its group's), last of its
+ * siblings.
+ */
+export const createGroup = <ThrowOnError extends boolean = false>(options: Options<CreateGroupData, ThrowOnError>): RequestResult<CreateGroupResponses, CreateGroupErrors, ThrowOnError> => (options.client ?? client).post<CreateGroupResponses, CreateGroupErrors, ThrowOnError>({
+    url: '/api/v1/groups',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete Group
+ *
+ * Deletes a subgroup, its items moving up to its group; a group only once it has no
+ * subgroups and no items.
+ */
+export const deleteGroup = <ThrowOnError extends boolean = false>(options: Options<DeleteGroupData, ThrowOnError>): RequestResult<DeleteGroupResponses, DeleteGroupErrors, ThrowOnError> => (options.client ?? client).delete<DeleteGroupResponses, DeleteGroupErrors, ThrowOnError>({ url: '/api/v1/groups/{group_id}', ...options });
+
+/**
+ * Update Group
+ *
+ * Renames a group, changes its colour or icons, moves it among its siblings, or moves
+ * a subgroup to another group. A group stays a group and a subgroup a subgroup.
+ */
+export const updateGroup = <ThrowOnError extends boolean = false>(options: Options<UpdateGroupData, ThrowOnError>): RequestResult<UpdateGroupResponses, UpdateGroupErrors, ThrowOnError> => (options.client ?? client).patch<UpdateGroupResponses, UpdateGroupErrors, ThrowOnError>({
+    url: '/api/v1/groups/{group_id}',
     ...options,
     headers: {
         'Content-Type': 'application/json',

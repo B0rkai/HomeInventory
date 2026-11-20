@@ -1,6 +1,6 @@
 import { type FormEvent, type KeyboardEvent, useId, useState } from 'react'
-import type { Category, ItemOut } from './api'
-import { CATEGORIES, categoryName, iconCategory } from './categories'
+import type { ItemOut } from './api'
+import { GroupSelect } from './GroupSelect'
 import { useHouse } from './house'
 import { IconPicker } from './IconPicker'
 import { t } from './strings'
@@ -20,7 +20,7 @@ export function ItemForm({
   const { house, actions } = useHouse()
   const [name, setName] = useState(item.name)
   const [variant, setVariant] = useState(item.variant ?? '')
-  const [category, setCategory] = useState(item.category)
+  const [groupId, setGroupId] = useState(item.group_id)
   const [icon, setIcon] = useState(item.icon)
   const [restock, setRestock] = useState(item.restock)
   const [anyVariant, setAnyVariant] = useState(item.any_variant)
@@ -66,7 +66,7 @@ export function ItemForm({
     const saved = await actions.updateItem(item.id, {
       name,
       variant,
-      category,
+      group_id: groupId,
       icon,
       restock,
       // Only what changed: "any variant" reaches the item's other variants.
@@ -102,20 +102,8 @@ export function ItemForm({
       </label>
       <label>
         {t.items.category}
-        <select
-          value={category ?? ''}
-          onChange={(e) => setCategory((e.target.value || null) as Category | null)}
-        >
-          {/* Unset follows the icon, as chosen below. */}
-          <option value="">
-            {t.items.categoryAuto(categoryName(iconCategory({ name, icon })))}
-          </option>
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {t.categories[c]}
-            </option>
-          ))}
-        </select>
+        {/* Unset follows the icon, as chosen below. */}
+        <GroupSelect item={{ name, icon }} value={groupId} onChange={setGroupId} />
       </label>
       <label className="check">
         <input type="checkbox" checked={restock} onChange={(e) => setRestock(e.target.checked)} />

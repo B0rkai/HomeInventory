@@ -1,7 +1,8 @@
 import { type FormEvent, type KeyboardEvent, useState } from 'react'
-import type { Category, ItemOut, StockOut } from './api'
+import type { ItemOut, StockOut } from './api'
 import { AdminAddItem } from './AdminAddItem'
-import { CATEGORIES, categoryName, categoryOf, iconCategory } from './categories'
+import { GroupSelect } from './GroupSelect'
+import { groupOf, groupOrder, groupPath, itemHue, topOf } from './groups'
 import { claimText } from './claims'
 import { useHouse } from './house'
 import { iconOf } from './iconLookup'
@@ -35,7 +36,8 @@ export function AdminItems() {
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [editing, setEditing] = useState<number>()
   if (!house) return null
-  const { items, stock, locations } = house
+  const { items, stock, locations, groups } = house
+  const ordered = groupOrder(groups)
   const order = new Map(treeOrder(locations).map((location, index) => [location.id, index]))
   const rowsOf = (id: number) =>
     stock
@@ -49,7 +51,12 @@ export function AdminItems() {
     .filter((item) => {
       const text = fold(`${item.name} ${item.variant ?? ''}`)
       if (!words.every((word) => text.includes(word))) return false
-      if (group && (categoryOf(item) ?? NO_GROUP) !== group) return false
+      if (group) {
+        // A group takes in its subgroups.
+        const own = groupOf(item, groups)
+        const ids = own ? [own.id, topOf(own, groups).id].map(String) : [NO_GROUP]
+        if (!ids.includes(group)) return false
+      }
       const rows = rowsOf(item.id)
       if (place === NOWHERE) return rows.length === 0
       return !place || rows.some((row) => row.location_id === Number(place))
@@ -58,8 +65,8 @@ export function AdminItems() {
       let by = 0
       if (sort.key === 'group') {
         const rank = (item: ItemOut) => {
-          const category = categoryOf(item)
-          return category ? CATEGORIES.indexOf(category) : CATEGORIES.length
+          const own = groupOf(item, groups)
+          return own ? ordered.indexOf(own) : ordered.length
         }
         by = rank(a) - rank(b)
       } else if (sort.key === 'level') {
@@ -107,12 +114,12 @@ export function AdminItems() {
           onChange={(event) => setGroup(event.target.value)}
         >
           <option value="">{t.admin.allGroups}</option>
-          {CATEGORIES.map((category) => (
-            <option key={category} value={category}>
-              {categoryName(category)}
+          {ordered.map((option) => (
+            <option key={option.id} value={option.id}>
+              {groupPath(option, groups)}
             </option>
           ))}
-          <option value={NO_GROUP}>{categoryName(null)}</option>
+          <option value={NO_GROUP}>{groupPath(undefined, groups)}</option>
         </select>
         <select
           aria-label={t.admin.where}
@@ -221,7 +228,7 @@ function ItemRow({
               icon={iconOf(item, 'item')}
               name={item.name}
               kind="item"
-              hue={item.category ?? undefined}
+              hue={itemHue(item, house?.groups ?? [])}
             />
             <TextCell
               key={item.name}
@@ -241,20 +248,12 @@ function ItemRow({
           />
         </td>
         <td>
-          <select
-            aria-label={t.admin.group}
-            value={item.category ?? ''}
-            onChange={(event) =>
-              onSave({ category: (event.target.value || null) as Category | null })
-            }
-          >
-            <option value="">{t.items.categoryAuto(categoryName(iconCategory(item)))}</option>
-            {CATEGORIES.map((category) => (
-              <option key={category} value={category}>
-                {categoryName(category)}
-              </option>
-            ))}
-          </select>
+          <GroupSelect
+            item={item}
+            label={t.admin.group}
+            value={item.group_id}
+            onChange={(groupId) => onSave({ group_id: groupId })}
+          />
         </td>
         <td className="check-cell">
           <input
@@ -543,18 +542,16 @@ function BulkBar({ picked, onClear }: { picked: ItemOut[]; onClear: () => void }
         value=""
         disabled={busy}
         onChange={(event) => {
-          const category = (
-            event.target.value === NO_GROUP ? null : event.target.value
-          ) as Category | null
-          void run(() => actions.updateItems(ids, { category }))
+          const groupId = event.target.value === NO_GROUP ? null : Number(event.target.value)
+          void run(() => actions.updateItems(ids, { group_id: groupId }))
         }}
       >
         <option value="" disabled>
           {t.admin.setGroup}
         </option>
-        {CATEGORIES.map((category) => (
-          <option key={category} value={category}>
-            {categoryName(category)}
+        {groupOrder(house.groups).map((option) => (
+          <option key={option.id} value={option.id}>
+            {groupPath(option, house.groups)}
           </option>
         ))}
         <option value={NO_GROUP}>{t.admin.groupAuto}</option>

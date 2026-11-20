@@ -250,13 +250,6 @@ export const t = {
     ],
   },
   // The fixed item groups, one per icon colour.
-  categories: {
-    food: 'Élelmiszer',
-    drink: 'Ital',
-    clean: 'Takarítás',
-    body: 'Tisztálkodás',
-    home: 'Háztartás',
-  },
   icons: {
     label: 'Ikon',
     auto: 'Automatikus',
@@ -330,6 +323,9 @@ export const t = {
     noMatch: 'Nincs ilyen termék.',
     name: 'Név',
     category: 'Csoport',
+    subgroup: 'Alcsoport',
+    // A group's items in none of its subgroups.
+    groupItself: 'Többi',
     categoryAuto: (name: string) => `Automatikus (${name})`,
     noCategory: 'Egyéb',
     noVariant: 'Egyéb',
@@ -340,7 +336,7 @@ export const t = {
     noRestock: 'nem pótoljuk',
     anyVariant: 'Bármelyik fajta elég',
     anyVariantHint:
-      'A fajták egy, a termék nevével azonos alcsoportba kerülnek: egy helyen csak akkor hiány, ha minden ott tartott fajta kevés vagy elfogyott; a listán egy sor.',
+      'A fajták hasonló termékek lesznek a termék nevén: egy helyen csak akkor hiány, ha minden ott tartott fajta kevés vagy elfogyott; a listán egy sor.',
     anyVariantNote: 'bármelyik fajta elég',
     substitutes: 'Helyettesítheti',
     substitutesHint:
@@ -349,11 +345,11 @@ export const t = {
     removeSubstitute: (name: string) => `${name} törlése`,
     anyKind: 'bármelyik fajta',
     anyOf: (names: string) => `bármelyik: ${names}`,
-    family: 'Alcsoport',
-    familyPlaceholder: 'Például: Pékáru (nem kötelező)',
+    family: 'Hasonló termékek',
+    familyPlaceholder: 'Például: Kenyérféle (nem kötelező)',
     familyHint:
-      'Különböző termékek, amelyek közül bármelyik megfelel (kenyér, zsemle, kifli). Egy helyen csak akkor hiány, ha mind kevés vagy elfogyott; a listán egy sor, az alcsoport nevén. Csak erre a fajtára érvényes.',
-    familyNote: (family: string) => `${family} alcsoport`,
+      'Különböző termékek közös neve, ha közülük bármelyik megfelel (kenyér, zsemle, kifli). Egy helyen csak akkor hiány, ha mind kevés vagy elfogyott; a listán egy sor, ezen a néven. Csak erre a fajtára érvényes.',
+    familyNote: (family: string) => `hasonló: ${family}`,
     whichBought: 'Melyiket vetted?',
     places: (count: number) => (count ? `${count} helyen` : 'sehol'),
     delete: 'Törlés',
@@ -427,6 +423,8 @@ export const t = {
     status: (status: number) => `A szerver hibát jelzett (${status}).`,
     duplicateLocation: 'Itt már van ilyen nevű hely.',
     duplicateItem: 'Már van ilyen nevű termék.',
+    duplicateGroup: 'Itt már van ilyen nevű csoport.',
+    groupNotEmpty: 'Előbb az alcsoportjait és a termékeit tedd át máshová.',
     duplicateRecipe: 'Már van ilyen nevű recept.',
     duplicateIngredient: 'Egy hozzávaló kétszer szerepel, vagy a recept önmagát tartalmazná.',
     duplicateChore: 'Itt már van ilyen nevű feladat.',
@@ -550,12 +548,33 @@ export const t = {
     action: 'Mit csinált',
     older: 'Régebbiek',
     recipeCount: (n: number) => `${n} recept`,
+    // Groups
+    groups: 'Csoportok',
+    groupsHint:
+      'A csoportok csak a rendezést szolgálják: a Termékek, a helyek és a bevásárlólista ezek szerint tagolódik. Az alcsoport a csoportja színét viseli; az ikonjai közül bármelyiket viselő terméket, ha nincs csoportja kiválasztva, magától ide sorolja.',
+    groupColour: 'Szín / csoport',
+    groupIcons: 'Ikonok',
+    groupIconsHint:
+      'Ezeket az ikonokat viselő termékek, ha nincs kiválasztott csoportjuk, ebbe az alcsoportba kerülnek.',
+    editIcons: 'Ikonok szerkesztése',
+    noIcons: '+ ikonok',
+    parentGroup: 'Melyik csoportban',
+    under: (name: string) => `${name} alatt`,
+    newTopGroup: 'Új csoport (legfelső szint)',
+    addGroup: 'Új csoport',
+    addGroupName: 'Név, például: Fűszer',
+    deleteGroup: 'Törlés',
+    confirmDeleteGroup: (name: string) => `Törlöd ezt a csoportot: ${name}?`,
+    confirmDeleteSubgroup: (name: string, group: string) =>
+      `Törlöd ezt az alcsoportot: ${name}? A termékei a(z) ${group} csoportba kerülnek.`,
+    hues: { food: 'Sárga', drink: 'Kék', clean: 'Zöld', body: 'Lila', home: 'Szürke' },
     usedIn: 'Receptekben',
     notInRecipes: 'Egyik recept sem használja.',
     newVariant: 'Új fajta',
     newVariantPlaceholder: 'Például: rétes',
     newVariantHint: 'Ugyanezen a néven, a csoportjával és ikonjával.',
-    nameThisVariant: 'Ennek a terméknek még nincs fajtája: adj neki is, hogy meg lehessen különböztetni.',
+    nameThisVariant:
+      'Ennek a terméknek még nincs fajtája: adj neki is, hogy meg lehessen különböztetni.',
     variantExists: 'Ez a fajta már megvan.',
     // Adding items, and keeping them at places
     addItem: 'Új termék',

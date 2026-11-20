@@ -3,6 +3,7 @@ import { AdminItems } from './AdminItems'
 import { AdminLog } from './AdminLog'
 import { AdminPeople } from './AdminPeople'
 import { AdminPlaces } from './AdminPlaces'
+import { AdminGroups } from './AdminGroups'
 import { AdminRecipes } from './AdminRecipes'
 import { AdminTodo } from './AdminTodo'
 import { useHouse } from './house'
@@ -11,6 +12,7 @@ import { t } from './strings'
 
 const TABS: [AdminView, string][] = [
   ['items', t.admin.items],
+  ['groups', t.admin.groups],
   ['places', t.admin.places],
   ['todo', t.admin.todo],
   ['cookings', t.admin.cookings],
@@ -33,6 +35,7 @@ export function AdminPages({ view }: { view: AdminView }) {
       </nav>
       {!house && <p className="muted">{loadError ?? t.loading}</p>}
       {view === 'items' && <AdminItems />}
+      {view === 'groups' && <AdminGroups />}
       {view === 'places' && <AdminPlaces />}
       {view === 'todo' && <AdminTodo />}
       {view === 'cookings' && <AdminCookings />}

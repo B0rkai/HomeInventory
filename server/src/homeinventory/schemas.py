@@ -12,6 +12,7 @@ from pydantic import (
 
 from homeinventory.models import (
     AMOUNT_MAX_LENGTH,
+    GROUP_ICONS_MAX,
     ICON_MAX_LENGTH,
     LINK_MAX_LENGTH,
     NAME_MAX_LENGTH,
@@ -19,7 +20,7 @@ from homeinventory.models import (
     NOTE_MAX_LENGTH,
     VARIANT_MAX_LENGTH,
     Action,
-    Category,
+    Hue,
     Level,
     RecipeKind,
     RequestKind,
@@ -111,13 +112,54 @@ class LocationUpdate(BaseModel):
     parent_id: int | None = None
 
 
+class GroupOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    # Unset for a group; a subgroup's group.
+    parent_id: int | None
+    name: str
+    position: int
+    # A group's tile colour; none for a subgroup (it wears its group's).
+    hue: Hue | None
+    # The icons that suggest it for an item with no group chosen.
+    icons: list[str]
+
+
+IconName = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=ICON_MAX_LENGTH)
+]
+GroupIcons = Annotated[list[IconName], Field(max_length=GROUP_ICONS_MAX)]
+
+
+class GroupCreate(BaseModel):
+    name: Name
+    # A subgroup's group; unset for a group, which then needs a colour.
+    parent_id: int | None = None
+    hue: Hue | None = None
+    icons: GroupIcons = []
+
+
+class GroupUpdate(BaseModel):
+    # Only the fields sent change.
+    name: Name | None = None
+    # A group's colour.
+    hue: Hue | None = None
+    icons: GroupIcons | None = None
+    # The new index among its siblings; past the end means last.
+    position: int | None = Field(default=None, ge=0)
+    # A subgroup's group: sent, it moves there, last unless `position` says otherwise.
+    parent_id: int | None = None
+
+
 class ItemOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     name: str
     variant: str | None
-    category: Category | None
+    # Its group or subgroup; unset: taken from the icon.
+    group_id: int | None
     icon: str | None
     # Running low puts it on the shopping list.
     restock: bool
@@ -133,7 +175,7 @@ class ItemCreate(BaseModel):
     name: Name
     variant: Variant = None
     # Unset: taken from the icon.
-    category: Category | None = None
+    group_id: int | None = None
     icon: Icon = None
     restock: bool = True
 
@@ -150,11 +192,11 @@ class ItemRef(BaseModel):
 
 
 class ItemUpdate(BaseModel):
-    # Only the fields sent change; send a blank or null variant, or a null category, to
+    # Only the fields sent change; send a blank or null variant, or a null group, to
     # clear it.
     name: Name | None = None
     variant: Variant = None
-    category: Category | None = None
+    group_id: int | None = None
     icon: Icon = None
     restock: bool | None = None
     # On: every item of the same name joins the family named after it; off: those in it

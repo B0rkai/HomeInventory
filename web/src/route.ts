@@ -4,8 +4,18 @@ import { useSyncExternalStore } from 'react'
 // The pool of open requests, or the ones I've claimed.
 export type TodoView = 'open' | 'mine'
 // The admin pages' tabs.
-export type AdminView = 'items' | 'places' | 'todo' | 'cookings' | 'recipes' | 'log' | 'people'
-const ADMIN_VIEWS: AdminView[] = ['items', 'places', 'todo', 'cookings', 'recipes', 'log', 'people']
+export type AdminView =
+  'items' | 'groups' | 'places' | 'todo' | 'cookings' | 'recipes' | 'log' | 'people'
+const ADMIN_VIEWS: AdminView[] = [
+  'items',
+  'groups',
+  'places',
+  'todo',
+  'cookings',
+  'recipes',
+  'log',
+  'people',
+]
 // The Menu tab: the planned cookings, or the recipes.
 export type MenuView = 'week' | 'recipes'
 

@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import type { ItemOut, RequestOut, StockOut } from './api'
+import { groupName, sectionByGroup, subheaded } from './groups'
 import { useHouse } from './house'
 import { IconPicker } from './IconPicker'
 import { COMMON_ITEMS } from './icons'
@@ -17,12 +18,38 @@ import { reservations, reservedText } from './cookings'
 import { MAX_DEPTH, childrenOf, pathTo, restockedStock, shortageIn } from './tree'
 import { byItem, firstVariant, fullName, groupByName, hasVariants } from './variants'
 
+// The stock headings folded at a place, on this phone.
+const FOLDED_KEY = (id: number) => `place-folded:${id}`
+
+function loadFolded(id: number): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(FOLDED_KEY(id)) ?? '[]') as string[])
+  } catch {
+    return new Set()
+  }
+}
+
+function saveFolded(id: number, folded: Set<string>): void {
+  try {
+    localStorage.setItem(FOLDED_KEY(id), JSON.stringify([...folded]))
+  } catch {
+    // Only a convenience.
+  }
+}
+
 /** One place: the places inside it, and the level of everything kept here. */
 export function PlacePage({ id }: { id: number }) {
   const { house, actions } = useHouse()
   const [editing, setEditing] = useState(false)
   // The item name whose "new variant" field is open.
   const [addingVariantTo, setAddingVariantTo] = useState<string>()
+  // The folded headings of this place's stock, for the place shown.
+  const [folded, setFolded] = useState(() => loadFolded(id))
+  const [foldedFor, setFoldedFor] = useState(id)
+  if (foldedFor !== id) {
+    setFoldedFor(id)
+    setFolded(loadFolded(id))
+  }
   if (!house) return null
   const { locations, items, stock, requests } = house
   // What planned cookings need.
@@ -114,6 +141,78 @@ export function PlacePage({ id }: { id: number }) {
         + {t.place.addVariant}
       </button>
     )
+
+  const nameGroup = (group: (typeof groups)[number]) =>
+    hasVariants(group, (r) => r.item) ? (
+      <li key={group.name} className="stock-group">
+        <div className="group-head">
+          <a
+            className="item-link"
+            href={href.item(firstVariant(items, group.name)?.id ?? group.first.id)}
+          >
+            <Named
+              thing={{ name: group.name, icon: group.first.icon, group_id: group.first.group_id }}
+              kind="item"
+            />
+            {group.first.any_variant && (
+              <span className="small muted any-kind"> · {t.items.anyKind}</span>
+            )}
+          </a>
+          {addVariantButton(group.name)}
+        </div>
+        <ul>
+          {group.rows.map((r) =>
+            row(
+              r,
+              <a className="item-link" href={href.item(r.item.id)}>
+                {r.item.variant ?? <span className="muted">{t.items.noVariant}</span>}
+              </a>,
+            ),
+          )}
+          {variantForm(group.name)}
+        </ul>
+      </li>
+    ) : (
+      [
+        row(
+          group.rows[0],
+          <span className="group-head">
+            <a className="item-link" href={href.item(group.rows[0].item.id)}>
+              <Named thing={group.rows[0].item} kind="item" />
+            </a>
+            {addVariantButton(group.name)}
+          </span>,
+        ),
+        variantForm(group.name),
+      ]
+    )
+
+  // Headings by group, and subgroup where a group has more than one here; none when
+  // everything here is in one. Each folds, remembered per place.
+  const sections = sectionByGroup(
+    groups,
+    (group) => group.first,
+    house.groups,
+    () => 0,
+  )
+  const headed = sections.length > 1 || (sections[0] !== undefined && subheaded(sections[0]))
+  const fold = (key: string) => {
+    const next = new Set(folded)
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    setFolded(next)
+    saveFolded(id, next)
+  }
+  const foldHead = (key: string, name: string, Heading: 'h4' | 'h5') => (
+    <Heading className="stock-section-head">
+      <button type="button" aria-expanded={!folded.has(key)} onClick={() => fold(key)}>
+        <span className="fold-mark" aria-hidden="true">
+          {folded.has(key) ? '▸' : '▾'}
+        </span>{' '}
+        {name}
+      </button>
+    </Heading>
+  )
 
   async function remove() {
     if (!place || !window.confirm(t.place.confirmDelete(place.name))) return
@@ -215,55 +314,28 @@ export function PlacePage({ id }: { id: number }) {
         <h3>{t.place.stockTitle}</h3>
         {rows.length === 0 && <p className="muted">{t.place.noStock}</p>}
         <ul className="stock">
-          {groups.map((group) =>
-            hasVariants(group, (r) => r.item) ? (
-              <li key={group.name} className="stock-group">
-                <div className="group-head">
-                  <a
-                    className="item-link"
-                    href={href.item(firstVariant(items, group.name)?.id ?? group.first.id)}
-                  >
-                    <Named
-                      thing={{
-                        name: group.name,
-                        icon: group.first.icon,
-                        category: group.first.category,
-                      }}
-                      kind="item"
-                    />
-                    {group.first.any_variant && (
-                      <span className="small muted any-kind"> · {t.items.anyKind}</span>
-                    )}
-                  </a>
-                  {addVariantButton(group.name)}
-                </div>
-                <ul>
-                  {group.rows.map((r) =>
-                    row(
-                      r,
-                      <a className="item-link" href={href.item(r.item.id)}>
-                        {r.item.variant ?? <span className="muted">{t.items.noVariant}</span>}
-                      </a>,
-                    ),
-                  )}
-                  {variantForm(group.name)}
-                </ul>
+          {sections.map((section) => {
+            const groupKey = `g${section.group?.id ?? ''}`
+            const subs = section.subs.map(({ sub, list }) => {
+              const subKey = `s${sub?.id ?? ''}`
+              return subheaded(section) ? (
+                <li key={subKey} className="stock-section">
+                  {foldHead(subKey, sub ? sub.name : t.items.groupItself, 'h5')}
+                  {!folded.has(subKey) && <ul>{list.map(nameGroup)}</ul>}
+                </li>
+              ) : (
+                list.map(nameGroup)
+              )
+            })
+            return headed ? (
+              <li key={groupKey} className="stock-section">
+                {foldHead(groupKey, groupName(section.group), 'h4')}
+                {!folded.has(groupKey) && <ul>{subs}</ul>}
               </li>
             ) : (
-              [
-                row(
-                  group.rows[0],
-                  <span className="group-head">
-                    <a className="item-link" href={href.item(group.rows[0].item.id)}>
-                      <Named thing={group.rows[0].item} kind="item" />
-                    </a>
-                    {addVariantButton(group.name)}
-                  </span>,
-                ),
-                variantForm(group.name),
-              ]
-            ),
-          )}
+              subs
+            )
+          })}
         </ul>
         <AddItemForm
           suggestions={suggestions}

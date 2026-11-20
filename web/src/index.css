@@ -1706,3 +1706,87 @@ td.agenda-status {
 .cooking-note {
   margin: 0.15rem 0 0;
 }
+
+/* Groups: a group's subgroup chips, subheadings in a list, a place's foldable headings */
+
+.sub-tabs {
+  margin-top: 0.35rem;
+}
+.sub-tabs .chip {
+  min-height: 1.9rem;
+  font-size: 0.85rem;
+}
+.subgroup + .subgroup {
+  margin-top: 0.3rem;
+}
+.subgroup-head {
+  margin: 0.5rem 0 0.1rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.stock li.stock-section {
+  padding: 0;
+  border-bottom: 0;
+}
+.stock-section > ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stock-section .stock-section > ul {
+  padding-left: 0.75rem;
+}
+.stock-section-head {
+  margin: 0.4rem 0 0;
+  font-size: 0.95rem;
+}
+h5.stock-section-head {
+  padding-left: 0.75rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.stock-section-head button {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+}
+.fold-mark {
+  width: 1rem;
+  color: var(--muted);
+}
+
+/* Admin: a subgroup's icons */
+
+.icons-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  max-width: 22rem;
+  padding: 0.2rem;
+  border: 1px dashed var(--border);
+  background: none;
+  cursor: pointer;
+}
+.icon-grid {
+  display: flex;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.icon-option[aria-pressed='true'] {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+}
+.admin-table .group-select {
+  max-width: 15rem;
+}

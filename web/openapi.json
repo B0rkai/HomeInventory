@@ -645,6 +645,147 @@
         }
       }
     },
+    "/api/v1/groups": {
+      "get": {
+        "summary": "List Groups",
+        "description": "Every group and subgroup, ordered by parent, then position; the client nests them.",
+        "operationId": "list_groups",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GroupOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Groups"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Group",
+        "description": "Adds a group (with a colour) or a subgroup (wearing its group's), last of its\nsiblings.",
+        "operationId": "create_group",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/groups/{group_id}": {
+      "patch": {
+        "summary": "Update Group",
+        "description": "Renames a group, changes its colour or icons, moves it among its siblings, or moves\na subgroup to another group. A group stays a group and a subgroup a subgroup.",
+        "operationId": "update_group",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Group Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Group",
+        "description": "Deletes a subgroup, its items moving up to its group; a group only once it has no\nsubgroups and no items.",
+        "operationId": "delete_group",
+        "parameters": [
+          {
+            "name": "group_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Group Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/chores": {
       "get": {
         "summary": "List Chores",
@@ -2014,18 +2155,6 @@
         ],
         "title": "AdminLogin"
       },
-      "Category": {
-        "type": "string",
-        "enum": [
-          "food",
-          "drink",
-          "clean",
-          "body",
-          "home"
-        ],
-        "title": "Category",
-        "description": "A fixed set of item groups, one per icon colour in the web client."
-      },
       "ChoreCreate": {
         "properties": {
           "location_id": {
@@ -2442,6 +2571,176 @@
         "type": "object",
         "title": "CookingUpdate"
       },
+      "GroupCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "hue": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Hue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "icons": {
+            "items": {
+              "type": "string",
+              "maxLength": 32,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Icons",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "GroupCreate"
+      },
+      "GroupOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "hue": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Hue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "icons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Icons"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "parent_id",
+          "name",
+          "position",
+          "hue",
+          "icons"
+        ],
+        "title": "GroupOut"
+      },
+      "GroupUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "hue": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Hue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "icons": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "maxLength": 32,
+                  "minLength": 1
+                },
+                "type": "array",
+                "maxItems": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icons"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          }
+        },
+        "type": "object",
+        "title": "GroupUpdate"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -2468,6 +2767,18 @@
           "status"
         ],
         "title": "Health"
+      },
+      "Hue": {
+        "type": "string",
+        "enum": [
+          "food",
+          "drink",
+          "clean",
+          "body",
+          "home"
+        ],
+        "title": "Hue",
+        "description": "A group's tile colour, from the web client's fixed palette (one per icon colour)."
       },
       "IngredientIn": {
         "properties": {
@@ -2599,15 +2910,16 @@
             ],
             "title": "Variant"
           },
-          "category": {
+          "group_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/Category"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Group Id"
           },
           "icon": {
             "anyOf": [
@@ -2654,15 +2966,16 @@
             ],
             "title": "Variant"
           },
-          "category": {
+          "group_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/Category"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Group Id"
           },
           "icon": {
             "anyOf": [
@@ -2707,7 +3020,7 @@
           "id",
           "name",
           "variant",
-          "category",
+          "group_id",
           "icon",
           "restock",
           "family",
@@ -2771,15 +3084,16 @@
             ],
             "title": "Variant"
           },
-          "category": {
+          "group_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/Category"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Group Id"
           },
           "icon": {
             "anyOf": [

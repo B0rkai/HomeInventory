@@ -29,7 +29,8 @@ requests with claiming (`requests.py`); web push (`notify.py`, keys made on
 first use in the data directory) and live updates over SSE (`live.py`,
 `/api/v1/events`); and the web pages for them (home tree, place page, to-do
 list with the shopping list, item catalogue (its "Csak hiány" is the shortages), activity log
-(`activity.py`), a bottom tab bar; hash routes in `web/src/route.ts`, shared
+(`activity.py`), a bottom tab bar; item groups and subgroups as data (`groups.py`,
+`web/src/groups.ts`, the admin Csoportok tab, seeded from `seed/groups.json`); hash routes in `web/src/route.ts`, shared
 data in `web/src/house.ts`, where changes also wait a few seconds to be undone);
 desktop admin pages (`#/admin/...`, and the LAN port as Admin): items, places,
 to-dos with assigning, the log, people and their devices; moving stock;

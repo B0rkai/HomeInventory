@@ -13,8 +13,8 @@ def add_location(api, name: str, parent_id: int | None = None) -> int:
     return response.json()["id"]
 
 
-def add_item(api, name: str, category: str | None = None) -> int:
-    response = api("POST", "/items", {"name": name, "category": category})
+def add_item(api, name: str, group_id: int | None = None) -> int:
+    response = api("POST", "/items", {"name": name, "group_id": group_id})
     assert response.status_code == 201, response.text
     return response.json()["id"]
 
@@ -118,15 +118,22 @@ def test_delete_location_drops_its_stock(api, app) -> None:
 # Items
 
 
+def add_group(api, name: str = "Élelmiszer") -> int:
+    return api("POST", "/groups", {"name": name, "hue": "food"}).json()["id"]
+
+
 def test_create_and_list_items(api) -> None:
-    add_item(api, "Tej", "food")
+    food = add_group(api)
+    add_item(api, "Tej", food)
     add_item(api, "Cukor")
-    items = {item["name"]: item["category"] for item in api("GET", "/items").json()}
-    assert items == {"Tej": "food", "Cukor": None}
+    items = {item["name"]: item["group_id"] for item in api("GET", "/items").json()}
+    assert items == {"Tej": food, "Cukor": None}
 
 
-def test_categories_are_a_fixed_set(api) -> None:
-    assert api("POST", "/items", {"name": "Tej", "category": "Tejtermék"}).status_code == 422
+def test_an_items_group_must_exist(api) -> None:
+    assert api("POST", "/items", {"name": "Tej", "group_id": 99}).status_code == 422
+    milk = add_item(api, "Tej")
+    assert api("PATCH", f"/items/{milk}", {"group_id": 99}).status_code == 422
 
 
 def test_item_names_are_unique_ignoring_case(api) -> None:
@@ -135,25 +142,26 @@ def test_item_names_are_unique_ignoring_case(api) -> None:
 
 
 def test_update_item_only_changes_what_is_sent(api) -> None:
-    milk = add_item(api, "Tej", "food")
+    food = add_group(api)
+    milk = add_item(api, "Tej", food)
     response = api("PATCH", f"/items/{milk}", {"name": "Zabtej"})
     assert response.json() == {
         "id": milk,
         "name": "Zabtej",
         "variant": None,
-        "category": "food",
+        "group_id": food,
         "icon": None,
         "restock": True,
         "any_variant": False,
         "family": None,
         "substitute_ids": [],
     }
-    response = api("PATCH", f"/items/{milk}", {"category": None})
+    response = api("PATCH", f"/items/{milk}", {"group_id": None})
     assert response.json() == {
         "id": milk,
         "name": "Zabtej",
         "variant": None,
-        "category": None,
+        "group_id": None,
         "icon": None,
         "restock": True,
         "any_variant": False,

@@ -9,6 +9,7 @@ from homeinventory.activity import record
 from homeinventory.common import NO_CONTENT, announce_changes, conflict, get_notifier, get_or_404
 from homeinventory.cooking_lines import level_changed
 from homeinventory.db import get_session
+from homeinventory.groups import check_group
 from homeinventory.identity import current_user
 from homeinventory.models import (
     ACTIVE,
@@ -241,10 +242,11 @@ def list_items(session: Session = Depends(get_session)) -> list[ItemOut]:
 @router.post("/items", status_code=status.HTTP_201_CREATED)
 def create_item(new: ItemCreate, session: Session = Depends(get_session)) -> ItemOut:
     _check_item_name(session, new.name, new.variant)
+    check_group(session, new.group_id)
     item = Item(
         name=new.name,
         variant=new.variant,
-        category=new.category,
+        group_id=new.group_id,
         icon=new.icon,
         restock=new.restock,
     )
@@ -293,8 +295,9 @@ def update_item(
         if was_any or joined:
             set_family(item, joined)
     item.name, item.variant = name, variant
-    if "category" in update.model_fields_set:
-        item.category = update.category
+    if "group_id" in update.model_fields_set:
+        check_group(session, update.group_id)
+        item.group_id = update.group_id
     if "icon" in update.model_fields_set:
         item.icon = update.icon
     if update.substitutes is not None:

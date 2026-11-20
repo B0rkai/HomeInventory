@@ -1,6 +1,14 @@
 import { useState } from 'react'
-import type { Category, ItemOut, Level } from './api'
-import { CATEGORIES, categoryName, categoryOf, groupByCategory } from './categories'
+import type { ItemOut, Level } from './api'
+import {
+  groupName,
+  groupOf,
+  sectionByGroup,
+  subgroupsOf,
+  subheaded,
+  topGroups,
+  topOf,
+} from './groups'
 import { reservations, reservedText } from './cookings'
 import { useHouse } from './house'
 import { IconArt } from './IconArt'
@@ -15,11 +23,15 @@ import { byItem, fullName } from './variants'
 // preference, kept for good.
 const SEARCH_KEY = 'items-search'
 const GROUP_KEY = 'items-group'
+const SUB_KEY = 'items-subgroup'
 const ORDER_KEY = 'items-order'
 const SHORT_KEY = 'items-short'
 
-// A group tab: every group, one of them, or the items in none ("Egyéb").
-type Tab = 'all' | Category | 'none'
+// A group tab: every group, one of them (its id), or the items in none ("Egyéb"). A
+// subgroup chip: all of the group, the items in the group itself, or a subgroup's id.
+type Tab = string
+const ALL = 'all'
+const NONE = 'none'
 // Most first (what's at home, say for cooking) or least first (what to buy).
 type Order = 'most' | 'least'
 
@@ -57,7 +69,8 @@ function fold(text: string): string {
 export function ItemsPage() {
   const { house } = useHouse()
   const [search, setSearch] = useState(() => load(() => sessionStorage, SEARCH_KEY) ?? '')
-  const [tab, setTab] = useState(() => (load(() => sessionStorage, GROUP_KEY) ?? 'all') as Tab)
+  const [tab, setTab] = useState<Tab>(() => load(() => sessionStorage, GROUP_KEY) ?? ALL)
+  const [subTab, setSubTab] = useState<Tab>(() => load(() => sessionStorage, SUB_KEY) ?? ALL)
   const [order, setOrder] = useState(() =>
     load(() => localStorage, ORDER_KEY) === 'least' ? 'least' : ('most' as Order),
   )
@@ -73,16 +86,33 @@ export function ItemsPage() {
   // What planned cookings need.
   const reserved = reservations(house)
 
-  const groupOf = (item: ItemOut): Tab => categoryOf(item) ?? 'none'
+  const { groups } = house
+  // An item's group tab, and its subgroup chip (the group's own id for one in the group
+  // itself).
+  const tabOf = (item: ItemOut): Tab => {
+    const own = groupOf(item, groups)
+    return own ? String(topOf(own, groups).id) : NONE
+  }
+  const subTabOf = (item: ItemOut): Tab => String(groupOf(item, groups)?.id)
   // Only the groups that have items, in list order.
   const tabs: Tab[] = [
-    'all',
-    ...[...CATEGORIES, 'none' as const].filter((group) =>
-      house.items.some((item) => groupOf(item) === group),
+    ALL,
+    ...[...topGroups(groups).map((group) => String(group.id)), NONE].filter((group) =>
+      house.items.some((item) => tabOf(item) === group),
     ),
   ]
   // A group emptied since (its last item deleted or regrouped) falls back to all.
-  const shown = tabs.includes(tab) ? tab : 'all'
+  const shown = tabs.includes(tab) ? tab : ALL
+  // The chosen group's subgroups in use, those in the group itself first: chips only when
+  // there are two kinds or more.
+  const inShown = house.items.filter((item) => tabOf(item) === shown)
+  const subTabs =
+    shown === ALL || shown === NONE
+      ? []
+      : [shown, ...subgroupsOf(groups, Number(shown)).map((sub) => String(sub.id))].filter((sub) =>
+          inShown.some((item) => subTabOf(item) === sub),
+        )
+  const subShown = subTabs.length > 1 && subTabs.includes(subTab) ? subTab : ALL
 
   const levels = new Map(
     house.items.map((item) => [item.id, bestLevel(stock.filter((row) => row.item_id === item.id))]),
@@ -102,7 +132,8 @@ export function ItemsPage() {
   const items = house.items.filter(
     (item) =>
       fold(fullName(item)).includes(wanted) &&
-      (shown === 'all' || groupOf(item) === shown) &&
+      (shown === ALL || tabOf(item) === shown) &&
+      (subShown === ALL || subTabOf(item) === subShown) &&
       (!shortOnly || short.some((row) => row.item_id === item.id)),
   )
 
@@ -114,6 +145,12 @@ export function ItemsPage() {
   function changeTab(next: Tab) {
     setTab(next)
     save(() => sessionStorage, GROUP_KEY, next)
+    changeSubTab(ALL)
+  }
+
+  function changeSubTab(next: Tab) {
+    setSubTab(next)
+    save(() => sessionStorage, SUB_KEY, next)
   }
 
   function flipShort() {
@@ -168,10 +205,32 @@ export function ItemsPage() {
                 aria-selected={group === shown}
                 onClick={() => changeTab(group)}
               >
-                {group === 'all' ? t.items.all : categoryName(group === 'none' ? null : group)}
+                {group === ALL
+                  ? t.items.all
+                  : groupName(groups.find((g) => String(g.id) === group))}
               </button>
             ))}
           </div>
+          {subTabs.length > 1 && (
+            <div className="group-tabs sub-tabs" role="tablist" aria-label={t.items.subgroup}>
+              {[ALL, ...subTabs].map((sub) => (
+                <button
+                  key={sub}
+                  type="button"
+                  role="tab"
+                  className="chip"
+                  aria-selected={sub === subShown}
+                  onClick={() => changeSubTab(sub)}
+                >
+                  {sub === ALL
+                    ? t.items.all
+                    : sub === shown
+                      ? t.items.groupItself
+                      : groupName(groups.find((g) => String(g.id) === sub))}
+                </button>
+              ))}
+            </div>
+          )}
         </>
       )}
       {items.length === 0 && (
@@ -179,54 +238,65 @@ export function ItemsPage() {
           <p>
             {!house.items.length
               ? t.items.empty
-              : shortOnly && !wanted && shown === 'all'
+              : shortOnly && !wanted && shown === ALL
                 ? t.items.noShortage
                 : t.items.noMatch}
           </p>
         </div>
       )}
-      {groupByCategory(items, byLevel).map(([category, groupItems]) => (
-        <section key={category ?? ''} className="card">
-          <h3>{categoryName(category)}</h3>
-          <ul className="item-list">
-            {groupItems.map((item) => {
-              const shortRows = short.filter((row) => row.item_id === item.id)
-              // Short: the worst level, and where; else the best, and in how many places.
-              const level = shortOnly
-                ? shortRows.some((row) => row.level === 'out')
-                  ? 'out'
-                  : 'low'
-                : levels.get(item.id)
-              const lots = stock.filter((row) => row.item_id === item.id && row.level === 'lots')
-              return (
-                <li key={item.id}>
-                  <a className="item-row" href={href.item(item.id)}>
-                    <Named thing={item} kind="item" />
-                    <span className="small">
-                      {!item.restock && (
-                        <span className="no-restock" role="img" aria-label={t.items.noRestock}>
-                          <IconArt name="repeat-off" />
+      {sectionByGroup(items, (item) => item, groups, byLevel).map((section) => (
+        <section key={section.group?.id ?? ''} className="card">
+          <h3>{groupName(section.group)}</h3>
+          {section.subs.map(({ sub, list }) => (
+            <div key={sub?.id ?? ''} className="subgroup">
+              {subheaded(section) && (
+                <h4 className="subgroup-head">{sub ? sub.name : t.items.groupItself}</h4>
+              )}
+              <ul className="item-list">
+                {list.map((item) => {
+                  const shortRows = short.filter((row) => row.item_id === item.id)
+                  // Short: the worst level, and where; else the best, and in how many places.
+                  const level = shortOnly
+                    ? shortRows.some((row) => row.level === 'out')
+                      ? 'out'
+                      : 'low'
+                    : levels.get(item.id)
+                  const lots = stock.filter(
+                    (row) => row.item_id === item.id && row.level === 'lots',
+                  )
+                  return (
+                    <li key={item.id}>
+                      <a className="item-row" href={href.item(item.id)}>
+                        <Named thing={item} kind="item" />
+                        <span className="small">
+                          {!item.restock && (
+                            <span className="no-restock" role="img" aria-label={t.items.noRestock}>
+                              <IconArt name="repeat-off" />
+                            </span>
+                          )}
+                          {reserved.has(item.id) && (
+                            <ReservedMark text={reservedText(house, reserved.get(item.id)!)} />
+                          )}
+                          {level && <LevelName level={level} />}
+                          <span className="muted">
+                            {level && ' · '}
+                            {shortOnly
+                              ? shortRows.map((row) => placeName(row.location_id)).join(', ')
+                              : t.items.places(
+                                  stock.filter((row) => row.item_id === item.id).length,
+                                )}
+                            {shortOnly &&
+                              lots.length > 0 &&
+                              ` · ${t.items.lotsAt(lots.map((row) => placeName(row.location_id)).join(', '))}`}
+                          </span>
                         </span>
-                      )}
-                      {reserved.has(item.id) && (
-                        <ReservedMark text={reservedText(house, reserved.get(item.id)!)} />
-                      )}
-                      {level && <LevelName level={level} />}
-                      <span className="muted">
-                        {level && ' · '}
-                        {shortOnly
-                          ? shortRows.map((row) => placeName(row.location_id)).join(', ')
-                          : t.items.places(stock.filter((row) => row.item_id === item.id).length)}
-                        {shortOnly &&
-                          lots.length > 0 &&
-                          ` · ${t.items.lotsAt(lots.map((row) => placeName(row.location_id)).join(', '))}`}
-                      </span>
-                    </span>
-                  </a>
-                </li>
-              )
-            })}
-          </ul>
+                      </a>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          ))}
         </section>
       ))}
     </>

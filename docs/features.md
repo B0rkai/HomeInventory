@@ -157,11 +157,10 @@ Activity (tables `users`, `locations`, `items`, `stock`, `chores`,
   place's lines into one (or none, if a variant is still there); off splits
   them again.
   A place's add form has an optional variant field next to the name.
-  Name and variant together are unique, ignoring case. Category, from a
-  fixed set matching the icon colours (`food` Élelmiszer, `drink` Ital,
-  `clean` Takarítás, `body` Tisztálkodás, `home` Háztartás), groups the
-  catalogue and the shopping list; unset means "from the icon" (a letter
-  tile is "Egyéb"), and a chosen one also colours the tile.
+  Name and variant together are unique, ignoring case. Its group (or
+  subgroup, see Groups) sorts the catalogue, a place's page and the
+  shopping list; unset means "from the icon" (a letter tile is "Egyéb"),
+  and a chosen one also colours the tile.
   Items and locations have an optional `icon`, a name from the web client's
   icon set (`web/src/icons.ts`): null means the client guesses one from the
   name, empty means none.
@@ -209,6 +208,51 @@ taking the item off the place cancels it. Completing a buy request sets the
 stock back to *plenty*; cancelling it leaves the level alone. Every state
 change is a single conditional update (see `CLAUDE.md`); losing a race is
 `409`.
+
+## Groups *(agreed 2026-11-20)*
+
+Groups sort what there is so it's quick to find; they don't change what's
+short or what goes on the list (that's a family's job, "Hasonló termékek").
+They are data, edited on the admin pages only (`item_groups`):
+
+- **Two levels**: a group (Élelmiszer, Ital, Takarítás, Tisztálkodás,
+  Háztartás: the old fixed categories) and its subgroups (Élelmiszer ›
+  Fűszer). Each has a name, unique among its siblings ignoring case, and a
+  position: the order lists show them in, the shopping list's too (roughly
+  the shop's aisles). A group has a tile colour from the client's fixed
+  palette (`hue`: food, drink, clean, body, home); a subgroup wears its
+  group's. A subgroup lists icons that suggest it (bread → Pékáru).
+- **An item** names a group or a subgroup (`group_id`), or none: then it
+  follows its icon, a subgroup listing it first (in list order), else the
+  group of the icon's colour, else "Egyéb".
+- **Starting set**: the five groups, the items' old categories moved over,
+  and under Élelmiszer: Zöldség, gyümölcs; Hús, hal; Tejtermék, tojás;
+  Pékáru; Száraz áru; Konzerv, üveges; Fűszer; Édesség, nasi; Fagyasztott,
+  each with the icons that suggest it. They come from a seed file
+  (`server/src/homeinventory/seed/groups.json`) the migration loads, not
+  from code.
+- **Deleting** a subgroup moves its items up to its group; a group goes
+  only once it has no subgroups and no items.
+- **Shelf life** (milestone 7) will default per subgroup.
+
+Where they show:
+
+- **Termékek** (phone): the group chips as before; a group with subgroups
+  in use gets a second row of chips (Mind, Fűszer, Pékáru, ...).
+- **A place's page**: its items under group headings, subgroup
+  subheadings inside where a group has more than one in use; none at all
+  when everything there is in one. Each heading folds; folded ones are
+  remembered per place, per phone.
+- **The shopping list**: group headings as before, subgroup subheadings
+  where a group has more than one in use; the shared text follows.
+- **Editing an item** (phone and admin): one picker, "Automatikus (...)",
+  then each group followed by its subgroups ("Élelmiszer › Fűszer").
+- **Admin**: the items table's group column, filter (a group takes in its
+  subgroups) and bulk change know subgroups; a **Csoportok** tab lists the
+  groups with their subgroups (name, colour, suggesting icons, how many
+  items, order), adds, renames, moves a subgroup to another group, deletes.
+- **Families** are renamed on screen to **Hasonló termékek** (any of them
+  will do, one line on the list), so the word "csoport" means only this.
 
 ## Milestones
 

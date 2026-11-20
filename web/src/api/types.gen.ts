@@ -71,13 +71,6 @@ export type AdminLogin = {
 };
 
 /**
- * Category
- *
- * A fixed set of item groups, one per icon colour in the web client.
- */
-export type Category = 'food' | 'drink' | 'clean' | 'body' | 'home';
-
-/**
  * ChoreCreate
  */
 export type ChoreCreate = {
@@ -270,6 +263,75 @@ export type CookingUpdate = {
 };
 
 /**
+ * GroupCreate
+ */
+export type GroupCreate = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Parent Id
+     */
+    parent_id?: number | null;
+    hue?: Hue | null;
+    /**
+     * Icons
+     */
+    icons?: Array<string>;
+};
+
+/**
+ * GroupOut
+ */
+export type GroupOut = {
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Parent Id
+     */
+    parent_id: number | null;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Position
+     */
+    position: number;
+    hue: Hue | null;
+    /**
+     * Icons
+     */
+    icons: Array<string>;
+};
+
+/**
+ * GroupUpdate
+ */
+export type GroupUpdate = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    hue?: Hue | null;
+    /**
+     * Icons
+     */
+    icons?: Array<string> | null;
+    /**
+     * Position
+     */
+    position?: number | null;
+    /**
+     * Parent Id
+     */
+    parent_id?: number | null;
+};
+
+/**
  * HTTPValidationError
  */
 export type HttpValidationError = {
@@ -288,6 +350,13 @@ export type Health = {
      */
     status: 'ok';
 };
+
+/**
+ * Hue
+ *
+ * A group's tile colour, from the web client's fixed palette (one per icon colour).
+ */
+export type Hue = 'food' | 'drink' | 'clean' | 'body' | 'home';
 
 /**
  * IngredientIn
@@ -364,7 +433,10 @@ export type ItemCreate = {
      * Variant
      */
     variant?: string | null;
-    category?: Category | null;
+    /**
+     * Group Id
+     */
+    group_id?: number | null;
     /**
      * Icon
      */
@@ -391,7 +463,10 @@ export type ItemOut = {
      * Variant
      */
     variant: string | null;
-    category: Category | null;
+    /**
+     * Group Id
+     */
+    group_id: number | null;
     /**
      * Icon
      */
@@ -442,7 +517,10 @@ export type ItemUpdate = {
      * Variant
      */
     variant?: string | null;
-    category?: Category | null;
+    /**
+     * Group Id
+     */
+    group_id?: number | null;
     /**
      * Icon
      */
@@ -1430,6 +1508,109 @@ export type MoveStockResponses = {
 };
 
 export type MoveStockResponse = MoveStockResponses[keyof MoveStockResponses];
+
+export type ListGroupsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/groups';
+};
+
+export type ListGroupsResponses = {
+    /**
+     * Response List Groups
+     *
+     * Successful Response
+     */
+    200: Array<GroupOut>;
+};
+
+export type ListGroupsResponse = ListGroupsResponses[keyof ListGroupsResponses];
+
+export type CreateGroupData = {
+    body: GroupCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/groups';
+};
+
+export type CreateGroupErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateGroupError = CreateGroupErrors[keyof CreateGroupErrors];
+
+export type CreateGroupResponses = {
+    /**
+     * Successful Response
+     */
+    201: GroupOut;
+};
+
+export type CreateGroupResponse = CreateGroupResponses[keyof CreateGroupResponses];
+
+export type DeleteGroupData = {
+    body?: never;
+    path: {
+        /**
+         * Group Id
+         */
+        group_id: number;
+    };
+    query?: never;
+    url: '/api/v1/groups/{group_id}';
+};
+
+export type DeleteGroupErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteGroupError = DeleteGroupErrors[keyof DeleteGroupErrors];
+
+export type DeleteGroupResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteGroupResponse = DeleteGroupResponses[keyof DeleteGroupResponses];
+
+export type UpdateGroupData = {
+    body: GroupUpdate;
+    path: {
+        /**
+         * Group Id
+         */
+        group_id: number;
+    };
+    query?: never;
+    url: '/api/v1/groups/{group_id}';
+};
+
+export type UpdateGroupErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateGroupError = UpdateGroupErrors[keyof UpdateGroupErrors];
+
+export type UpdateGroupResponses = {
+    /**
+     * Successful Response
+     */
+    200: GroupOut;
+};
+
+export type UpdateGroupResponse = UpdateGroupResponses[keyof UpdateGroupResponses];
 
 export type ListChoresData = {
     body?: never;

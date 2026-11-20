@@ -1,6 +1,5 @@
 import { type FormEvent, useId, useState } from 'react'
-import type { Category } from './api'
-import { CATEGORIES, categoryName } from './categories'
+import { GroupSelect } from './GroupSelect'
 import { useHouse } from './house'
 import { COMMON_ITEMS } from './icons'
 import { t } from './strings'
@@ -21,7 +20,7 @@ export function AdminAddItem({ locationId }: { locationId?: number }) {
   const { house, actions } = useHouse()
   const [name, setName] = useState('')
   const [variant, setVariant] = useState('')
-  const [category, setCategory] = useState('')
+  const [groupId, setGroupId] = useState<number | null>(null)
   const [place, setPlace] = useState('')
   const [saving, setSaving] = useState(false)
   if (!house) return null
@@ -57,12 +56,7 @@ export function AdminAddItem({ locationId }: { locationId?: number }) {
   async function add(event: FormEvent) {
     event.preventDefault()
     setSaving(true)
-    const added = await actions.keepItem(
-      parsed.name,
-      chosenVariant,
-      at,
-      category ? (category as Category) : undefined,
-    )
+    const added = await actions.keepItem(parsed.name, chosenVariant, at, groupId ?? undefined)
     setSaving(false)
     if (added) {
       setName('')
@@ -93,19 +87,13 @@ export function AdminAddItem({ locationId }: { locationId?: number }) {
         autoComplete="off"
       />
       {/* A known item keeps its group. */}
-      <select
-        aria-label={t.admin.group}
-        value={category}
+      <GroupSelect
+        item={{ name: parsed.name, icon: null }}
+        label={t.admin.group}
+        value={groupId}
         disabled={Boolean(known)}
-        onChange={(event) => setCategory(event.target.value)}
-      >
-        <option value="">{t.admin.groupAuto}</option>
-        {CATEGORIES.map((option) => (
-          <option key={option} value={option}>
-            {categoryName(option)}
-          </option>
-        ))}
-      </select>
+        onChange={setGroupId}
+      />
       {locationId === undefined && (
         <select
           aria-label={t.admin.keepAt}

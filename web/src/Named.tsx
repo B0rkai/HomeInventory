@@ -1,14 +1,16 @@
 import { IconArt } from './IconArt'
 import { iconOf } from './iconLookup'
 import { hueOf, type Hue, type IconKind } from './icons'
-import type { Category, RecipeOut } from './api'
+import type { RecipeOut } from './api'
+import { itemHue } from './groups'
+import { useHouse } from './house'
 
 type Thing = {
   name: string
   icon: string | null
   variant?: string | null
-  // An item's chosen group colours its tile, letter tiles too.
-  category?: Category | null
+  // An item's group colours its tile, letter tiles too.
+  group_id?: number | null
 }
 
 /** A two-tone tile: the icon in its group's colour, or the name's first letter. */
@@ -33,14 +35,14 @@ export function IconTile({
 /** An item's or place's tile and name (and variant); tiles keep names in a list lined up.
  * `note` follows the name, wrapping beside the tile, not under it. */
 export function Named({ thing, kind, note }: { thing: Thing; kind: IconKind; note?: string }) {
+  const { house } = useHouse()
+  const hue =
+    kind === 'item' && house
+      ? itemHue({ ...thing, group_id: thing.group_id ?? null }, house.groups)
+      : undefined
   return (
     <span className="named">
-      <IconTile
-        icon={iconOf(thing, kind)}
-        name={thing.name}
-        kind={kind}
-        hue={thing.category ?? undefined}
-      />
+      <IconTile icon={iconOf(thing, kind)} name={thing.name} kind={kind} hue={hue} />
       <span>
         {thing.name}
         {/* No break between the name and its variant. */}
