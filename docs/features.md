@@ -486,6 +486,19 @@ UI (agreed 2026-11-19 on the prototype):
   quietly). Reading offline is done (feature 11); build this if the shop
   shows it's missed.
 
+- **A general version** *(discussed 2026-11-20)*: the core (places,
+  items, variants, families, levels, requests, chores, push, live updates,
+  log, admin) already fits any shared stock, an office's supplies say. What
+  ties it to this household: the fixed groups (become data with the
+  subgroups, the next step), the icon lookup by Hungarian name and the
+  common items (a seed file), the suggested recipes (already data), recipes
+  and cookings (an optional module: they put lines on the list and reserve
+  stock, a small seam), and Hungarian only (`strings.ts`, the notification
+  text, the recipe paster's units). Running it for others also needs what
+  Tailscale gives us for free: real logins, several households kept apart
+  (a household on every row), public hosting and its hardening. Not until
+  there's a second use; meanwhile household content goes in as data.
+
 Considered and dropped (2026-11):
 
 - An extra reminder before a repeating chore falls due: schedule it for the

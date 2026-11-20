@@ -132,8 +132,13 @@ development and the live app apart:
   the tailnet policy auto-approves to host it).
 - Because borkai-server is a tagged device, requests made **from the server
   itself** through either name carry no user identity and get `401`. Test
-  identity with real headers against `127.0.0.1` (e.g. a headless browser
-  with `extraHTTPHeaders`), or from a phone.
+  identity with real headers against `127.0.0.1`, or from a phone.
+- **Screenshots and UI checks**: Playwright with a headless Chromium is
+  installed outside the repo (`~/.local/lib/playwright`; run scripts with
+  `NODE_PATH=~/.local/lib/playwright/node_modules node x.js`), against the
+  dev Vite with `extraHTTPHeaders` (`docs/dev-setup.md`, section 10). Check
+  UI changes with it before calling them done; scripts and images go in the
+  session's scratchpad.
 - Git pushes go out as the **B0rkai-Claude** GitHub account.
 
 ## Repository layout
@@ -212,6 +217,10 @@ docker exec -it homeinventory-app-1 python -m homeinventory.admin
   `web/src/strings.ts` (no hard-coded strings in components). Code, comments,
   commits, docs and API error details stay in English. "HomeInventory" is the
   dev name (repo, code, services); users only ever see "Spájz".
+- Household content is data, not code: new groups, lists, suggestions or
+  rules for this household (or its kitchen) go into the database or a seed
+  file the code loads, so the core stays a general stock tracker
+  (`docs/features.md`, "A general version").
 - Every server change comes with tests; API tests run against a temporary
   SQLite database, never the real one.
 - Times are stored as UTC; the client formats them for display.

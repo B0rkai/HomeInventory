@@ -158,3 +158,39 @@ API and web client as systemd user services, and expose the web client on the
 tailnet: see `deploy/dev/README.md`. User services start at boot only with
 lingering on (`loginctl show-user "$USER" -p Linger`; if it says `no`, run
 `sudo loginctl enable-linger "$USER"` once).
+
+## 10. Headless browser (screenshots, UI checks)
+
+Playwright lives outside the repo, in its own folder, with a headless Chromium
+in its default cache (`~/.cache/ms-playwright`):
+
+```bash
+mkdir -p ~/.local/lib/playwright && cd ~/.local/lib/playwright
+npm init -y && npm i playwright@1.65.1
+npx playwright install chromium-headless-shell
+```
+
+A script (CommonJS, `require('playwright')`) runs with
+`NODE_PATH=~/.local/lib/playwright/node_modules node script.js`. It opens the dev
+build at `http://127.0.0.1:5173/` with identity headers, since requests from the
+server itself through the tailnet names carry none:
+
+```js
+const { chromium } = require('playwright')
+;(async () => {
+  const b = await chromium.launch()
+  const ctx = await b.newContext({
+    viewport: { width: 393, height: 851 }, // a phone; 1400 wide for the admin pages
+    extraHTTPHeaders: { 'Tailscale-User-Login': 'borkaiakos@gmail.com', 'Tailscale-User-Name': 'Akos Borkai' },
+  })
+  await ctx.addInitScript(() => localStorage.setItem('push-prompt-dismissed', '1'))
+  const page = await ctx.newPage()
+  page.on('pageerror', (e) => console.log('PAGEERROR', e.message))
+  await page.goto('http://127.0.0.1:5173/#/menu/recipes')
+  await page.screenshot({ path: 'menu.png' })
+  await b.close()
+})()
+```
+
+The admin pages open at `#/admin` on the dev build too (there's no admin port in
+dev). Data made for a check goes into the dev database: delete it afterwards.
