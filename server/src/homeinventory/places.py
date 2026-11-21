@@ -427,7 +427,7 @@ def apply_level(
     opened, refilled = False, []
     group = group_of(session, item)
     if interchangeable(item):
-        # Short only once every variant (or family member) kept here is.
+        # Short only once every variant (or family member) is, wherever it's kept.
         opened, refilled = sync_variants_at(session, group, location_id, user, prefer=item)
     elif level in SHORT:
         # An item that isn't kept stocked just records that there's none (or little).
@@ -455,7 +455,8 @@ def tell_level(
         _announce_opened(
             session, notifier, user, [i.id for i in group_of(session, item)], location_id, level
         )
-    for id in refilled:
+    # A family taken off at several places is still one line: told once.
+    for id in refilled[:1] if interchangeable(item) else refilled:
         request = session.get_one(Request, id)
         notifier.send(
             session, user.id, message_for(session, request, "refilled", user.display_name)

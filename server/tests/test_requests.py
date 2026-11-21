@@ -798,11 +798,46 @@ def test_buying_any_variant_says_which(api, house, bread, pushes) -> None:
 
 
 def test_a_variant_bought_for_a_new_place_is_kept_there(api, house, bread) -> None:
-    wc = house["wc"]
+    pantry, wc = house["pantry"], house["wc"]
+    set_level(api, pantry, bread["kenyér"], "out")
+    set_level(api, pantry, bread["zsemle"], "out")
     set_level(api, wc, bread["kenyér"], "out")
-    [request] = active(api)
+    request = next(r for r in active(api) if r["location_id"] == wc)
     api("POST", f"/requests/{request['id']}/done", {"item_id": bread["zsemle"]})
     assert level_of(api, wc, bread["zsemle"]) == "plenty"
+
+
+def test_any_variant_counts_the_whole_house(api, house, bread, pushes) -> None:
+    """Rolls in the freezer run low while there's bread in the pantry: nothing to buy."""
+    pantry, wc = house["pantry"], house["wc"]
+    set_level(api, wc, bread["zsemle"], "low")
+    assert active(api) == []
+    # Short everywhere: on the list for each place keeping it, one line on screen.
+    set_level(api, pantry, bread["kenyér"], "out")
+    assert active(api) == []
+    set_level(api, pantry, bread["zsemle"], "out")
+    assert sorted(r["location_id"] for r in active(api)) == sorted([pantry, wc])
+    # One back anywhere: off the list everywhere, told once.
+    api(
+        "PUT",
+        "/push/subscriptions",
+        {"endpoint": "https://p/a", "keys": {"p256dh": "k", "auth": "a"}},
+    )
+    pushes.clear()
+    set_level(api, wc, bread["zsemle"], "plenty", BELA)
+    assert active(api) == []
+    assert [m["event"] for _, m in pushes] == ["refilled"]
+
+
+def test_buying_takes_the_family_off_its_other_places(api, house, bread) -> None:
+    pantry, wc = house["pantry"], house["wc"]
+    set_level(api, wc, bread["zsemle"], "low")
+    set_level(api, pantry, bread["kenyér"], "out")
+    set_level(api, pantry, bread["zsemle"], "out")
+    request = next(r for r in active(api) if r["location_id"] == pantry)
+    api("POST", f"/requests/{request['id']}/done", {"item_id": bread["kenyér"]})
+    assert active(api) == []
+    assert level_of(api, wc, bread["zsemle"]) == "low"
 
 
 def test_turning_any_variant_on_merges_the_lines(api, house) -> None:

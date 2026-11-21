@@ -147,11 +147,14 @@ Activity (tables `users`, `locations`, `items`, `stock`, `chores`,
   items sharing a name show as one group, each variant with its own stock.
   "Bármelyik fajta elég": any variant will do ("Konzerv"), stored as the
   variants' family named after the item (see Families; `any_variant` is
-  derived from it). A place is short of it only once every variant kept there is low
-  or out (`sync_variants_at` in `requests.py`; the client's
-  `restockedStock` agrees, for the badges and the shortages view), and then
-  it's one request, one row on the list ("Konzerv · bármelyik fajta"); one
-  variant back takes it off. Done asks which variant was bought
+  derived from it). It's short only once every variant is low or out
+  wherever it's kept, in the whole house *(2026-11-21: was per place; rolls
+  low in the freezer while there's bread in the kitchen aren't a shortage)*
+  (`sync_variants_at` in `requests.py`; the client's `restockedStock`
+  agrees, for the badges and the shortages view). Then each place keeping it
+  gets a request, shown as one row on the list ("Konzerv · bármelyik
+  fajta"); one variant back anywhere takes them all off, and buying one
+  does too. Done asks which variant was bought
   (`POST /requests/{id}/done` with `item_id`): that one goes to *plenty*
   there, kept there from then on if it wasn't. Turning it on merges a
   place's lines into one (or none, if a variant is still there); off splits
@@ -380,8 +383,8 @@ Decisions:
   names a side dish keeps it.
 - **Families** *(2026-11-19)*: an optional group of different items any of
   which will do ("Pékáru": Kenyér, Zsemle, Kifli), as "any variant will do"
-  is for the kinds of one item: a place is short only once every member
-  kept there is, one line on the list named after the family ("Pékáru ·
+  is for the kinds of one item: short only once every member is, wherever
+  it's kept in the house, one line on the list named after the family ("Pékáru ·
   bármelyik: Kenyér, Kifli, Zsemle"), and buying asks which. Set on the item
   (phone and admin, a column there), each variant its own *(2026-11-19:
   "Kenyér · fehér" can be Pékáru while "Kenyér · rozs" isn't)*, spelled

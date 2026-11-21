@@ -182,8 +182,8 @@ class Item(Base):
     # Kept stocked: running low puts it on the shopping list. Off for what's only bought
     # now and then (ice cream, salmon): its level still says whether there's any.
     restock: Mapped[bool] = mapped_column(default=True, server_default=true())
-    # A group of items any of which will do ("Pékáru": Kenyér, Zsemle, Kifli): short in a
-    # place only once every member kept there is, one line on the list, named after it. Any
+    # A group of items any of which will do ("Pékáru": Kenyér, Zsemle, Kifli): short only
+    # once every member is, wherever it's kept, one line on the list, named after it. Any
     # of an item's variants will do when they're a family named after the item ("Konzerv").
     # Set per item; the API spells each family one way.
     family: Mapped[str | None] = mapped_column(String(NAME_MAX_LENGTH))

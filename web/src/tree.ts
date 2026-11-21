@@ -72,25 +72,20 @@ export function byName(a: { name: string }, b: { name: string }): number {
 
 /**
  * The stock rows whose running low is a shortage: of items kept stocked, and where any
- * variant (or any of a family) will do, only once every one kept in that place is short.
+ * variant (or any of a family) will do, only once every one is short wherever it's kept.
  */
 export function restockedStock(stock: StockOut[], items: ItemOut[]): StockOut[] {
   const byId = new Map(items.map((item) => [item.id, item]))
-  // Where some variant (or family member) of an item isn't short: "group|place".
+  // The groups some variant (or family member) of which isn't short somewhere.
   const covered = new Set(
     stock.flatMap((row) => {
       const item = byId.get(row.item_id)
-      return item && interchangeable(item) && !isShort(row)
-        ? [`${groupKey(item)}|${row.location_id}`]
-        : []
+      return item && interchangeable(item) && !isShort(row) ? [groupKey(item)] : []
     }),
   )
   return stock.filter((row) => {
     const item = byId.get(row.item_id)
-    return (
-      item?.restock &&
-      !(interchangeable(item) && covered.has(`${groupKey(item)}|${row.location_id}`))
-    )
+    return item?.restock && !(interchangeable(item) && covered.has(groupKey(item)))
   })
 }
 

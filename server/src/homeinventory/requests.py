@@ -137,6 +137,15 @@ def group_of(session: Session, item: Item) -> list[Item]:
     ]
 
 
+def family_short(session: Session, group: list[Item]) -> bool:
+    """Whether a family (or the variants of an item where any will do) is short in the whole
+    house: kept somewhere, and every member low or out wherever it's kept."""
+    levels = list(
+        session.scalars(select(Stock.level).where(Stock.item_id.in_([i.id for i in group])))
+    )
+    return bool(levels) and all(level in SHORT for level in levels)
+
+
 def sync_variants_at(
     session: Session,
     group: list[Item],
@@ -145,51 +154,48 @@ def sync_variants_at(
     prefer: Item | None = None,
     closed: RequestStatus = RequestStatus.DONE,
 ) -> tuple[bool, list[int]]:
-    """For a supply where any variant will do: puts it on the list for a place (as one of
-    the restocked variants kept there, `prefer` if it can) once every variant kept there is
-    short, and takes it off (as `closed`) once one isn't. Whether it opened a request, and
-    the ids it closed."""
+    """For a supply where any variant (or any of a family) will do, after a change at
+    `location_id`: once every member is short wherever it's kept, it goes on the list for
+    each place keeping it (as one of the restocked members kept there, `prefer` if it can;
+    the list shows them as one line); once one member anywhere isn't, it comes off
+    everywhere (as `closed`). Whether it opened a request, and the ids it closed."""
     ids = [item.id for item in group]
-    rows = list(
-        session.scalars(
-            select(Stock).where(Stock.item_id.in_(ids), Stock.location_id == location_id)
-        )
-    )
-    if not (rows and all(row.level in SHORT for row in rows)):
+    if not family_short(session, group):
+        places = set(session.scalars(select(Stock.location_id).where(Stock.item_id.in_(ids))))
         return False, [
             id
+            for place in sorted(places | {location_id})
             for item_id in ids
-            for id in close_buy_requests(session, item_id, location_id, user, closed)
+            for id in close_buy_requests(session, item_id, place, user, closed)
         ]
-    active = session.scalar(
-        select(Request.id)
-        .where(
-            Request.item_id.in_(ids),
-            Request.location_id == location_id,
-            Request.status.in_(ACTIVE),
+    rows = list(session.scalars(select(Stock).where(Stock.item_id.in_(ids))))
+    opened = False
+    for place in sorted({row.location_id for row in rows}):
+        active = session.scalar(
+            select(Request.id)
+            .where(
+                Request.item_id.in_(ids),
+                Request.location_id == place,
+                Request.status.in_(ACTIVE),
+            )
+            .limit(1)
         )
-        .limit(1)
-    )
-    kept = {row.item_id for row in rows}
-    candidates = [item for item in group if item.id in kept and item.restock]
-    if active or not candidates:
-        return False, []
-    target = prefer if prefer in candidates else candidates[0]
-    return open_buy_request(session, target.id, location_id, user), []
+        kept = {row.item_id for row in rows if row.location_id == place}
+        candidates = [item for item in group if item.id in kept and item.restock]
+        if active or not candidates:
+            continue
+        target = prefer if prefer in candidates else candidates[0]
+        opened = open_buy_request(session, target.id, place, user) or opened
+    return opened, []
 
 
 def merge_variant_requests(session: Session, group: list[Item], user: User) -> None:
-    """Any variant now will do: wherever the group isn't short any more its requests go,
-    and where it is, one stays."""
+    """Any variant (or any of a family) now will do: unless the group is short in the whole
+    house its requests go, and where it is, one stays per place."""
     ids = [item.id for item in group]
+    short = family_short(session, group)
     places = set(session.scalars(select(Stock.location_id).where(Stock.item_id.in_(ids))))
     for location_id in places:
-        rows = list(
-            session.scalars(
-                select(Stock).where(Stock.item_id.in_(ids), Stock.location_id == location_id)
-            )
-        )
-        short = all(row.level in SHORT for row in rows)
         active = list(
             session.scalars(
                 select(Request)
