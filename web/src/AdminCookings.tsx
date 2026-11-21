@@ -254,6 +254,7 @@ function PlanForm({ people, onDone }: { people: UserOut[]; onDone: () => void })
       {recipe && (
         <PlanPreview
           plan={{ recipe_id: recipe.id, side_id: side ? sideId : null, bought_item_ids: [] }}
+          day={day}
         />
       )}
       <div className="actions">

@@ -6,6 +6,8 @@ WORKDIR /web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
 COPY web/ ./
+# The items' icon table, shared with the server (web/src/icons.ts).
+COPY server/src/homeinventory/seed/item_icons.json /server/src/homeinventory/seed/
 RUN npm run build
 
 FROM python:3.12-slim-trixie

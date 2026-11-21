@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from homeinventory.activity import record
 from homeinventory.common import NO_CONTENT, announce_changes, conflict, get_notifier, get_or_404
-from homeinventory.cooking_lines import level_changed
+from homeinventory.cooking_lines import level_changed, settle
 from homeinventory.db import get_session
 from homeinventory.groups import check_group
 from homeinventory.identity import current_user
@@ -300,6 +300,15 @@ def update_item(
         item.group_id = update.group_id
     if "icon" in update.model_fields_set:
         item.icon = update.icon
+    # Days of its own and "any time" exclude each other: the one sent wins.
+    if "keeps_days" in update.model_fields_set:
+        item.keeps_days = update.keeps_days
+        if update.keeps_days is not None:
+            item.keeps_any_time = False
+    if update.keeps_any_time is not None:
+        item.keeps_any_time = update.keeps_any_time
+        if update.keeps_any_time:
+            item.keeps_days = None
     if update.substitutes is not None:
         catalogue = list(session.scalars(select(Item)))
         substitutes = [
@@ -357,6 +366,8 @@ def update_item(
                     )
                 elif open_buy_request(session, other.id, stock.location_id, user):
                     opened.append((other.id, stock.location_id, stock.level))
+    # Its group or shelf life may date its lines for cookings differently.
+    settle(session, user)
     # The family it left: still one line wherever all of the rest are short.
     left = [other for other in before if other not in group_of(session, item)]
     if left and interchangeable(left[0]):

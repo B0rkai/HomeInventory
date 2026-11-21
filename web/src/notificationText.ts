@@ -1,4 +1,4 @@
-import { dayTitle } from './days'
+import { dayFor, dayTitle } from './days'
 import { t } from './strings'
 
 /** What the server sends for a notification (server/src/homeinventory/notify.py). */
@@ -15,6 +15,7 @@ export type PushMessage = {
     | 'planned'
     | 'moved'
     | 'dropped'
+    | 'window'
   kind: 'buy' | 'chore' | 'cooking'
   name: string
   variant: string | null
@@ -72,6 +73,11 @@ export function notificationText(message: PushMessage): { title: string; body: s
       return {
         title: t.notify.dropped(actor, name),
         body: message.day ? dayTitle(message.day) : '',
+      }
+    case 'window':
+      return {
+        title: t.notify.window(name),
+        body: message.day ? t.notify.windowFor(dayFor(message.day)) : place,
       }
   }
 }

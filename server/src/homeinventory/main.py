@@ -15,7 +15,7 @@ from homeinventory.db import create_db_engine
 from homeinventory.live import LiveUpdates
 from homeinventory.models import utcnow
 from homeinventory.notify import Notifier
-from homeinventory.requests import check_due_chores
+from homeinventory.requests import check_due_chores, check_windows
 from homeinventory.web import add_web_client
 
 
@@ -54,8 +54,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     return app
 
 
-# Scheduled chores fall due at midnight; this finds them (and sends the push) even when
-# nobody has the app open.
+# Scheduled chores fall due at midnight, and lines for cookings come into their buying
+# window; this finds them (and sends the push) even when nobody has the app open.
 DUE_CHECK_SECONDS = 60
 
 
@@ -65,6 +65,7 @@ async def _check_due_chores(app: FastAPI) -> None:
     def check() -> None:
         with app.state.sessionmaker() as session:
             check_due_chores(session, app.state.notifier, app.state.live, utcnow(), tz)
+            check_windows(session, app.state.notifier, utcnow(), tz)
 
     while True:
         await asyncio.sleep(DUE_CHECK_SECONDS)

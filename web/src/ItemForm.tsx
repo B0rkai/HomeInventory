@@ -1,6 +1,7 @@
 import { type FormEvent, type KeyboardEvent, useId, useState } from 'react'
 import type { ItemOut } from './api'
 import { GroupSelect } from './GroupSelect'
+import { groupName, groupOf } from './groups'
 import { useHouse } from './house'
 import { IconPicker } from './IconPicker'
 import { t } from './strings'
@@ -21,6 +22,11 @@ export function ItemForm({
   const [name, setName] = useState(item.name)
   const [variant, setVariant] = useState(item.variant ?? '')
   const [groupId, setGroupId] = useState(item.group_id)
+  // Its shelf life: its group's, any time, or days of its own.
+  const [keeps, setKeeps] = useState<'auto' | 'any' | 'days'>(
+    item.keeps_days !== null ? 'days' : item.keeps_any_time ? 'any' : 'auto',
+  )
+  const [keepsDays, setKeepsDays] = useState(String(item.keeps_days ?? 3))
   const [icon, setIcon] = useState(item.icon)
   const [restock, setRestock] = useState(item.restock)
   const [anyVariant, setAnyVariant] = useState(item.any_variant)
@@ -68,6 +74,8 @@ export function ItemForm({
       variant,
       group_id: groupId,
       icon,
+      keeps_days: keeps === 'days' ? Number(keepsDays) : null,
+      keeps_any_time: keeps === 'any',
       restock,
       // Only what changed: "any variant" reaches the item's other variants.
       ...(anyVariant !== item.any_variant && { any_variant: anyVariant }),
@@ -105,6 +113,13 @@ export function ItemForm({
         {/* Unset follows the icon, as chosen below. */}
         <GroupSelect item={{ name, icon }} value={groupId} onChange={setGroupId} />
       </label>
+      <KeepsField
+        item={{ name, icon, group_id: groupId }}
+        mode={keeps}
+        days={keepsDays}
+        onMode={setKeeps}
+        onDays={setKeepsDays}
+      />
       <label className="check">
         <input type="checkbox" checked={restock} onChange={(e) => setRestock(e.target.checked)} />
         <span>
@@ -214,5 +229,58 @@ export function ItemForm({
         </span>
       </div>
     </form>
+  )
+}
+
+/** How long it keeps, so how early it's bought for a cooking: its group's (named), any
+ * time, or days of its own. */
+function KeepsField({
+  item,
+  mode,
+  days,
+  onMode,
+  onDays,
+}: {
+  item: Pick<ItemOut, 'name' | 'icon' | 'group_id'>
+  mode: 'auto' | 'any' | 'days'
+  days: string
+  onMode: (mode: 'auto' | 'any' | 'days') => void
+  onDays: (days: string) => void
+}) {
+  const { house } = useHouse()
+  const group = groupOf(item, house?.groups ?? [])
+  const groupKeeps = group?.keeps_days ?? null
+  return (
+    <label>
+      {t.items.keeps}
+      <span className="row">
+        <select
+          value={mode}
+          onChange={(event) => onMode(event.target.value as 'auto' | 'any' | 'days')}
+        >
+          <option value="auto">
+            {t.items.keepsAuto(
+              groupName(group),
+              groupKeeps === null ? t.items.keepsAny : t.items.keepsDays(groupKeeps),
+            )}
+          </option>
+          <option value="any">{t.items.keepsAnyTime}</option>
+          <option value="days">{t.items.keepsOwn}</option>
+        </select>
+        {mode === 'days' && (
+          <input
+            type="number"
+            inputMode="numeric"
+            aria-label={t.items.keepsDaysLabel}
+            min={0}
+            max={60}
+            value={days}
+            onChange={(event) => onDays(event.target.value)}
+            required
+          />
+        )}
+      </span>
+      <span className="small muted">{t.items.keepsHint}</span>
+    </label>
   )
 }

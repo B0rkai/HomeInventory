@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react'
 import type { ItemOut, RequestOut } from './api'
 import { cookingName } from './cookings'
-import { dayFor } from './days'
+import { dayFor, dayFrom, today } from './days'
 import { type House, needsPlace, useHouse } from './house'
 import { IconArt } from './IconArt'
 import { LevelName } from './LevelPicker'
@@ -134,6 +134,8 @@ function Sections({ requests }: { requests: RequestOut[] }) {
         group_id: null,
         icon: null,
         restock: false,
+        keeps_days: null,
+        keeps_any_time: false,
         any_variant: false,
         family: null,
         substitute_ids: [],
@@ -161,9 +163,17 @@ function Sections({ requests }: { requests: RequestOut[] }) {
       )
       .sort(byPlace)
   }
+  // Fresh food for a cooking not worth buying yet: from when, the earliest of its places'.
+  const now = today()
+  const laterFrom = (key: number) => {
+    const days = buying.get(key)!.map((request) => request.buy_from)
+    return days.every((day) => day !== null && day > now) ? [...days].sort()[0]! : null
+  }
   const refills: ItemOut[] = []
-  // The rest is the shopping list, by group and subgroup.
+  // The rest is the shopping list, by group and subgroup; what's not worth buying yet comes
+  // after it, by when it is.
   const toBuy: ItemOut[] = []
+  const later: ItemOut[] = []
   for (const id of buying.keys()) {
     const first = itemsById.get(id)!
     // Shown as the family (any variant: the item, not one kind of it), with its first
@@ -173,9 +183,14 @@ function Sections({ requests }: { requests: RequestOut[] }) {
       refills.push(item)
       continue
     }
+    if (laterFrom(id)) {
+      later.push(item)
+      continue
+    }
     toBuy.push(item)
   }
   refills.sort(byItem)
+  later.sort((a, b) => laterFrom(a.id)!.localeCompare(laterFrom(b.id)!) || byItem(a, b))
   const shopping = sectionByGroup(toBuy, (item) => item, house.groups, byItem)
   // A list of only ungrouped items needs no group headings.
   const headed = shopping.length > 1 || shopping[0]?.group !== undefined
@@ -282,6 +297,9 @@ function Sections({ requests }: { requests: RequestOut[] }) {
         )}
         {wanted.some(needsPlace) && <p className="small muted">{t.todo.noPlaceYet}</p>}
         <CookingNote requests={wanted} />
+        {laterFrom(item.id) && (
+          <p className="small muted">{t.todo.buyFrom(dayFrom(laterFrom(item.id)!))}</p>
+        )}
         {item.id < 0 && wanted[0].created_by_name && (
           <p className="small muted">
             {t.todo.written(wanted[0].created_by_name, ago(wanted[0].created_at))}
@@ -345,7 +363,7 @@ function Sections({ requests }: { requests: RequestOut[] }) {
             <span className="head-actions">
               {/* A list of only uncategorised items has no group heading to put it on. */}
               {!headed && claimAll(toBuy)}
-              <ShareButton text={shoppingText(shopping, buying, house, headed)} />
+              <ShareButton text={shoppingText(shopping, buying, house, headed, later, laterFrom)} />
             </span>
           </div>
           {shopping.map((section) => (
@@ -368,6 +386,14 @@ function Sections({ requests }: { requests: RequestOut[] }) {
           ))}
         </section>
       )}
+
+      {later.length > 0 && (
+        <section className="card later-list">
+          <h3>{t.todo.later}</h3>
+          <p className="small muted">{t.todo.laterHint}</p>
+          <ul className="requests">{later.map(itemRow)}</ul>
+        </section>
+      )}
     </>
   )
 }
@@ -379,6 +405,8 @@ function shoppingText(
   buying: Map<number, RequestOut[]>,
   house: House,
   headed: boolean,
+  later: ItemOut[],
+  laterFrom: (key: number) => string | null,
 ): string {
   const lines = [t.todo.shopping]
   for (const section of shopping) {
@@ -397,6 +425,10 @@ function shoppingText(
         lines.push(why.length ? `- ${fullName(item)} (${why.join(', ')})` : `- ${fullName(item)}`)
       }
     }
+  }
+  if (later.length) {
+    lines.push('', `${t.todo.later}:`)
+    for (const item of later) lines.push(`- ${fullName(item)} (${dayFrom(laterFrom(item.id)!)})`)
   }
   return lines.join('\n')
 }

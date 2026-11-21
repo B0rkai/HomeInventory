@@ -43,6 +43,8 @@ export default defineConfig({
   server: {
     // Reachable from the server itself only, never on the network.
     host: '127.0.0.1',
+    // The items' icon table is shared with the server (src/icons.ts).
+    fs: { allow: ['.', '../server/src/homeinventory/seed'] },
     port: 5173,
     strictPort: true,
     proxy: { '/api': 'http://127.0.0.1:8000' },

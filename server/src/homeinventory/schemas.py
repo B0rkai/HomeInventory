@@ -14,6 +14,7 @@ from homeinventory.models import (
     AMOUNT_MAX_LENGTH,
     GROUP_ICONS_MAX,
     ICON_MAX_LENGTH,
+    KEEPS_DAYS_MAX,
     LINK_MAX_LENGTH,
     NAME_MAX_LENGTH,
     NICKNAME_MAX_LENGTH,
@@ -124,6 +125,11 @@ class GroupOut(BaseModel):
     hue: Hue | None
     # The icons that suggest it for an item with no group chosen.
     icons: list[str]
+    # How many days its items keep; none: any time.
+    keeps_days: int | None
+
+
+KeepsDays = Annotated[int, Field(ge=0, le=KEEPS_DAYS_MAX)] | None
 
 
 IconName = Annotated[
@@ -138,6 +144,7 @@ class GroupCreate(BaseModel):
     parent_id: int | None = None
     hue: Hue | None = None
     icons: GroupIcons = []
+    keeps_days: KeepsDays = None
 
 
 class GroupUpdate(BaseModel):
@@ -146,6 +153,8 @@ class GroupUpdate(BaseModel):
     # A group's colour.
     hue: Hue | None = None
     icons: GroupIcons | None = None
+    # Sent null: any time.
+    keeps_days: KeepsDays = None
     # The new index among its siblings; past the end means last.
     position: int | None = Field(default=None, ge=0)
     # A subgroup's group: sent, it moves there, last unless `position` says otherwise.
@@ -163,6 +172,9 @@ class ItemOut(BaseModel):
     icon: str | None
     # Running low puts it on the shopping list.
     restock: bool
+    # Its own shelf life in days; else, with `keeps_any_time`, any time; else its group's.
+    keeps_days: int | None
+    keeps_any_time: bool
     # Any member of this family will do instead ("Pékáru"); the item's own.
     family: str | None
     # Its family is named after it: any of its variants will do.
@@ -199,6 +211,9 @@ class ItemUpdate(BaseModel):
     group_id: int | None = None
     icon: Icon = None
     restock: bool | None = None
+    # Sent: its own shelf life (null: its group's again, unless `keeps_any_time`).
+    keeps_days: KeepsDays = None
+    keeps_any_time: bool | None = None
     # On: every item of the same name joins the family named after it; off: those in it
     # leave it.
     any_variant: bool | None = None
@@ -307,6 +322,9 @@ class RequestOut(BaseModel):
     # for an item with no place: a written line taken into the inventory, put somewhere
     # once bought.
     for_cooking: bool
+    # Fresh food put on for a cooking: worth buying from this day (the household's local
+    # date); unset: any time.
+    buy_from: date | None
 
 
 class ActivityOut(BaseModel):

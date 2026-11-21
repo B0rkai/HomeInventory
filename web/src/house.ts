@@ -180,6 +180,13 @@ function readCache(userId: number): Cached | undefined {
     // Before groups were data.
     cached.house.groups ??= []
     for (const item of cached.house.items) item.group_id ??= null
+    // Before shelf life.
+    for (const group of cached.house.groups) group.keeps_days ??= null
+    for (const item of cached.house.items) {
+      item.keeps_days ??= null
+      item.keeps_any_time ??= false
+    }
+    for (const request of cached.house.requests) request.buy_from ??= null
     return cached
   } catch {
     return undefined
@@ -444,6 +451,7 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
       reminded_at: null,
       cooking_id: null,
       for_cooking: false,
+      buy_from: null,
     }),
     [me],
   )

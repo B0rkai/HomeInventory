@@ -10,7 +10,8 @@ import {
   recipeOf,
   takesSide,
 } from './cookings'
-import { dayChip, dayTitle, nextDays } from './days'
+import { addDays, dayChip, dayFrom, dayTitle, nextDays, today } from './days'
+import { keepsDays } from './groups'
 import { useHouse } from './house'
 import { LevelName, LevelPicker } from './LevelPicker'
 import { Named, RecipeName } from './Named'
@@ -160,19 +161,28 @@ export function SideChips({
   )
 }
 
-/** What planning it would do: what's at home, what goes on the list, what's on it already. */
-export function PlanPreview({ plan }: { plan: Plan }) {
+/** What planning it would do: what's at home, what goes on the list (fresh food from when
+ * it's worth buying, for a cooking on `day`), what's on it already. */
+export function PlanPreview({ plan, day }: { plan: Plan; day?: string }) {
   const { house } = useHouse()
   if (!house) return null
   const needs = cookingNeeds(house, plan)
+  // Not worth buying until some days before the cooking: from when.
+  const from = (need: Need) => {
+    const keeps = need.items[0] && keepsDays(need.items[0], house.groups)
+    if (!day || keeps === null || keeps === undefined) return null
+    const first = addDays(day, -keeps)
+    return first > today() ? first : null
+  }
   const named = (states: Need['state'][]) =>
     needs
       .filter((need) => states.includes(need.state))
-      .map((need) =>
-        need.instead
-          ? `${needName(need)} (${t.menu.instead(fullName(need.instead.item))})`
-          : needName(need),
-      )
+      .map((need) => {
+        if (need.instead)
+          return `${needName(need)} (${t.menu.instead(fullName(need.instead.item))})`
+        const first = need.state === 'missing' && from(need)
+        return first ? `${needName(need)} (${t.todo.buyFrom(dayFrom(first))})` : needName(need)
+      })
       .join(', ')
   const lines: [string, string, string][] = [
     ['ok', '✓', `${t.menu.atHome}: ${named(['home', 'instead'])}`],
@@ -310,6 +320,7 @@ function PlanRecipe({ recipe }: { recipe: RecipeOut }) {
         <div className="card">
           <PlanPreview
             plan={{ recipe_id: recipe.id, side_id: side ? sideId : null, bought_item_ids: [] }}
+            day={day}
           />
           <div className="actions spread">
             <button

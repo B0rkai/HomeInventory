@@ -1800,3 +1800,15 @@ h5.stock-section-head {
 .admin-table .group-select {
   max-width: 15rem;
 }
+
+/* Fresh food for a cooking, not worth buying yet */
+
+.later-list .requests > li {
+  opacity: 0.7;
+}
+.keeps-input {
+  width: 7rem;
+}
+.item-form .row input[type='number'] {
+  width: 5rem;
+}

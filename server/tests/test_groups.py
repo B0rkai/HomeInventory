@@ -29,6 +29,7 @@ def test_groups_and_subgroups(api) -> None:
         # A subgroup wears its group's colour.
         "hue": None,
         "icons": ["salt", "pepper"],
+        "keeps_days": None,
     }
     add_group(api, "Pékáru", food["id"])
     assert names(api) == [

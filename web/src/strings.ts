@@ -102,6 +102,10 @@ export const t = {
     reported: (name: string, when: string) => `${name} jelezte, ${when}`,
     written: (name: string, when: string) => `${name} írta fel, ${when}`,
     due: (when: string) => `Esedékes, ${when}`,
+    // Fresh food for a cooking, not worth buying yet.
+    later: 'Később',
+    laterHint: 'Friss áru egy főzéshez: akkor érdemes megvenni, amikor ideje van.',
+    buyFrom: (from: string) => `${from} vehető`,
   },
   // The meal planner: recipes.
   menu: {
@@ -249,8 +253,19 @@ export const t = {
       'szombatra',
       'vasárnapra',
     ],
+    // From a day: "mától", "csütörtöktől".
+    todayFrom: 'mától',
+    tomorrowFrom: 'holnaptól',
+    weekdaysFrom: [
+      'hétfőtől',
+      'keddtől',
+      'szerdától',
+      'csütörtöktől',
+      'péntektől',
+      'szombattól',
+      'vasárnaptól',
+    ],
   },
-  // The fixed item groups, one per icon colour.
   icons: {
     label: 'Ikon',
     auto: 'Automatikus',
@@ -351,6 +366,14 @@ export const t = {
     familyHint:
       'Különböző termékek közös neve, ha közülük bármelyik megfelel (kenyér, zsemle, kifli). Csak akkor kerül a listára, ha a házban mindenhol mind kevés vagy elfogyott; a listán egy sor, ezen a néven. Csak erre a fajtára érvényes.',
     familyNote: (family: string) => `hasonló: ${family}`,
+    keeps: 'Eltartható',
+    keepsAuto: (group: string, keeps: string) => `Automatikus (${group}: ${keeps})`,
+    keepsAny: 'bármikor',
+    keepsDays: (n: number) => (n === 0 ? 'a főzés napján' : `${n} nap`),
+    keepsAnyTime: 'Bármikor vehető előre',
+    keepsOwn: 'Ennyi napig:',
+    keepsDaysLabel: 'Napok',
+    keepsHint: 'Egy főzéshez legfeljebb ennyi nappal előtte érdemes megvenni.',
     whichBought: 'Melyiket vetted?',
     places: (count: number) => (count ? `${count} helyen` : 'sehol'),
     delete: 'Törlés',
@@ -406,6 +429,8 @@ export const t = {
     planned: (actor: string, name: string) => `${actor} betervezte: ${name}`,
     moved: (actor: string, name: string) => `${actor} áthelyezte: ${name}`,
     dropped: (actor: string, name: string) => `${actor} lemondta: ${name}`,
+    window: (name: string) => `Ma már veheted: ${name}`,
+    windowFor: (day: string) => `Egy főzéshez, ${day}`,
   },
   nickname: {
     prompt: 'Hogy szólítsunk?',
@@ -552,9 +577,10 @@ export const t = {
     // Groups
     groups: 'Csoportok',
     groupsHint:
-      'A csoportok csak a rendezést szolgálják: a Termékek, a helyek és a bevásárlólista ezek szerint tagolódik. Az alcsoport a csoportja színét viseli; az ikonjai közül bármelyiket viselő terméket, ha nincs csoportja kiválasztva, magától ide sorolja.',
+      'A csoportok szerint tagolódik a Termékek, a helyek és a bevásárlólista. Az alcsoport a csoportja színét viseli; az ikonjai közül bármelyiket viselő terméket, ha nincs csoportja kiválasztva, magától ide sorolja. Az eltarthatóság szerint egy főzéshez legfeljebb ennyi nappal előtte kerül vehetőre a friss áru; üresen bármikor.',
     groupColour: 'Szín / csoport',
     groupIcons: 'Ikonok',
+    groupKeeps: 'Eltartható (nap)',
     groupIconsHint:
       'Ezeket az ikonokat viselő termékek, ha nincs kiválasztott csoportjuk, ebbe az alcsoportba kerülnek.',
     editIcons: 'Ikonok szerkesztése',

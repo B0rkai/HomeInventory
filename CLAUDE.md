@@ -40,8 +40,9 @@ dish, a menu of several, ...) and can take another whole; an item can name subst
 and join a family any member of which will do;
 suggested ones are added with a tap, `web/src/starterRecipes.ts`); planning cookings
 (`cookings.py`, the lines they put on the list in `cooking_lines.py`; the Menu tab's
-"A hét", `web/src/CookingPages.tsx`, the admin Főzések tab). Next: the meal planner's
-milestone 7, shelf life and buying windows (`docs/features.md`). Anything marked *(planned)* describes intended
+"A hét", `web/src/CookingPages.tsx`, the admin Főzések tab); item groups, shelf life and buying windows (milestone 7:
+`shelf.py`, `Request.buy_from`, the to-do list's "Később"). Next: the meal planner's
+milestone 8, shopping trips (`docs/features.md`). Anything marked *(planned)* describes intended
 setup, not code that exists yet.
 
 ## Tech stack

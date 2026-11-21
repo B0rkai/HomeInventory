@@ -2,6 +2,8 @@
 // (drawnIcons.ts). An icon stored on the server wins; null means "guess from the name"
 // with the tables below, and an empty string means no icon.
 
+import itemIcons from '../../server/src/homeinventory/seed/item_icons.json' with { type: 'json' }
+
 /** The group an icon belongs to; each has its own tile colour. */
 export type Hue = 'food' | 'drink' | 'clean' | 'body' | 'home' | 'place'
 
@@ -11,109 +13,9 @@ type Entry = [icon: string, hue: Hue, keywords: string[]]
 // a whole word ("só" isn't "sör"), 4 letters start a word, longer ones match anywhere
 // ("kockacukor"). The first matching entry wins, so specific ones come first. An empty
 // icon stops a word from matching a shorter keyword further down ("borsó" isn't "bors").
-const ITEMS: Entry[] = [
-  ['paper-towel', 'body', ['papirtorlo', 'konyhai papir', 'konyhapapir']],
-  ['toilet-paper', 'body', ['wc papir', 'wcpapir', 'toalettpapir']],
-  ['tissue', 'body', ['zsebkendo', 'papirzsebkendo', 'szalveta', 'fultisztito', 'vatta']],
-  ['foil', 'home', ['alufolia', 'sutopapir', 'folpack', 'folia']],
-  ['milk', 'food', ['tej', 'tejszin', 'tejfol', 'joghurt', 'kefir']],
-  ['cheese', 'food', ['sajt', 'turo']],
-  ['butter', 'food', ['vaj', 'margarin', 'zsir']],
-  ['egg', 'food', ['tojas']],
-  ['bread', 'food', ['kenyer', 'zsemle', 'kifli', 'pekaru']],
-  ['sugar', 'food', ['cukor', 'edesito']],
-  ['', 'food', ['borso']],
-  ['pepper', 'food', ['bors', 'paprika']],
-  [
-    'salt',
-    'food',
-    ['so', 'fuszer', 'szerecsendio', 'komeny', 'fahej', 'vanilia', 'curry', 'gyomber'],
-  ],
-  ['wheat', 'food', ['liszt', 'zabpehely', 'muzli', 'gabona']],
-  ['rice', 'food', ['rizs']],
-  ['lentils', 'food', ['lencse', 'csicseri']],
-  ['meat', 'food', ['leveshus']],
-  ['bowl-spoon', 'food', ['teszta', 'spagetti', 'leves', 'csusza', 'metelt']],
-  ['bottle', 'food', ['olaj', 'olivaolaj', 'ecet']],
-  ['can', 'food', ['konzerv', 'paradicsomszosz', 'passata', 'bab']],
-  ['jar', 'food', ['mez', 'lekvar', 'befott']],
-  ['coffee', 'drink', ['kave', 'kapszula']],
-  ['teapot', 'drink', ['tea']],
-  ['mug', 'drink', ['kakao']],
-  ['chocolate', 'food', ['csoki', 'csokolade']],
-  ['cookie', 'food', ['keksz', 'ropi', 'chips', 'nasi', 'tejszelet']],
-  ['beer', 'drink', ['sor']],
-  ['glass-full', 'drink', ['bor', 'pezsgo']],
-  ['droplet', 'drink', ['viz', 'asvanyviz', 'szodaviz']],
-  ['cup', 'drink', ['udito', 'gyumolcsle', 'szorp']],
-  ['potato', 'food', ['krumpli', 'burgonya']],
-  ['onion', 'food', ['hagyma', 'fokhagyma']],
-  ['tomato', 'food', ['paradicsom']],
-  ['lemon-2', 'food', ['citrom', 'lime', 'narancs']],
-  ['apple', 'food', ['alma', 'gyumolcs']],
-  ['banana', 'food', ['banan']],
-  ['carrot', 'food', ['repa', 'sargarepa', 'feherrepa', 'zeller', 'paszternak', 'zoldseg']],
-  ['broccoli', 'food', ['brokkoli', 'karfiol']],
-  ['pumpkin', 'food', ['tok', 'sutotok', 'fozotok', 'cukkini']],
-  ['cabbage', 'food', ['kaposzta', 'lilakaposzta', 'kel', 'karalabe']],
-  ['salad', 'food', ['salata', 'uborka', 'spenot', 'rukkola']],
-  ['mushroom', 'food', ['gomba', 'csiperke']],
-  [
-    'leaf',
-    'food',
-    [
-      'petrezselyem',
-      'bazsalikom',
-      'kapor',
-      'majoranna',
-      'baberlevel',
-      'rozmaring',
-      'oregano',
-      'menta',
-      'kakukkfu',
-      'zoldfuszer',
-    ],
-  ],
-  ['sausage', 'food', ['sonka', 'kolbasz', 'felvagott', 'virsli']],
-  ['pig', 'food', ['szalonna', 'teperto']],
-  [
-    'meat',
-    'food',
-    [
-      'csirke',
-      'hus',
-      'marha',
-      'sertes',
-      'karaj',
-      'tarja',
-      'oldalas',
-      'pulyka',
-      'kacsa',
-      'comb',
-      'mell',
-    ],
-  ],
-  ['ice-cream', 'food', ['jegkrem', 'fagyi']],
-  ['fish', 'food', ['lazac', 'hal', 'tonhal', 'pisztrang']],
-  ['pizza', 'food', ['pizza']],
-  ['snowflake', 'food', ['jeg', 'fagyasztott']],
-  ['soap', 'body', ['szappan', 'kezmoso']],
-  ['dish-soap', 'clean', ['mosogato']],
-  ['sponge', 'clean', ['szivacs', 'surolo']],
-  ['wash-machine', 'clean', ['mososzer', 'mosopor', 'mosogel', 'oblito']],
-  ['spray', 'clean', ['hipo', 'hypo', 'tisztito', 'fertotlenito', 'vizkooldo']],
-  ['hand-sanitizer', 'body', ['sampon', 'tusfurdo', 'balzsam', 'krem', 'testapolo', 'dezodor']],
-  ['dental', 'body', ['fogkrem', 'fogkefe', 'fogselyem', 'szajviz']],
-  ['razor', 'body', ['borotva']],
-  ['bandage', 'body', ['sebtapasz', 'kotszer']],
-  ['pill', 'body', ['gyogyszer', 'vitamin', 'fajdalomcsillapito']],
-  ['diaper', 'body', ['pelenka', 'popsitorlo']],
-  ['trash', 'clean', ['szemeteszsak', 'kukazsak', 'zsak', 'szemetes']],
-  ['battery-2', 'home', ['elem', 'akkumulator']],
-  ['bulb', 'home', ['izzo', 'ego']],
-  ['candle', 'home', ['gyertya', 'mecses']],
-  ['paw', 'home', ['eledel', 'macskaalom', 'kutyatap', 'macskatap']],
-]
+// The items' table is data the server reads too (to tell an item's subgroup, for its shelf
+// life: groups.py), so it lives in the server's seed folder; the others are the client's.
+const ITEMS: Entry[] = itemIcons.map(({ icon, hue, keywords }) => [icon, hue as Hue, keywords])
 
 const PLACES: Entry[] = [
   ['toilet', 'place', ['wc', 'toalett', 'mosdo']],

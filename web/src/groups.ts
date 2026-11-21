@@ -60,6 +60,17 @@ export function itemHue(item: Groupable, groups: GroupOut[]): Hue {
   return hue ?? hueOf(iconOf(item, 'item'), 'item')
 }
 
+/** How many days an item keeps: its own, else (unless any time) its group's; null for any
+ * time. As the server dates lines for cookings (shelf.py). */
+export function keepsDays(
+  item: Groupable & Pick<ItemOut, 'keeps_days' | 'keeps_any_time'>,
+  groups: GroupOut[],
+): number | null {
+  if (item.keeps_days !== null) return item.keeps_days
+  if (item.keeps_any_time) return null
+  return groupOf(item, groups)?.keeps_days ?? null
+}
+
 /** "Fűszer", or "Egyéb" for none. */
 export function groupName(group: GroupOut | undefined): string {
   return group ? group.name : t.items.noCategory

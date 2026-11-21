@@ -279,6 +279,10 @@ export type GroupCreate = {
      * Icons
      */
     icons?: Array<string>;
+    /**
+     * Keeps Days
+     */
+    keeps_days?: number | null;
 };
 
 /**
@@ -306,6 +310,10 @@ export type GroupOut = {
      * Icons
      */
     icons: Array<string>;
+    /**
+     * Keeps Days
+     */
+    keeps_days: number | null;
 };
 
 /**
@@ -321,6 +329,10 @@ export type GroupUpdate = {
      * Icons
      */
     icons?: Array<string> | null;
+    /**
+     * Keeps Days
+     */
+    keeps_days?: number | null;
     /**
      * Position
      */
@@ -476,6 +488,14 @@ export type ItemOut = {
      */
     restock: boolean;
     /**
+     * Keeps Days
+     */
+    keeps_days: number | null;
+    /**
+     * Keeps Any Time
+     */
+    keeps_any_time: boolean;
+    /**
      * Family
      */
     family: string | null;
@@ -529,6 +549,14 @@ export type ItemUpdate = {
      * Restock
      */
     restock?: boolean | null;
+    /**
+     * Keeps Days
+     */
+    keeps_days?: number | null;
+    /**
+     * Keeps Any Time
+     */
+    keeps_any_time?: boolean | null;
     /**
      * Any Variant
      */
@@ -926,6 +954,10 @@ export type RequestOut = {
      * For Cooking
      */
     for_cooking: boolean;
+    /**
+     * Buy From
+     */
+    buy_from: string | null;
 };
 
 /**

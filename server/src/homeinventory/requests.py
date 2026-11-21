@@ -7,6 +7,7 @@ is one conditional UPDATE, so when both users tap at once exactly one wins and t
 gets 409. Reporting, claiming and finishing tell the other user (`notify.py`).
 """
 
+import dataclasses
 from datetime import UTC, datetime, time
 from zoneinfo import ZoneInfo
 
@@ -33,6 +34,7 @@ from homeinventory.models import (
     ACTIVE_WHERE,
     Action,
     Chore,
+    Cooking,
     Item,
     Level,
     Location,
@@ -327,6 +329,47 @@ def check_due_chores(
         )
     if opened:
         live.publish(None)
+
+
+# A line for a cooking coming into its buying window is told about in the morning, not at
+# the midnight it opens.
+WINDOW_TELL_AT = time(7)
+
+
+def check_windows(session: Session, notifier: Notifier, now: datetime, tz: ZoneInfo) -> None:
+    """Tells everyone about the lines for cookings worth buying from today on: once each,
+    from the morning, and only those that waited for today (one open on the day it went on
+    the list was told about with the cooking)."""
+    local = now.astimezone(tz)
+    if local.time() < WINDOW_TELL_AT:
+        return
+    today = local.date()
+    opening = list(
+        session.scalars(
+            select(Request).where(
+                Request.buy_from == today,
+                Request.window_told.is_(False),
+                Request.status.in_(ACTIVE),
+            )
+        )
+    )
+    for request in opening:
+        request.window_told = True
+    session.commit()
+    for request in opening:
+        if request.created_at.astimezone(tz).date() >= today:
+            continue
+        cooking = request.cooking_id and session.get(Cooking, request.cooking_id)
+        message = message_for(session, request, "window", None)
+        notifier.send(
+            session,
+            None,
+            dataclasses.replace(
+                message,
+                tag=f"window-{request.id}",
+                day=cooking.day.isoformat() if cooking else None,
+            ),
+        )
 
 
 def _chore_outs(session: Session, chores: list[Chore], tz: ZoneInfo) -> list[ChoreOut]:

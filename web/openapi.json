@@ -708,7 +708,7 @@
     "/api/v1/groups/{group_id}": {
       "patch": {
         "summary": "Update Group",
-        "description": "Renames a group, changes its colour or icons, moves it among its siblings, or moves\na subgroup to another group. A group stays a group and a subgroup a subgroup.",
+        "description": "Renames a group, changes its colour, icons or shelf life, moves it among its\nsiblings, or moves a subgroup to another group. A group stays a group and a subgroup a\nsubgroup. Fresh food planned for a cooking is dated again.",
         "operationId": "update_group",
         "parameters": [
           {
@@ -2610,6 +2610,19 @@
             "maxItems": 50,
             "title": "Icons",
             "default": []
+          },
+          "keeps_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 60.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keeps Days"
           }
         },
         "type": "object",
@@ -2659,6 +2672,17 @@
             },
             "type": "array",
             "title": "Icons"
+          },
+          "keeps_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keeps Days"
           }
         },
         "type": "object",
@@ -2668,7 +2692,8 @@
           "name",
           "position",
           "hue",
-          "icons"
+          "icons",
+          "keeps_days"
         ],
         "title": "GroupOut"
       },
@@ -2713,6 +2738,19 @@
               }
             ],
             "title": "Icons"
+          },
+          "keeps_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 60.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keeps Days"
           },
           "position": {
             "anyOf": [
@@ -2992,6 +3030,21 @@
             "type": "boolean",
             "title": "Restock"
           },
+          "keeps_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keeps Days"
+          },
+          "keeps_any_time": {
+            "type": "boolean",
+            "title": "Keeps Any Time"
+          },
           "family": {
             "anyOf": [
               {
@@ -3023,6 +3076,8 @@
           "group_id",
           "icon",
           "restock",
+          "keeps_days",
+          "keeps_any_time",
           "family",
           "any_variant",
           "substitute_ids"
@@ -3117,6 +3172,30 @@
               }
             ],
             "title": "Restock"
+          },
+          "keeps_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 60.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keeps Days"
+          },
+          "keeps_any_time": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keeps Any Time"
           },
           "any_variant": {
             "anyOf": [
@@ -3930,6 +4009,18 @@
           "for_cooking": {
             "type": "boolean",
             "title": "For Cooking"
+          },
+          "buy_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buy From"
           }
         },
         "type": "object",
@@ -3950,7 +4041,8 @@
           "reminded_by_name",
           "reminded_at",
           "cooking_id",
-          "for_cooking"
+          "for_cooking",
+          "buy_from"
         ],
         "title": "RequestOut"
       },

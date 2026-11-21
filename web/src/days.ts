@@ -72,6 +72,15 @@ export function dayFor(day: string, now = new Date()): string {
   return Math.abs(away) >= 7 ? `${name} (${dayDate(day)})` : name
 }
 
+/** From a day: "mától", "holnaptól", "csütörtöktől", with its date from a week off. */
+export function dayFrom(day: string, now = new Date()): string {
+  const away = daysAway(day, now)
+  if (away <= 0) return t.time.todayFrom
+  if (away === 1) return t.time.tomorrowFrom
+  const name = t.time.weekdaysFrom[weekday(day)]
+  return away >= 7 ? `${name} (${dayDate(day)})` : name
+}
+
 /** The days a cooking can be planned for: today and the nine after. */
 export function nextDays(count = 10, now = new Date()): string[] {
   return Array.from({ length: count }, (_, i) => addDays(today(now), i))

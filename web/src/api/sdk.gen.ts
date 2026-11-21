@@ -237,8 +237,9 @@ export const deleteGroup = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Update Group
  *
- * Renames a group, changes its colour or icons, moves it among its siblings, or moves
- * a subgroup to another group. A group stays a group and a subgroup a subgroup.
+ * Renames a group, changes its colour, icons or shelf life, moves it among its
+ * siblings, or moves a subgroup to another group. A group stays a group and a subgroup a
+ * subgroup. Fresh food planned for a cooking is dated again.
  */
 export const updateGroup = <ThrowOnError extends boolean = false>(options: Options<UpdateGroupData, ThrowOnError>): RequestResult<UpdateGroupResponses, UpdateGroupErrors, ThrowOnError> => (options.client ?? client).patch<UpdateGroupResponses, UpdateGroupErrors, ThrowOnError>({
     url: '/api/v1/groups/{group_id}',

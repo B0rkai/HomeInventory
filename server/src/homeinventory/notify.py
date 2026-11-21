@@ -38,6 +38,7 @@ TTL_SECONDS = 24 * 60 * 60
 # from there rather than bought.
 # "reminder": the other asks when a claimed request will be done.
 # "planned", "moved", "dropped": a cooking was planned, moved to another day, cancelled.
+# "window": a line for a cooking is worth buying from today (fresh food).
 Event = Literal[
     "reported",
     "claimed",
@@ -50,6 +51,7 @@ Event = Literal[
     "planned",
     "moved",
     "dropped",
+    "window",
 ]
 
 

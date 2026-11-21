@@ -38,6 +38,7 @@ export function AdminGroups() {
               <th>{t.admin.name}</th>
               <th>{t.admin.groupColour}</th>
               <th>{t.admin.groupIcons}</th>
+              <th>{t.admin.groupKeeps}</th>
               <th>{t.admin.order}</th>
               <th>{t.admin.items}</th>
               <th />
@@ -124,6 +125,13 @@ export function AdminGroups() {
                       </button>
                     )}
                   </td>
+                  <td>
+                    <KeepsCell
+                      key={group.keeps_days ?? ''}
+                      value={group.keeps_days}
+                      onSave={(days) => void actions.updateGroup(group.id, { keeps_days: days })}
+                    />
+                  </td>
                   <td className="order-cell">
                     <button
                       type="button"
@@ -164,7 +172,7 @@ export function AdminGroups() {
                 </tr>,
                 editing === group.id && (
                   <tr key={`${group.id}-icons`} className="edit-row">
-                    <td colSpan={6}>
+                    <td colSpan={7}>
                       <GroupIcons group={group} />
                     </td>
                   </tr>
@@ -176,6 +184,39 @@ export function AdminGroups() {
       </div>
       <AddGroup groups={tops} />
     </>
+  )
+}
+
+/** A group's shelf life in days, saved when left; empty for any time. */
+function KeepsCell({
+  value,
+  onSave,
+}: {
+  value: number | null
+  onSave: (days: number | null) => void
+}) {
+  const [text, setText] = useState(value === null ? '' : String(value))
+  return (
+    <input
+      className="cell-input keeps-input"
+      type="number"
+      inputMode="numeric"
+      min={0}
+      max={60}
+      aria-label={t.admin.groupKeeps}
+      placeholder={t.items.keepsAny}
+      value={text}
+      onChange={(event) => setText(event.target.value)}
+      onKeyDown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
+      onBlur={() => {
+        const days = text.trim() === '' ? null : Math.min(60, Math.max(0, Math.round(Number(text))))
+        if (days === value || (days !== null && Number.isNaN(days))) {
+          setText(value === null ? '' : String(value))
+          return
+        }
+        onSave(days)
+      }}
+    />
   )
 }
 

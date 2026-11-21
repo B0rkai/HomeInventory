@@ -240,7 +240,16 @@ They are data, edited on the admin pages only (`item_groups`):
   from code.
 - **Deleting** a subgroup moves its items up to its group; a group goes
   only once it has no subgroups and no items.
-- **Shelf life** (milestone 7) will default per subgroup.
+- **Shelf life** *(2026-11-21)*: a group or subgroup keeps for so many days
+  (`keeps_days`, empty: any time; each its own, a subgroup doesn't take its
+  group's): Hús, hal 1, Pékáru 2, Zöldség, gyümölcs and Tejtermék, tojás 7 to
+  start with. An item can say its own days, or "any time" (frozen meat), else
+  it keeps as its group says. See the meal planner for what it's for.
+- **The server tells an item's group too**, for shelf life: the name → icon
+  table is data both read (`server/src/homeinventory/seed/item_icons.json`,
+  loaded by `web/src/icons.ts` and `icons.py`), and `shelf.py` resolves the
+  group as `groups.ts` does. The matching rules exist in both languages;
+  `tests/test_shelf.py` pins the tricky cases.
 
 Where they show:
 
@@ -410,10 +419,21 @@ Decisions:
   too, each once (optional only if optional everywhere; an optional part's
   items are all optional). No recipe may take itself, directly or through
   others; a deleted recipe leaves the recipes taking it (asked first).
-- **Shelf life** by the item's group, changeable per item: raw meat and
-  fish at most 1 day before the cooking, other fresh food (vegetables,
-  fruit, dairy, eggs, bread) at most 7 days, the rest any time. Frozen meat
-  is its own variant, kept any time.
+- **Shelf life** by the item's group, changeable per item *(built
+  2026-11-21, see Groups)*: raw meat and fish at most 1 day before the
+  cooking, bread 2, vegetables, fruit, dairy and eggs 7, the rest any time.
+  Frozen meat is its own variant (or in Fagyasztott), kept any time.
+- **Buying windows** *(built 2026-11-21)*: a line a cooking put on
+  (`for_cooking`) of something that keeps only so long is worth buying from
+  the cooking's day less its shelf life (`Request.buy_from`, settled with
+  the line); a shortage line is bought now, whatever cookings need it. On
+  the to-do list, lines not worth buying yet come last, in a faded "Később"
+  card, by that day ("szerdától vehető"); claiming all of a group leaves
+  them out, the shared text lists them apart. Planning shows it too, and
+  the admin to-dos. The morning (from 7, the household's time) a window
+  opens, everyone is told ("Ma már veheted: Csirkemell"), once a line, and
+  not for one already open the day it went on. Anyone can buy anything
+  any time; the window only says when it's worth it.
 
 Features:
 
@@ -477,14 +497,16 @@ variant found in the line, else taken as typed and marked "új termék".
 **Cooking** (recipe, side dish (a main course's, or a menu's naming none), day,
 cook, created by, `done_at`; a cancelled one is deleted); **Request**
 `cooking_id` (the earliest planned cooking lacking it), `for_cooking`, and an
-item's line may have no place (kept nowhere, bought for a cooking). Still to
-come: **ShoppingTrip** (day, claimed by, status); **Item** `keeps_days` (null:
-any time); **Request** `buy_from`, `trip`.
+item's line may have no place (kept nowhere, bought for a cooking);
+**ItemGroup** `keeps_days`; **Item** `keeps_days`, `keeps_any_time`;
+**Request** `buy_from`, `window_told`. Still to come: **ShoppingTrip** (day,
+claimed by, status); **Request** `trip`.
 
 Milestones: (5, done) recipes, the Menu tab, "Csak hiány" in the
 catalogue (the shortages tab is gone), the admin recipe editor; then
 recipes taking recipes, recipe kinds and the suggested recipes; (6, done) planning, reservations, missing ingredients on
-the list, "what's left?", the admin Főzések tab; (7) shelf life and buying windows; (8) shopping
+the list, "what's left?", the admin Főzések tab; (7, done 2026-11-21) item groups and
+subgroups, shelf life and buying windows; (8) shopping
 trips and the list by trip. 5-6 are useful on their own.
 
 UI (agreed 2026-11-19 on the prototype):

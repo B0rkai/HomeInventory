@@ -4,11 +4,14 @@ A cooking needs its recipe's items, its parts' and its side dish's too, but not 
 optional ones. One that isn't at home (nor anything to use instead, nor bought for it
 already) goes on the list: where it's kept, as that place's line, else as a line with no
 place. A line points at the earliest planned cooking still lacking its item, so it's due
-before that day. Nothing about it is stored that the plan doesn't say, so every change to
-a cooking, or to a level, settles the lines it touched again.
+before that day; a line put on for it, of something that keeps only so long, is worth
+buying no earlier than that many days before. Nothing about it is stored that the plan
+doesn't say, so every change to a cooking, a level, or a shelf life settles the lines it
+touched again.
 """
 
 from collections.abc import Iterable
+from datetime import timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -26,6 +29,7 @@ from homeinventory.models import (
     User,
     utcnow,
 )
+from homeinventory.shelf import ShelfLife
 
 AT_HOME = (Level.PLENTY, Level.LOTS)
 # Fuller is more; out first is the place to buy it for.
@@ -158,10 +162,12 @@ def list_missing(
 
 
 def settle(session: Session, user: User) -> list[Request]:
-    """Points each active line of an item at the earliest planned cooking lacking it. A line
-    put on for a cooking that none lacks now goes, unless someone's buying it: those are
-    returned, for telling them."""
+    """Points each active line of an item at the earliest planned cooking lacking it, and
+    dates when it's worth buying from (only a line put on for a cooking: a shortage is
+    bought now). A line put on for a cooking that none lacks now goes, unless someone's
+    buying it: those are returned, for telling them."""
     house = House(session)
+    shelf = ShelfLife(session)
     lacks = [
         (cooking, {id for _, ids in lacking(session, house, cooking) for id in ids})
         for cooking in planned(session)
@@ -177,6 +183,16 @@ def settle(session: Session, user: User) -> list[Request]:
     for request in requests:
         first = next((cooking for cooking, ids in lacks if request.item_id in ids), None)
         request.cooking_id = first and first.id
+        keeps = shelf.keeps_days(house.items[request.item_id])
+        buy_from = (
+            first.day - timedelta(days=keeps)
+            if first is not None and request.for_cooking and keeps is not None
+            else None
+        )
+        if buy_from != request.buy_from:
+            # A new day to tell about, when it comes.
+            request.buy_from = buy_from
+            request.window_told = False
         if first is not None or not request.for_cooking:
             continue
         if request.status == RequestStatus.CLAIMED:

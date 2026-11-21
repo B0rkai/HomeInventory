@@ -2,7 +2,7 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { listUsers, type ChoreOut, type RequestOut, type UserOut } from './api'
 import { TextCell } from './AdminItems'
 import { cookingName } from './cookings'
-import { dayFor } from './days'
+import { dayFor, dayFrom, today } from './days'
 import { needsPlace, useHouse } from './house'
 import { KeepForm } from './KeepForm'
 import { Named } from './Named'
@@ -91,6 +91,9 @@ function RequestRow({ request, people }: { request: RequestOut; people: UserOut[
             <div className="muted">
               {t.menu.forCooking(cookingName(house, cooking), dayFor(cooking.day))}
             </div>
+          )}
+          {request.buy_from && request.buy_from > today() && (
+            <div className="muted">{t.todo.buyFrom(dayFrom(request.buy_from))}</div>
           )}
         </td>
         <td className="small muted">{ago(request.created_at)}</td>

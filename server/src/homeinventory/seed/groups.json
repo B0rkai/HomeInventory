@@ -3,22 +3,19 @@
     "name": "Élelmiszer",
     "hue": "food",
     "subgroups": [
-      {
-        "name": "Zöldség, gyümölcs",
-        "icons": ["apple", "banana", "broccoli", "cabbage", "carrot", "mushroom", "onion", "potato", "pumpkin", "salad", "tomato"]
-      },
-      { "name": "Hús, hal", "icons": ["meat", "fish", "pig", "sausage"] },
-      { "name": "Tejtermék, tojás", "icons": ["milk", "cheese", "butter", "egg"] },
-      { "name": "Pékáru", "icons": ["bread"] },
-      { "name": "Száraz áru", "icons": ["wheat", "rice", "bowl-spoon", "lentils", "sugar", "bottle"] },
-      { "name": "Konzerv, üveges", "icons": ["can", "jar"] },
-      { "name": "Fűszer", "icons": ["salt", "pepper"] },
-      { "name": "Édesség, nasi", "icons": ["chocolate", "cookie"] },
-      { "name": "Fagyasztott", "icons": ["snowflake", "ice-cream", "pizza"] }
+      {"name": "Zöldség, gyümölcs", "icons": ["apple", "banana", "broccoli", "cabbage", "carrot", "mushroom", "onion", "potato", "pumpkin", "salad", "tomato"], "keeps_days": 7},
+      {"name": "Hús, hal", "icons": ["meat", "fish", "pig", "sausage"], "keeps_days": 1},
+      {"name": "Tejtermék, tojás", "icons": ["milk", "cheese", "butter", "egg"], "keeps_days": 7},
+      {"name": "Pékáru", "icons": ["bread"], "keeps_days": 2},
+      {"name": "Száraz áru", "icons": ["wheat", "rice", "bowl-spoon", "lentils", "sugar", "bottle"]},
+      {"name": "Konzerv, üveges", "icons": ["can", "jar"]},
+      {"name": "Fűszer", "icons": ["salt", "pepper"]},
+      {"name": "Édesség, nasi", "icons": ["chocolate", "cookie"]},
+      {"name": "Fagyasztott", "icons": ["snowflake", "ice-cream", "pizza"]}
     ]
   },
-  { "name": "Ital", "hue": "drink" },
-  { "name": "Takarítás", "hue": "clean" },
-  { "name": "Tisztálkodás", "hue": "body" },
-  { "name": "Háztartás", "hue": "home" }
+  {"name": "Ital", "hue": "drink"},
+  {"name": "Takarítás", "hue": "clean"},
+  {"name": "Tisztálkodás", "hue": "body"},
+  {"name": "Háztartás", "hue": "home"}
 ]

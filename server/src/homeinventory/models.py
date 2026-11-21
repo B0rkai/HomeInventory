@@ -28,6 +28,8 @@ ICON_MAX_LENGTH = 32
 LOCATION_MAX_DEPTH = 3
 # The icons that suggest a subgroup.
 GROUP_ICONS_MAX = 50
+# How long fresh food keeps, at most: beyond it, it may as well be bought any time.
+KEEPS_DAYS_MAX = 60
 
 
 def utcnow() -> datetime:
@@ -160,6 +162,9 @@ class ItemGroup(Base):
     hue: Mapped[Hue | None] = mapped_column(str_enum(Hue, "hue"))
     # The icons that suggest it for an item with no group chosen (bread: Pékáru).
     icons: Mapped[list[str]] = mapped_column(JSON, default=list, server_default="[]")
+    # How many days its items keep, so how early they're bought for a cooking; unset: any
+    # time. Each its own: a subgroup doesn't take its group's.
+    keeps_days: Mapped[int | None]
 
 
 class Item(Base):
@@ -189,6 +194,9 @@ class Item(Base):
     family: Mapped[str | None] = mapped_column(String(NAME_MAX_LENGTH))
     # Unset: the client guesses one from the name. Empty: no icon.
     icon: Mapped[str | None] = mapped_column(String(ICON_MAX_LENGTH))
+    # Its own shelf life in days, else `keeps_any_time` (frozen meat), else its group's.
+    keeps_days: Mapped[int | None]
+    keeps_any_time: Mapped[bool] = mapped_column(default=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
     # What a recipe can use instead of it ("Vaj": "Margarin · sütő"); always both ways, the
@@ -373,6 +381,11 @@ class Request(Base):
     # Put on for a cooking (not a shortage, nor by hand): it goes again once no planned
     # cooking needs it, unless someone's buying it.
     for_cooking: Mapped[bool] = mapped_column(default=False, server_default=false())
+    # Put on for a cooking of something that keeps only so long: the day it's worth buying
+    # from (the cooking's day less its shelf life); unset: any time.
+    buy_from: Mapped[date | None] = mapped_column(Date)
+    # Whether the push for that day coming has gone (or there's nothing to tell).
+    window_told: Mapped[bool] = mapped_column(default=False, server_default=false())
 
     created_by: Mapped[User | None] = relationship(foreign_keys=[created_by_id], lazy="joined")
     claimed_by: Mapped[User | None] = relationship(foreign_keys=[claimed_by_id], lazy="joined")
