@@ -825,6 +825,10 @@ export type RequestDone = {
      */
     item_id?: number | null;
     /**
+     * Location Id
+     */
+    location_id?: number | null;
+    /**
      * By
      */
     by?: number | null;
@@ -833,14 +837,10 @@ export type RequestDone = {
 /**
  * RequestKeep
  *
- * Something written on the shopping list, bought and kept from now on: as this item
- * (an existing one of the same name and variant, or a new one) in this place.
+ * Something written on the shopping list, kept track of from now on: as this item (an
+ * existing one of the same name and variant, or a new one), its place chosen once bought.
  */
 export type RequestKeep = {
-    /**
-     * Location Id
-     */
-    location_id: number;
     /**
      * Name
      */
@@ -853,10 +853,6 @@ export type RequestKeep = {
      * Restock
      */
     restock?: boolean;
-    /**
-     * By
-     */
-    by?: number | null;
 };
 
 /**
@@ -926,6 +922,10 @@ export type RequestOut = {
      * Cooking Id
      */
     cooking_id: number | null;
+    /**
+     * For Cooking
+     */
+    for_cooking: boolean;
 };
 
 /**

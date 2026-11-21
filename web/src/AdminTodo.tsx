@@ -3,7 +3,7 @@ import { listUsers, type ChoreOut, type RequestOut, type UserOut } from './api'
 import { TextCell } from './AdminItems'
 import { cookingName } from './cookings'
 import { dayFor } from './days'
-import { useHouse } from './house'
+import { needsPlace, useHouse } from './house'
 import { KeepForm } from './KeepForm'
 import { Named } from './Named'
 import { OneOffForm } from './OneOffForm'
@@ -64,7 +64,10 @@ export function AdminTodo() {
 function RequestRow({ request, people }: { request: RequestOut; people: UserOut[] }) {
   const { house, actions } = useHouse()
   const [keeping, setKeeping] = useState(false)
+  // Where an item with no place yet goes, picked before marking it bought.
+  const [place, setPlace] = useState('')
   if (!house) return null
+  const askPlace = needsPlace(request)
   const item = house.items.find((i) => i.id === request.item_id)
   const chore = house.chores.find((c) => c.id === request.chore_id)
   const thing = item ?? chore ?? { name: request.name ?? '', icon: null }
@@ -80,7 +83,9 @@ function RequestRow({ request, people }: { request: RequestOut; people: UserOut[
           {request.location_id === null
             ? chore
               ? t.home.wholeHouse
-              : t.notify.shoppingList
+              : askPlace
+                ? t.todo.noPlaceYet
+                : t.notify.shoppingList
             : placePath(house.locations, request.location_id)}
           {cooking && (
             <div className="muted">
@@ -100,7 +105,7 @@ function RequestRow({ request, people }: { request: RequestOut; people: UserOut[
           >
             {t.admin.cancelRequest}
           </button>
-          {/* Written on the list by hand: bought, and kept track of from now on. */}
+          {/* Written on the list by hand: kept track of from now on. */}
           {request.name !== null && (
             <button
               type="button"
@@ -111,18 +116,40 @@ function RequestRow({ request, people }: { request: RequestOut; people: UserOut[
               {t.todo.keep}
             </button>
           )}
+          {askPlace && (
+            <select
+              aria-label={t.todo.wherePut}
+              value={place}
+              onChange={(event) => setPlace(event.target.value)}
+            >
+              <option value="" disabled>
+                {t.todo.wherePut}
+              </option>
+              {treeOrder(house.locations).map((location) => (
+                <option key={location.id} value={location.id}>
+                  {placePath(house.locations, location.id)}
+                </option>
+              ))}
+            </select>
+          )}
           <DoneFor
             people={people}
             claimedBy={request.claimed_by_id}
             verb={request.kind === 'buy' ? t.admin.boughtBy : t.admin.doneBy}
-            onDone={(person) => actions.act('done', [request.id], undefined, person.id)}
+            disabled={askPlace && !place}
+            onDone={(person) =>
+              actions.act('done', [request.id], {
+                by: person.id,
+                place: askPlace ? Number(place) : undefined,
+              })
+            }
           />
         </td>
       </tr>
       {keeping && (
         <tr className="edit-row">
           <td colSpan={5}>
-            <KeepForm request={request} people={people} onClose={() => setKeeping(false)} />
+            <KeepForm request={request} onClose={() => setKeeping(false)} />
           </td>
         </tr>
       )}
@@ -135,11 +162,13 @@ function DoneFor({
   people,
   claimedBy,
   verb,
+  disabled,
   onDone,
 }: {
   people: UserOut[]
   claimedBy: number | null
   verb: (name: string) => string
+  disabled?: boolean
   onDone: (person: UserOut) => void
 }) {
   // Whoever has it is the likely one, so first.
@@ -151,6 +180,7 @@ function DoneFor({
       className="done-for"
       aria-label={t.admin.doneFor}
       value=""
+      disabled={disabled}
       onChange={(event) => {
         const person = people.find((p) => p.id === Number(event.target.value))
         if (person) onDone(person)

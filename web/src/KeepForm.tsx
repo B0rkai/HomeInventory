@@ -1,45 +1,30 @@
-import { type FormEvent, useId, useState } from 'react'
-import type { RequestOut, UserOut } from './api'
+import { type FormEvent, useState } from 'react'
+import type { RequestOut } from './api'
 import { useHouse } from './house'
 import { t } from './strings'
-import { placePath, treeOrder } from './tree'
 import { parseFullName } from './variants'
 
 /**
- * Takes something written on the shopping list into the inventory once it's bought: the
- * item (an existing one of the same name and variant, or a new one) at plenty in a place.
- * `people`: on the admin pages, whom to mark it bought by.
+ * Takes something written on the shopping list into the inventory: the item (an existing
+ * one of the same name and variant, or a new one), still on the list, its place chosen
+ * once it's bought.
  */
-export function KeepForm({
-  request,
-  people,
-  onClose,
-}: {
-  request: RequestOut
-  people?: UserOut[]
-  onClose: () => void
-}) {
-  const id = useId()
-  const { house, actions } = useHouse()
+export function KeepForm({ request, onClose }: { request: RequestOut; onClose: () => void }) {
+  const { actions } = useHouse()
   // "Konzerv · bab" written on the list reads as a name and a variant.
   const written = parseFullName(request.name ?? '')
   const [name, setName] = useState(written.name)
   const [variant, setVariant] = useState(written.variant ?? '')
-  const [place, setPlace] = useState('')
   const [restock, setRestock] = useState(false)
-  const [by, setBy] = useState(request.claimed_by_id ? String(request.claimed_by_id) : '')
   const [saving, setSaving] = useState(false)
-  if (!house) return null
 
   async function submit(event: FormEvent) {
     event.preventDefault()
     setSaving(true)
     const saved = await actions.keepRequest(request.id, {
-      location_id: Number(place),
       name: name.trim(),
       variant: variant.trim() || null,
       restock,
-      by: people ? Number(by) : undefined,
     })
     setSaving(false)
     if (saved) onClose()
@@ -61,39 +46,6 @@ export function KeepForm({
           maxLength={40}
         />
       </label>
-      <label htmlFor={`${id}-place`}>
-        {t.todo.keepPlace}
-        <select
-          id={`${id}-place`}
-          value={place}
-          onChange={(e) => setPlace(e.target.value)}
-          required
-        >
-          <option value="" disabled>
-            {t.todo.keepPlacePick}
-          </option>
-          {treeOrder(house.locations).map((location) => (
-            <option key={location.id} value={location.id}>
-              {placePath(house.locations, location.id)}
-            </option>
-          ))}
-        </select>
-      </label>
-      {people && (
-        <label>
-          {t.admin.keepBy}
-          <select value={by} onChange={(e) => setBy(e.target.value)} required>
-            <option value="" disabled>
-              {t.admin.pickPerson}
-            </option>
-            {people.map((person) => (
-              <option key={person.id} value={person.id}>
-                {person.display_name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
       <label className="check">
         <input type="checkbox" checked={restock} onChange={(e) => setRestock(e.target.checked)} />
         <span>
@@ -105,7 +57,7 @@ export function KeepForm({
         <button type="button" className="secondary" onClick={onClose}>
           {t.cancel}
         </button>
-        <button type="submit" disabled={saving || !name.trim() || !place || (people && !by)}>
+        <button type="submit" disabled={saving || !name.trim()}>
           {t.todo.keepSave}
         </button>
       </div>

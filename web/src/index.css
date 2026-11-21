@@ -1233,6 +1233,16 @@ a.item-row {
   padding: 0.2rem 0.8rem;
   font-weight: 500;
 }
+.which-bought .chip[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+label.which-bought {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
 .any-kind {
   font-weight: 400;
 }

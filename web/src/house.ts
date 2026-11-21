@@ -49,6 +49,7 @@ import {
   type ItemCreate,
   type ItemOut,
   type ItemUpdate,
+  type RequestDone,
   type RequestKeep,
   type Level,
   type LocationOut,
@@ -95,6 +96,11 @@ type Result<T> = Promise<{ data?: T; response?: Response }>
 
 /** How long a change waits to be undone before it goes to the server. */
 export const UNDO_DELAY = 6000
+
+/** A line of an item with no place yet (written on the list, then taken into the
+ * inventory): done asks where it goes. One bought for a cooking is used up, not kept. */
+export const needsPlace = (request: RequestOut) =>
+  request.item_id !== null && request.location_id === null && !request.for_cooking
 
 /**
  * A change held back for a few seconds so it can be undone: until it's sent, `show` makes
@@ -437,6 +443,7 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
       reminded_by_name: null,
       reminded_at: null,
       cooking_id: null,
+      for_cooking: false,
     }),
     [me],
   )
@@ -574,12 +581,12 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
           )
         }
       },
-      /** Marks a written line bought and keeps it from now on, as an item in a place. */
+      /** Keeps track of a written line from now on: an item, its place chosen once bought. */
       async keepRequest(id: number, body: RequestKeep) {
         const ok = await change(keepRequest({ path: { request_id: id }, body }), {
           409: t.errors.requestChanged,
         })
-        // A new item, its stock, the line closed: fetch it all.
+        // A new item, the line now its: fetch it all.
         if (ok) await reload()
         return Boolean(ok)
       },
@@ -765,17 +772,23 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
           )
         }
       },
-      /** Claims, unclaims, completes or cancels requests (an item's, in every place). */
-      async act(action: RequestAction, ids: number[], bought?: number, by?: number) {
+      /** Claims, unclaims, completes or cancels requests (an item's, in every place);
+       * `done` says what was bought, where, by whom. */
+      async act(
+        action: RequestAction,
+        ids: number[],
+        done?: (id: number) => RequestDone | undefined,
+      ) {
         const results = await Promise.all(
-          ids.map((id) =>
-            change(
-              action === 'done' && (bought !== undefined || by !== undefined)
-                ? completeRequest({ path: { request_id: id }, body: { item_id: bought, by } })
+          ids.map((id) => {
+            const body = action === 'done' ? done?.(id) : undefined
+            return change(
+              body
+                ? completeRequest({ path: { request_id: id }, body })
                 : REQUEST_ACTIONS[action]({ path: { request_id: id } }),
               { 409: action === 'remind' ? t.errors.remindedToday : t.errors.requestChanged },
-            ),
-          ),
+            )
+          }),
         )
         if (action === 'done') {
           // Done refills the stock too.
@@ -992,11 +1005,26 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
        * `bought`: the variant bought, where any variant will do; `by`: who did it, when
        * marked for someone else (the admin pages).
        */
-      act(action: RequestAction, all: number[], bought?: number, by?: number) {
+      /**
+       * Done: `bought`, the variant bought where any will do; `place`, where an item with no
+       * place yet goes; `by`, whom it's marked for.
+       */
+      act(
+        action: RequestAction,
+        all: number[],
+        { bought, place, by }: { bought?: number; place?: number; by?: number } = {},
+      ) {
         // A request still on its way has no id yet to act on.
         const ids = all.filter((id) => id > 0)
         if (!ids.length) return
         const targets = known.current?.requests.filter((r) => ids.includes(r.id)) ?? []
+        const placeless = new Set(targets.filter(needsPlace).map((r) => r.id))
+        const done = (id: number): RequestDone | undefined => {
+          const location_id = placeless.has(id) ? place : undefined
+          return bought !== undefined || by !== undefined || location_id !== undefined
+            ? { item_id: bought, by, location_id }
+            : undefined
+        }
         const names = [
           ...new Set(
             targets.map(
@@ -1037,11 +1065,11 @@ export function useHouseState(me: UserOut, onError: (message: string) => void) {
               return [{ ...r, reminded_by_name: me.display_name, reminded_at: now }]
             }),
           }),
-          send: () => send.act(action, ids, bought, by),
+          send: () => send.act(action, ids, done),
           calls: ids.map((id) => ({
             method: 'POST',
             path: `/requests/${id}/${action}`,
-            body: bought !== undefined || by !== undefined ? { item_id: bought, by } : undefined,
+            body: action === 'done' ? done(id) : undefined,
           })),
         })
       },

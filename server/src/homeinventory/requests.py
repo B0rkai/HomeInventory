@@ -686,10 +686,19 @@ def complete_request(
     """Marks a request done, whoever claimed it; a bought item's level goes back to plenty
     (one written in by hand has none, nor one bought for a cooking that's kept nowhere).
     Where any variant will do, `item_id` says which was bought: that one goes to plenty in
-    the place, kept there from now on if it wasn't.
+    the place, kept there from now on if it wasn't. An item with no place (a written line
+    taken into the inventory) is put in `location_id` as it's bought, kept there from now on.
     `by`: the person who bought it, when marked for them."""
     user = _doer(session, user, done and done.by)
     bought = None
+    put = None
+    if done and done.location_id is not None:
+        asked = get_or_404(session, Request, request_id)
+        if asked.item_id is None or asked.location_id is not None:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_CONTENT, "Only an item with no place is put somewhere"
+            )
+        put = get_or_404(session, Location, done.location_id).id
     if done and done.item_id is not None:
         asked = get_or_404(session, Request, request_id)
         bought = get_or_404(session, Item, done.item_id)
@@ -710,7 +719,8 @@ def complete_request(
     )
     event = "done"
     action = Action.DONE
-    if request.item_id is not None and request.location_id is None:
+    location_id = put or request.location_id
+    if request.item_id is not None and location_id is None:
         # Bought for a cooking, kept nowhere: there's no level to set.
         record(session, user, action, item=bought or session.get_one(Item, request.item_id))
     elif request.item_id is not None:
@@ -722,7 +732,7 @@ def complete_request(
         if session.scalar(
             select(Stock.id).where(
                 Stock.item_id.in_(sources),
-                Stock.location_id != request.location_id,
+                Stock.location_id != location_id,
                 Stock.level == Level.LOTS,
             )
         ):
@@ -730,10 +740,13 @@ def complete_request(
         values = {"level": Level.PLENTY, "updated_by_id": user.id, "updated_at": utcnow()}
         session.execute(
             insert(Stock)
-            .values(item_id=item.id, location_id=request.location_id, **values)
+            .values(item_id=item.id, location_id=location_id, **values)
             .on_conflict_do_update(index_elements=[Stock.item_id, Stock.location_id], set_=values)
         )
-        record(session, user, action, item=item, location_id=request.location_id)
+        record(session, user, action, item=item, location_id=location_id)
+        if interchangeable(item):
+            # Bought one: the family comes off the list at its other places too.
+            sync_variants_at(session, group_of(session, item), location_id, user)
     else:
         record_request(session, user, action, request)
     session.commit()
@@ -751,14 +764,11 @@ def keep_request(
     keep: RequestKeep,
     user: User = Depends(current_user),
     session: Session = Depends(get_session),
-    notifier: Notifier = Depends(get_notifier),
 ) -> RequestOut:
-    """Marks something written on the shopping list bought, and keeps it from now on: as
-    an item (one of the same name and variant, or a new one) at plenty in a place. All or
-    nothing; 409 if the line was dealt with in the meantime. `by`: the person who bought
-    it, when marked for them."""
-    user = _doer(session, user, keep.by)
-    get_or_404(session, Location, keep.location_id)
+    """Takes something written on the shopping list into the inventory: the line becomes
+    one of an item (one of the same name and variant, or a new one) with no place yet,
+    claimed as it was; done asks where it goes. Where that item is already on the list
+    with no place, the written line just goes. 409 if the line was dealt with meanwhile."""
 
     def key(name: str, variant: str | None) -> tuple[str, str | None]:
         return name.casefold(), variant and variant.casefold()
@@ -771,25 +781,28 @@ def keep_request(
         item = Item(name=keep.name, variant=keep.variant, restock=keep.restock)
         session.add(item)
         session.flush()
-    values = {"level": Level.PLENTY, "updated_by_id": user.id, "updated_at": utcnow()}
-    session.execute(
-        insert(Stock)
-        .values(item_id=item.id, location_id=keep.location_id, **values)
-        .on_conflict_do_update(index_elements=[Stock.item_id, Stock.location_id], set_=values)
+    written = (Request.name.is_not(None), Request.status.in_(ACTIVE))
+    on_already = session.scalar(
+        select(Request).where(
+            Request.item_id == item.id,
+            Request.location_id.is_(None),
+            Request.status.in_(ACTIVE),
+        )
     )
-    # Commits it all, or nothing if the line is gone.
-    request = _transition(
-        session,
-        request_id,
-        Request.name.is_not(None),
-        Request.status.in_(ACTIVE),
-        logged=(user, Action.DONE),
-        status=RequestStatus.DONE,
-        closed_by_id=user.id,
-        closed_at=utcnow(),
+    if on_already is not None:
+        # Commits it all, or nothing if the line is gone.
+        _transition(
+            session,
+            request_id,
+            *written,
+            status=RequestStatus.CANCELLED,
+            closed_by_id=user.id,
+            closed_at=utcnow(),
+        )
+        return RequestOut.model_validate(on_already)
+    return RequestOut.model_validate(
+        _transition(session, request_id, *written, item_id=item.id, name=None)
     )
-    notifier.send(session, user.id, message_for(session, request, "done", user.display_name))
-    return RequestOut.model_validate(request)
 
 
 @router.post("/requests/{request_id}/remind")

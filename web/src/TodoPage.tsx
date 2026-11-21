@@ -2,7 +2,7 @@ import { type ReactNode, useState } from 'react'
 import type { ItemOut, RequestOut } from './api'
 import { cookingName } from './cookings'
 import { dayFor } from './days'
-import { type House, useHouse } from './house'
+import { type House, needsPlace, useHouse } from './house'
 import { IconArt } from './IconArt'
 import { LevelName } from './LevelPicker'
 import { Named } from './Named'
@@ -255,6 +255,8 @@ function Sections({ requests }: { requests: RequestOut[] }) {
         keep={item.id < 0 ? wanted[0] : undefined}
         // Any of several variants will do: done asks which was bought.
         variants={variants && variants.length > 1 ? variants : undefined}
+        // Taken into the inventory from the list: done asks where it goes.
+        askPlace={wanted.some(needsPlace)}
       >
         {item.id > 0 && wanted.some((request) => request.location_id !== null) && (
           <p className="small">
@@ -278,6 +280,7 @@ function Sections({ requests }: { requests: RequestOut[] }) {
               })}
           </p>
         )}
+        {wanted.some(needsPlace) && <p className="small muted">{t.todo.noPlaceYet}</p>}
         <CookingNote requests={wanted} />
         {item.id < 0 && wanted[0].created_by_name && (
           <p className="small muted">
@@ -465,6 +468,7 @@ function RequestRow({
   doneLabel,
   keep,
   variants,
+  askPlace,
   children,
 }: {
   title: ReactNode
@@ -475,11 +479,15 @@ function RequestRow({
   keep?: RequestOut
   // Where any of these variants will do: done asks which one was bought.
   variants?: ItemOut[]
+  // An item with no place yet: done asks where it goes.
+  askPlace?: boolean
   children: ReactNode
 }) {
-  const { me, actions } = useHouse()
+  const { house, me, actions } = useHouse()
   const [keeping, setKeeping] = useState(false)
   const [choosing, setChoosing] = useState(false)
+  // Asked both: the variant picked, waiting for the place.
+  const [picked, setPicked] = useState<number>()
   const ids = (list: RequestOut[]) => list.map((request) => request.id)
   const open = requests.filter((request) => request.status === 'open')
   const mine = requests.filter((request) => request.claimed_by_id === me.id)
@@ -494,6 +502,11 @@ function RequestRow({
   const askedMe = lastReminder(mine)
   const asked = lastReminder(theirs)
   const askedToday = asked && isToday(asked.reminded_at!)
+  const finish = (bought?: number, place?: number) => {
+    setChoosing(false)
+    setPicked(undefined)
+    actions.act('done', ids(requests), { bought, place })
+  }
   return (
     <li>
       <div className="request-head">
@@ -523,54 +536,59 @@ function RequestRow({
             <p className="small muted">{t.todo.remindedByMe(ago(asked.reminded_at!))}</p>
           )}
         </div>
-        <div className="request-actions">
-          {open.length > 0 && (
+        {/* Taking it into the inventory first; done comes after. */}
+        {!keeping && (
+          <div className="request-actions">
+            {open.length > 0 && (
+              <button
+                type="button"
+                className="secondary small-button"
+                onClick={() => actions.act('claim', ids(open))}
+              >
+                {t.todo.claim}
+              </button>
+            )}
+            {open.length === 0 && mine.length > 0 && (
+              <button
+                type="button"
+                className="secondary small-button"
+                onClick={() => actions.act('unclaim', ids(mine))}
+              >
+                {t.todo.unclaim}
+              </button>
+            )}
+            {!open.length && !mine.length && theirs.length > 0 && !askedToday && (
+              <button
+                type="button"
+                className="secondary small-button"
+                title={t.todo.remindHint(theirs[0].claimed_by_name ?? '')}
+                // One nudge per row: the item's other places would only repeat it.
+                onClick={() => actions.act('remind', [theirs[0].id])}
+              >
+                🔔 {t.todo.remind}
+              </button>
+            )}
+            {keep && !keeping && (
+              <button
+                type="button"
+                className="secondary small-button"
+                title={t.todo.keepHint}
+                onClick={() => setKeeping(true)}
+              >
+                {t.todo.keep}
+              </button>
+            )}
             <button
               type="button"
-              className="secondary small-button"
-              onClick={() => actions.act('claim', ids(open))}
+              className="small-button"
+              onClick={() =>
+                variants || askPlace ? setChoosing(!choosing) : actions.act('done', ids(requests))
+              }
             >
-              {t.todo.claim}
+              ✓ {doneLabel}
             </button>
-          )}
-          {open.length === 0 && mine.length > 0 && (
-            <button
-              type="button"
-              className="secondary small-button"
-              onClick={() => actions.act('unclaim', ids(mine))}
-            >
-              {t.todo.unclaim}
-            </button>
-          )}
-          {!open.length && !mine.length && theirs.length > 0 && !askedToday && (
-            <button
-              type="button"
-              className="secondary small-button"
-              title={t.todo.remindHint(theirs[0].claimed_by_name ?? '')}
-              // One nudge per row: the item's other places would only repeat it.
-              onClick={() => actions.act('remind', [theirs[0].id])}
-            >
-              🔔 {t.todo.remind}
-            </button>
-          )}
-          {keep && !keeping && (
-            <button
-              type="button"
-              className="secondary small-button"
-              title={t.todo.keepHint}
-              onClick={() => setKeeping(true)}
-            >
-              {t.todo.keep}
-            </button>
-          )}
-          <button
-            type="button"
-            className="small-button"
-            onClick={() => (variants ? setChoosing(!choosing) : actions.act('done', ids(requests)))}
-          >
-            ✓ {doneLabel}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
       {variants && choosing && (
         <div className="which-bought">
@@ -581,10 +599,8 @@ function RequestRow({
                 key={variant.id}
                 type="button"
                 className="chip"
-                onClick={() => {
-                  setChoosing(false)
-                  actions.act('done', ids(requests), variant.id)
-                }}
+                aria-pressed={picked === variant.id}
+                onClick={() => (askPlace ? setPicked(variant.id) : finish(variant.id))}
               >
                 {/* A family of several names: its members by their whole name. */}
                 {oneName(variants) ? (variant.variant ?? t.items.noVariant) : fullName(variant)}
@@ -592,6 +608,26 @@ function RequestRow({
             ))}
           </div>
         </div>
+      )}
+      {askPlace && choosing && house && (
+        <label className="which-bought">
+          <span className="small muted">{t.todo.wherePut}</span>
+          <select
+            value=""
+            // With a variant to pick too, that comes first.
+            disabled={variants && picked === undefined}
+            onChange={(event) => finish(picked, Number(event.target.value))}
+          >
+            <option value="" disabled>
+              {t.todo.pickPlace}
+            </option>
+            {treeOrder(house.locations).map((location) => (
+              <option key={location.id} value={location.id}>
+                {placePath(house.locations, location.id)}
+              </option>
+            ))}
+          </select>
+        </label>
       )}
       {keep && keeping && <KeepForm request={keep} onClose={() => setKeeping(false)} />}
     </li>

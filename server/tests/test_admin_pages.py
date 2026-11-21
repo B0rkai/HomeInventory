@@ -206,12 +206,13 @@ def test_mark_a_chore_done_for_someone(api, lan, people, house) -> None:
     assert response.json()["last_done_by_name"] == "Anna Kovacs"
 
 
-def test_keep_a_line_bought_by_someone(api, lan, people, house) -> None:
+def test_keep_a_line_and_mark_it_bought_by_someone(api, lan, people, house) -> None:
     line = api("POST", "/requests", {"name": "Elem"}).json()
-    body = {"location_id": house["pantry"], "name": "Elem", "by": people["bela"]}
-    assert lan.post(f"/api/v1/requests/{line['id']}/keep", json=body).status_code == 200
+    assert lan.post(f"/api/v1/requests/{line['id']}/keep", json={"name": "Elem"}).status_code == 200
+    body = {"location_id": house["pantry"], "by": people["bela"]}
+    assert lan.post(f"/api/v1/requests/{line['id']}/done", json=body).status_code == 200
     [entry, *_] = api("GET", "/activity").json()
-    assert entry["user_name"] == "Bela Kovacs"
+    assert (entry["user_name"], entry["location_id"]) == ("Bela Kovacs", house["pantry"])
 
 
 def test_marked_only_for_a_person(api, lan, house, sugar_out) -> None:

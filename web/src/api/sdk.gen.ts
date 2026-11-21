@@ -368,7 +368,8 @@ export const unclaimRequest = <ThrowOnError extends boolean = false>(options: Op
  * Marks a request done, whoever claimed it; a bought item's level goes back to plenty
  * (one written in by hand has none, nor one bought for a cooking that's kept nowhere).
  * Where any variant will do, `item_id` says which was bought: that one goes to plenty in
- * the place, kept there from now on if it wasn't.
+ * the place, kept there from now on if it wasn't. An item with no place (a written line
+ * taken into the inventory) is put in `location_id` as it's bought, kept there from now on.
  * `by`: the person who bought it, when marked for them.
  */
 export const completeRequest = <ThrowOnError extends boolean = false>(options: Options<CompleteRequestData, ThrowOnError>): RequestResult<CompleteRequestResponses, CompleteRequestErrors, ThrowOnError> => (options.client ?? client).post<CompleteRequestResponses, CompleteRequestErrors, ThrowOnError>({
@@ -383,10 +384,10 @@ export const completeRequest = <ThrowOnError extends boolean = false>(options: O
 /**
  * Keep Request
  *
- * Marks something written on the shopping list bought, and keeps it from now on: as
- * an item (one of the same name and variant, or a new one) at plenty in a place. All or
- * nothing; 409 if the line was dealt with in the meantime. `by`: the person who bought
- * it, when marked for them.
+ * Takes something written on the shopping list into the inventory: the line becomes
+ * one of an item (one of the same name and variant, or a new one) with no place yet,
+ * claimed as it was; done asks where it goes. Where that item is already on the list
+ * with no place, the written line just goes. 409 if the line was dealt with meanwhile.
  */
 export const keepRequest = <ThrowOnError extends boolean = false>(options: Options<KeepRequestData, ThrowOnError>): RequestResult<KeepRequestResponses, KeepRequestErrors, ThrowOnError> => (options.client ?? client).post<KeepRequestResponses, KeepRequestErrors, ThrowOnError>({
     url: '/api/v1/requests/{request_id}/keep',

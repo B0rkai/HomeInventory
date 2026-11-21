@@ -1215,7 +1215,7 @@
     "/api/v1/requests/{request_id}/done": {
       "post": {
         "summary": "Complete Request",
-        "description": "Marks a request done, whoever claimed it; a bought item's level goes back to plenty\n(one written in by hand has none, nor one bought for a cooking that's kept nowhere).\nWhere any variant will do, `item_id` says which was bought: that one goes to plenty in\nthe place, kept there from now on if it wasn't.\n`by`: the person who bought it, when marked for them.",
+        "description": "Marks a request done, whoever claimed it; a bought item's level goes back to plenty\n(one written in by hand has none, nor one bought for a cooking that's kept nowhere).\nWhere any variant will do, `item_id` says which was bought: that one goes to plenty in\nthe place, kept there from now on if it wasn't. An item with no place (a written line\ntaken into the inventory) is put in `location_id` as it's bought, kept there from now on.\n`by`: the person who bought it, when marked for them.",
         "operationId": "complete_request",
         "parameters": [
           {
@@ -1272,7 +1272,7 @@
     "/api/v1/requests/{request_id}/keep": {
       "post": {
         "summary": "Keep Request",
-        "description": "Marks something written on the shopping list bought, and keeps it from now on: as\nan item (one of the same name and variant, or a new one) at plenty in a place. All or\nnothing; 409 if the line was dealt with in the meantime. `by`: the person who bought\nit, when marked for them.",
+        "description": "Takes something written on the shopping list into the inventory: the line becomes\none of an item (one of the same name and variant, or a new one) with no place yet,\nclaimed as it was; done asks where it goes. Where that item is already on the list\nwith no place, the written line just goes. 409 if the line was dealt with meanwhile.",
         "operationId": "keep_request",
         "parameters": [
           {
@@ -3709,6 +3709,17 @@
             ],
             "title": "Item Id"
           },
+          "location_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Id"
+          },
           "by": {
             "anyOf": [
               {
@@ -3726,10 +3737,6 @@
       },
       "RequestKeep": {
         "properties": {
-          "location_id": {
-            "type": "integer",
-            "title": "Location Id"
-          },
           "name": {
             "type": "string",
             "maxLength": 60,
@@ -3752,26 +3759,14 @@
             "type": "boolean",
             "title": "Restock",
             "default": false
-          },
-          "by": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "By"
           }
         },
         "type": "object",
         "required": [
-          "location_id",
           "name"
         ],
         "title": "RequestKeep",
-        "description": "Something written on the shopping list, bought and kept from now on: as this item\n(an existing one of the same name and variant, or a new one) in this place."
+        "description": "Something written on the shopping list, kept track of from now on: as this item (an\nexisting one of the same name and variant, or a new one), its place chosen once bought."
       },
       "RequestKind": {
         "type": "string",
@@ -3931,6 +3926,10 @@
               }
             ],
             "title": "Cooking Id"
+          },
+          "for_cooking": {
+            "type": "boolean",
+            "title": "For Cooking"
           }
         },
         "type": "object",
@@ -3950,7 +3949,8 @@
           "claimed_at",
           "reminded_by_name",
           "reminded_at",
-          "cooking_id"
+          "cooking_id",
+          "for_cooking"
         ],
         "title": "RequestOut"
       },

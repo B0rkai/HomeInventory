@@ -98,9 +98,13 @@ check stock remotely, and avoid duplicating the job.
    inventory keeps offers it, and listing it puts *that item* on the list in
    one of its places (chosen when it has several) whatever its level: more
    for a party is still the same sugar. A written line can be taken into the
-   inventory as it's bought (*Leltárba*: name, variant, place, restock off by
-   default; `POST /requests/{id}/keep` makes or finds the item, sets it to
-   *plenty* there and closes the line, all or nothing). An item's page has
+   inventory (*Leltárba*: name, variant, restock off by default; `POST
+   /requests/{id}/keep` makes or finds the item and turns the line into that
+   item's, with no place yet and claimed as it was) *(2026-11-21: was bought
+   and placed in one go, which "✓ Megvettem" tapped beside it quietly undid)*.
+   Its *✓ Megvettem* then asks where it goes (`POST /requests/{id}/done` with
+   `location_id`): *plenty* there, kept there from then on. An item bought for
+   a cooking and kept nowhere (`for_cooking`) isn't asked: it's used up. An item's page has
    *+ Listára* for each place without a request, any level. The catalogue has a search box
    (ignoring case and accents), a tab per group (only the groups in use),
    and is sorted by each item's best level: most first by default (what's at

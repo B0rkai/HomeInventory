@@ -670,45 +670,79 @@ def keep(api, request_id: int, json: dict, headers=ANNA):
     return api("POST", f"/requests/{request_id}/keep", json, headers)
 
 
-def test_keeping_a_written_line_makes_an_item_in_the_place(api, house) -> None:
+def test_keeping_a_written_line_makes_it_an_item_with_no_place(api, house) -> None:
     request = api("POST", "/requests", {"name": "Elem"}).json()
-    response = keep(
-        api, request["id"], {"location_id": house["pantry"], "name": "Elem", "variant": "AA"}, BELA
-    )
+    api("POST", f"/requests/{request['id']}/claim", headers=BELA)
+    response = keep(api, request["id"], {"name": "Elem", "variant": "AA"})
     assert response.status_code == 200, response.text
-    assert response.json()["status"] == "done"
     [item] = [i for i in api("GET", "/items").json() if i["name"] == "Elem"]
     assert item["variant"] == "AA"
     assert item["restock"] is False
-    assert level_of(api, house["pantry"], item["id"]) == "plenty"
+    # Still on the list, still Bela's: now as the item, with no place and kept nowhere yet.
+    [line] = active(api)
+    assert line == response.json()
+    assert (line["id"], line["item_id"], line["name"]) == (request["id"], item["id"], None)
+    assert (line["location_id"], line["for_cooking"]) == (None, False)
+    assert (line["status"], line["claimed_by_name"]) == ("claimed", "Bela Kovacs")
+    assert [s for s in api("GET", "/stock").json() if s["item_id"] == item["id"]] == []
+
+
+def test_done_puts_a_kept_line_in_the_place_chosen(api, house) -> None:
+    request = api("POST", "/requests", {"name": "Elem"}).json()
+    item = keep(api, request["id"], {"name": "Elem"}).json()["item_id"]
+    response = api("POST", f"/requests/{request['id']}/done", {"location_id": house["pantry"]})
+    assert response.status_code == 200, response.text
+    assert level_of(api, house["pantry"], item) == "plenty"
     assert active(api) == []
     [entry] = api("GET", "/activity?limit=1").json()
-    assert (entry["user_name"], entry["action"], entry["name"]) == ("Bela Kovacs", "done", "Elem")
+    assert (entry["action"], entry["item_id"], entry["location_id"]) == (
+        "done",
+        item,
+        house["pantry"],
+    )
+
+
+def test_a_place_only_for_an_item_with_no_place(api, house) -> None:
+    written = api("POST", "/requests", {"name": "Elem"}).json()
+    set_level(api, house["pantry"], house["sugar"], "low")
+    sugar = next(r for r in active(api) if r["item_id"] == house["sugar"])
+    for line in (written, sugar):
+        response = api("POST", f"/requests/{line['id']}/done", {"location_id": house["wc"]})
+        assert response.status_code == 422
+    kept = keep(api, written["id"], {"name": "Elem"}).json()
+    assert api("POST", f"/requests/{kept['id']}/done", {"location_id": 999}).status_code == 404
+    assert len(active(api)) == 2
 
 
 def test_keeping_finds_the_item_by_name_and_keeps_its_settings(api, house) -> None:
     request = api("POST", "/requests", {"name": "cukor"}).json()
-    response = keep(api, request["id"], {"location_id": house["wc"], "name": "CUKOR"})
+    response = keep(api, request["id"], {"name": "CUKOR"})
     assert response.status_code == 200, response.text
+    assert response.json()["item_id"] == house["sugar"]
     assert [i["name"] for i in api("GET", "/items").json()].count("Cukor") == 1
-    assert level_of(api, house["wc"], house["sugar"]) == "plenty"
     # Restocked, as it was.
     assert next(i for i in api("GET", "/items").json() if i["id"] == house["sugar"])["restock"]
 
 
-def test_keeping_is_all_or_nothing(api, house) -> None:
+def test_keeping_an_item_on_the_list_with_no_place_already_drops_the_line(api, house) -> None:
+    first = api("POST", "/requests", {"name": "Elem"}).json()
+    second = api("POST", "/requests", {"name": "elem"}).json()
+    kept = keep(api, first["id"], {"name": "Elem"}).json()
+    response = keep(api, second["id"], {"name": "Elem"})
+    assert response.status_code == 200, response.text
+    assert response.json()["id"] == kept["id"]
+    assert [line["id"] for line in active(api)] == [kept["id"]]
+
+
+def test_only_a_written_line_still_on_the_list_is_kept(api, house) -> None:
     request = api("POST", "/requests", {"name": "Elem"}).json()
     api("POST", f"/requests/{request['id']}/cancel")
-    response = keep(api, request["id"], {"location_id": house["pantry"], "name": "Elem"})
-    assert response.status_code == 409
+    assert keep(api, request["id"], {"name": "Elem"}).status_code == 409
     assert [i for i in api("GET", "/items").json() if i["name"] == "Elem"] == []
-    # Only a written line can be kept this way.
     set_level(api, house["pantry"], house["sugar"], "low")
     [bought] = active(api)
-    assert keep(api, bought["id"], {"location_id": house["pantry"], "name": "X"}).status_code == 409
-    assert keep(api, 999, {"location_id": house["pantry"], "name": "X"}).status_code == 404
-    other = api("POST", "/requests", {"name": "Elem"}).json()
-    assert keep(api, other["id"], {"location_id": 999, "name": "Elem"}).status_code == 404
+    assert keep(api, bought["id"], {"name": "X"}).status_code == 409
+    assert keep(api, 999, {"name": "X"}).status_code == 404
 
 
 # An item kept nowhere

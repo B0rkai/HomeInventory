@@ -303,6 +303,10 @@ class RequestOut(BaseModel):
     # The planned cooking it's for, if any: needed before its day. A buy request of an item
     # with no place is only for that.
     cooking_id: int | None
+    # Put on the list for a cooking (an item kept nowhere is bought for it, not kept); unset
+    # for an item with no place: a written line taken into the inventory, put somewhere
+    # once bought.
+    for_cooking: bool
 
 
 class ActivityOut(BaseModel):
@@ -336,6 +340,8 @@ class RequestCreate(BaseModel):
 class RequestDone(BaseModel):
     # For an item where any variant will do: the variant bought, if not the one asked for.
     item_id: int | None = None
+    # For an item with no place (a written line taken into the inventory): where it goes.
+    location_id: int | None = None
     # Who did it, when it's marked for them (the admin pages); unset: whoever marks it.
     by: int | None = None
 
@@ -346,17 +352,14 @@ class ChoreDone(BaseModel):
 
 
 class RequestKeep(BaseModel):
-    """Something written on the shopping list, bought and kept from now on: as this item
-    (an existing one of the same name and variant, or a new one) in this place."""
+    """Something written on the shopping list, kept track of from now on: as this item (an
+    existing one of the same name and variant, or a new one), its place chosen once bought."""
 
-    location_id: int
     name: Name
     variant: Variant = None
     # Whether running low puts it on the list again; off, since what's written on the
     # list by hand is mostly bought now and then.
     restock: bool = False
-    # Who bought it, when it's marked for them (the admin pages); unset: whoever marks it.
-    by: int | None = None
 
 
 class RequestAssign(BaseModel):
